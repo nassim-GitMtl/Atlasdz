@@ -1,0 +1,45 @@
+import {
+  PostgresOrderRepository,
+  PostgresOrderNotificationRepository,
+  PostgresReviewRepository,
+  PostgresSupportRepository,
+  type CheckoutPolicy,
+} from '@atlas/commerce';
+import { Inject, Injectable } from '@nestjs/common';
+import { SharedDatabasePool } from '../shared-database-pool.js';
+export const ORDER_REPOSITORY = Symbol('atlas.order.repository');
+export const LOCAL_CHECKOUT_POLICY = Symbol('atlas.local-checkout-policy');
+export type OrderRepositoryPort = Pick<
+  PostgresOrderRepository,
+  | 'createQuote'
+  | 'getQuote'
+  | 'place'
+  | 'listCustomerOrders'
+  | 'getCustomerOrder'
+  | 'listSellerOrders'
+  | 'getSellerOrder'
+  | 'closeSellerOrder'
+  | 'expireDue'
+  | 'processSellerOrder'
+  | 'confirmDelivery'
+  | 'listDestinations'
+  | 'listSellerRates'
+  | 'setSellerRate'
+>;
+@Injectable()
+export class OrderInfrastructure {
+  readonly repository: PostgresOrderRepository;
+  readonly notifications: PostgresOrderNotificationRepository;
+  readonly support: PostgresSupportRepository;
+  readonly reviews: PostgresReviewRepository;
+  constructor(
+    @Inject(SharedDatabasePool) database: SharedDatabasePool,
+    @Inject(LOCAL_CHECKOUT_POLICY) policy: CheckoutPolicy | null,
+  ) {
+    const pool = database.pool;
+    this.repository = new PostgresOrderRepository(pool, policy);
+    this.notifications = new PostgresOrderNotificationRepository(pool);
+    this.support = new PostgresSupportRepository(pool);
+    this.reviews = new PostgresReviewRepository(pool);
+  }
+}

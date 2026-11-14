@@ -1,0 +1,28 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+!.env.test.example
+.pnpm-store/
+node_modules/
+dist/
+dist-test/
+.next/
+coverage/
+*.tsbuildinfo
+*.log
+
+# Local service state and generated evidence
+.data/
+artifacts/
+test-results/
+
+# Editors
+.idea/
+.vscode/
+var/
+
+# Tool caches and local settings
+.turbo/
+.expo/
+.claude/settings.local.json

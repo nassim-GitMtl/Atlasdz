@@ -1,0 +1,65 @@
+{
+	email {$ACME_EMAIL}
+	servers {
+		timeouts {
+			read_body 15s
+			read_header 10s
+			write 60s
+			idle 2m
+		}
+	}
+}
+
+(common) {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Frame-Options "DENY"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+		# Default policy; responses that set their own (e.g. /media photos) keep it.
+		# Next.js hydration needs inline scripts; everything else is same-origin only.
+		?Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+		-Server
+	}
+	log {
+		output stdout
+		format json
+	}
+}
+
+{$SHOP_DOMAIN}, www.{$SHOP_DOMAIN} {
+	import common
+	# Seller photos from the mobile app may reach 5 MiB (the API limit); everything else 2 MB.
+	@photoUpload path_regexp ^/api/v1/seller/products/[^/]+/image$
+	@otherBody not path_regexp ^/api/v1/seller/products/[^/]+/image$
+	request_body @photoUpload {
+		max_size 7MB
+	}
+	request_body @otherBody {
+		max_size 2MB
+	}
+	@www host www.{$SHOP_DOMAIN}
+	redir @www https://{$SHOP_DOMAIN}{uri} permanent
+	# API for the mobile app (bearer tokens, no cookies): buyer paths and seller paths (seller
+	# sessions require the authenticator code). Staff and local endpoints are not listed, so
+	# they stay reachable only from the web apps inside Docker.
+	@appApi path /api/v1/catalog/* /api/v1/auth/* /api/v1/account /api/v1/account/* /api/v1/cart /api/v1/cart/* /api/v1/checkout/* /api/v1/orders /api/v1/orders/* /api/v1/delivery/destinations /api/v1/notifications /api/v1/notifications/* /api/v1/support /api/v1/support/* /api/v1/reviews/* /api/v1/seller/*
+	handle @appApi {
+		# Caddy replaces any client-supplied X-Forwarded-For with the real peer address.
+		reverse_proxy api:3000
+	}
+	handle {
+		reverse_proxy customer-web:3000
+	}
+}
+
+{$SELLER_DOMAIN} {
+	import common
+	# Product photo uploads (5 MiB images) go through Seller Center server actions.
+	request_body {
+		max_size 7MB
+	}
+	reverse_proxy seller-center:3000
+}

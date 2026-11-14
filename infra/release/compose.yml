@@ -1,0 +1,137 @@
+name: atlas-release
+
+x-runtime: &runtime
+  init: true
+  read_only: true
+  user: '1000:1000'
+  cap_drop: [ALL]
+  security_opt: ['no-new-privileges:true']
+  restart: unless-stopped
+  stop_grace_period: 30s
+  pids_limit: 128
+  mem_limit: 512m
+  cpus: 1.0
+  logging:
+    driver: json-file
+    options: { max-size: 10m, max-file: '3' }
+
+x-database-env: &database-env
+  APP_ENV: ${APP_ENV:?Choose staging or production}
+  NODE_ENV: production
+  DATABASE_URL_FILE: /run/secrets/database_url
+  DATABASE_SSL: 'true'
+  NODE_EXTRA_CA_CERTS: /run/secrets/database_ca
+  ATLAS_LOCAL_ACCOUNTS: 'false'
+  ATLAS_LOCAL_CHECKOUT: 'false'
+  ENABLE_ELECTRONIC_PAYMENTS: 'false'
+  ENABLE_REAL_PAYOUTS: 'false'
+
+services:
+  api:
+    <<: *runtime
+    image: ${ATLAS_API_IMAGE:?Set the tested API image reference}
+    build: { context: ../.., dockerfile: infra/release/Dockerfile, target: api }
+    environment:
+      <<: *database-env
+      SERVICE_NAME: atlas-api
+      HOST: 0.0.0.0
+      PORT: '3000'
+      LOG_LEVEL: info
+      CORS_ALLOWED_ORIGINS: ${CUSTOMER_WEB_ORIGIN:?Set HTTPS origin},${SELLER_WEB_ORIGIN:?Set HTTPS origin}
+      IDENTITY_SECRET_KEY_FILE: /run/secrets/identity_key
+      ATLAS_LEGAL_REVIEWED: ${ATLAS_LEGAL_REVIEWED:-false}
+      SMTP_URL_FILE: /run/secrets/smtp_url
+      # Optional HTTPS SMS gateway (POST {to, message}); enables phone verification for COD.
+      SMS_GATEWAY_URL: ${SMS_GATEWAY_URL:-}
+      SMS_GATEWAY_TOKEN_FILE: /run/secrets/sms_token
+      MAIL_FROM: ${MAIL_FROM:-Atlas DZ <no-reply@invalid.example>}
+      SELLER_WEB_ORIGIN: ${SELLER_WEB_ORIGIN:?Set HTTPS origin}
+      CUSTOMER_WEB_ORIGIN: ${CUSTOMER_WEB_ORIGIN:?Set HTTPS origin}
+      MEDIA_DIR: /data/media
+      ATLAS_LIVE_CHECKOUT: ${ATLAS_LIVE_CHECKOUT:-false}
+      # Web servers forward the browser IP from the TLS proxy; trust only private container ranges.
+      TRUST_PROXY: uniquelocal
+    secrets: [database_url, database_ca, identity_key, smtp_url, sms_token]
+    tmpfs: ['/tmp:rw,noexec,nosuid,size=32m']
+    # Seller product photos (back this up with the database).
+    volumes: ['media_data:/data/media']
+    ports: ['127.0.0.1:${API_BIND_PORT:-3100}:3000']
+    networks: [app, database-egress]
+
+  migrate:
+    <<: *runtime
+    image: ${ATLAS_MIGRATE_IMAGE:?Set matching migration image reference}
+    build: { context: ../.., dockerfile: infra/release/Dockerfile, target: migrate }
+    profiles: [operations]
+    restart: 'no'
+    environment: *database-env
+    secrets: [database_url, database_ca]
+    tmpfs: ['/tmp:rw,noexec,nosuid,size=32m']
+    networks: [database-egress]
+
+  customer-web:
+    <<: *runtime
+    image: ${ATLAS_CUSTOMER_IMAGE:?Set matching customer image reference}
+    build: { context: ../.., dockerfile: infra/release/Dockerfile, target: customer-web }
+    environment:
+      APP_ENV: ${APP_ENV:?Choose staging or production}
+      NODE_ENV: production
+      CUSTOMER_WEB_ORIGIN: ${CUSTOMER_WEB_ORIGIN:?Set HTTPS origin}
+      CATALOG_API_BASE_URL: http://api:3000
+      ATLAS_LIVE_CHECKOUT: ${ATLAS_LIVE_CHECKOUT:-false}
+      ATLAS_LEGAL_REVIEWED: ${ATLAS_LEGAL_REVIEWED:-false}
+      ATLAS_LEGAL_NAME: ${ATLAS_LEGAL_NAME:-}
+      ATLAS_LEGAL_ADDRESS: ${ATLAS_LEGAL_ADDRESS:-}
+      ATLAS_LEGAL_RC: ${ATLAS_LEGAL_RC:-}
+      ATLAS_LEGAL_NIF: ${ATLAS_LEGAL_NIF:-}
+      ATLAS_LEGAL_EMAIL: ${ATLAS_LEGAL_EMAIL:-}
+      ATLAS_LEGAL_PHONE: ${ATLAS_LEGAL_PHONE:-}
+      ATLAS_LEGAL_HOST: ${ATLAS_LEGAL_HOST:-}
+      NEXT_SERVER_ACTIONS_ENCRYPTION_KEY_FILE: /run/secrets/action_key
+      ATLAS_LOCAL_ACCOUNTS: 'false'
+      ATLAS_LOCAL_CHECKOUT: 'false'
+    secrets: [{ source: customer_action_key, target: action_key }]
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=32m
+      - /app/apps/customer-web/.next/cache:uid=1000,gid=1000,mode=0700,size=128m
+    ports: ['127.0.0.1:${CUSTOMER_BIND_PORT:-3101}:3000']
+    networks: [app]
+    depends_on: { api: { condition: service_healthy } }
+
+  seller-center:
+    <<: *runtime
+    image: ${ATLAS_SELLER_IMAGE:?Set matching seller image reference}
+    build: { context: ../.., dockerfile: infra/release/Dockerfile, target: seller-center }
+    environment:
+      APP_ENV: ${APP_ENV:?Choose staging or production}
+      NODE_ENV: production
+      SELLER_WEB_ORIGIN: ${SELLER_WEB_ORIGIN:?Set HTTPS origin}
+      SELLER_API_BASE_URL: http://api:3000
+      ATLAS_LIVE_CHECKOUT: ${ATLAS_LIVE_CHECKOUT:-false}
+      NEXT_SERVER_ACTIONS_ENCRYPTION_KEY_FILE: /run/secrets/action_key
+      ATLAS_LOCAL_ACCOUNTS: 'false'
+      ATLAS_LOCAL_CHECKOUT: 'false'
+    secrets: [{ source: seller_action_key, target: action_key }]
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=32m
+      - /app/apps/seller-center/.next/cache:uid=1000,gid=1000,mode=0700,size=128m
+    ports: ['127.0.0.1:${SELLER_BIND_PORT:-3102}:3000']
+    networks: [app]
+    depends_on: { api: { condition: service_healthy } }
+
+volumes:
+  media_data: {}
+
+networks:
+  app: { internal: true }
+  database-egress: {}
+secrets:
+  database_url: { file: '${DATABASE_URL_FILE:?Set mounted database connection file}' }
+  database_ca: { file: '${DATABASE_CA_FILE:?Set trusted database CA file}' }
+  identity_key: { file: '${IDENTITY_KEY_FILE:?Set 32-byte base64 identity key file}' }
+  # smtp(s)://user:password@host:port — an empty file disables email (reset links are not sent).
+  smtp_url: { file: '${SMTP_URL_FILE:?Set SMTP URL file (may be empty)}' }
+  sms_token: { file: '${SMS_TOKEN_FILE:?Set SMS gateway token file (may be empty)}' }
+  customer_action_key:
+    { file: '${CUSTOMER_ACTION_KEY_FILE:?Set customer action encryption key file}' }
+  seller_action_key: { file: '${SELLER_ACTION_KEY_FILE:?Set seller action encryption key file}' }

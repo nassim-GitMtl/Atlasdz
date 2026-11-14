@@ -1,0 +1,57 @@
+{
+  "name": "atlas-dz",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Project Atlas DZ marketplace monorepo",
+  "packageManager": "pnpm@11.19.0",
+  "engines": {
+    "node": ">=24.21.0 <25",
+    "pnpm": ">=11.19.0 <12"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "clean": "turbo run clean",
+    "dev": "turbo run dev --parallel",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "turbo run lint && eslint tools",
+    "typecheck": "turbo run typecheck && tsc -p tools/smoke/tsconfig.json --noEmit",
+    "test": "turbo run test",
+    "test:unit": "turbo run test:unit",
+    "test:integration": "turbo run test:integration",
+    "test:contract": "turbo run test:contract",
+    "test:e2e": "node tools/testing/run-required-suite.mjs test:e2e",
+    "test:ui": "node tools/testing/run-required-suite.mjs test:ui",
+    "test:security": "node tools/testing/run-required-suite.mjs test:security",
+    "test:tooling": "node --test tools/testing/*.test.mjs tools/deployment/*.test.mjs",
+    "verify": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test:tooling && pnpm test:unit && pnpm test:contract && pnpm build",
+    "infra:up": "docker compose --env-file .env.local -f infra/local/compose.yml up -d --wait",
+    "infra:status": "docker compose --env-file .env.local -f infra/local/compose.yml ps",
+    "infra:down": "docker compose --env-file .env.local -f infra/local/compose.yml down",
+    "infra:logs": "docker compose --env-file .env.local -f infra/local/compose.yml logs",
+    "db:migrate": "pnpm --filter @atlas/database build && pnpm --filter @atlas/database migrate",
+    "db:status": "pnpm --filter @atlas/database build && pnpm --filter @atlas/database status",
+    "db:verify": "pnpm --filter @atlas/database build && pnpm --filter @atlas/database verify",
+    "db:seed:synthetic": "pnpm --filter @atlas/database build && pnpm --filter @atlas/database seed:synthetic",
+    "catalog:seed:synthetic": "pnpm --filter @atlas/catalog build && pnpm --filter @atlas/catalog seed:synthetic",
+    "smoke": "tsc -p tools/smoke/tsconfig.json --noEmit && tsx tools/smoke/api-smoke.ts"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.19.1",
+    "eslint": "10.12.0",
+    "globals": "17.13.0",
+    "prettier": "3.9.9",
+    "tsx": "4.23.15",
+    "turbo": "2.11.7",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.71.0"
+  },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "24.21.0",
+      "onFail": "download"
+    }
+  }
+}

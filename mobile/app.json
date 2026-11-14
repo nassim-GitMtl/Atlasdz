@@ -1,0 +1,52 @@
+{
+  "expo": {
+    "name": "atlas dz",
+    "slug": "atlas-dz",
+    "scheme": "atlasdz",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#fffaf3",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "dz.atlasdz.app"
+    },
+    "android": {
+      "package": "dz.atlasdz.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#fffaf3",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-localization",
+      "expo-image",
+      "expo-web-browser",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 140,
+          "backgroundColor": "#fffaf3"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "atlas dz utilise vos photos pour illustrer les produits que vous vendez.",
+          "cameraPermission": "atlas dz utilise l'appareil photo pour photographier les produits que vous vendez.",
+          "microphonePermission": false
+        }
+      ]
+    ]
+  }
+}

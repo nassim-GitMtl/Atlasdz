@@ -1,0 +1,3 @@
+export const RUNTIME_CONFIG = Symbol('RUNTIME_CONFIG');
+export const STRUCTURED_LOGGER = Symbol('STRUCTURED_LOGGER');
+export const DATABASE_HEALTH = Symbol('DATABASE_HEALTH');

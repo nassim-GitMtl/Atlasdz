@@ -1,0 +1,109 @@
+# Single-VPS overlay: PostgreSQL (TLS), Caddy (automatic HTTPS) and nightly backups.
+# Use together with ../compose.yml:
+#   docker compose --env-file /opt/atlas/atlas.env -f infra/release/compose.yml \
+#     -f infra/release/vps/compose.vps.yml up -d
+name: atlas-release
+# Relative paths resolve from infra/release (the first compose file).
+
+services:
+  postgres:
+    image: postgres:17.11-alpine
+    restart: unless-stopped
+    shm_size: 256m
+    environment:
+      POSTGRES_DB: atlas
+      POSTGRES_USER: atlas_owner
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_owner_password
+      ATLAS_APP_PASSWORD_FILE: /run/secrets/postgres_app_password
+    command:
+      - postgres
+      - -c
+      - ssl=on
+      - -c
+      - ssl_cert_file=/certs/server.crt
+      - -c
+      - ssl_key_file=/certs/server.key
+      - -c
+      - ssl_min_protocol_version=TLSv1.2
+      - -c
+      - password_encryption=scram-sha-256
+      - -c
+      - max_connections=60
+    secrets: [postgres_owner_password, postgres_app_password]
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ${ATLAS_HOME:?Set ATLAS_HOME}/certs/postgres:/certs:ro
+      - ./vps/init-db.sh:/docker-entrypoint-initdb.d/10-atlas-roles.sh:ro
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-U', 'atlas_owner', '-d', 'atlas']
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    networks: [database-egress]
+    logging:
+      driver: json-file
+      options: { max-size: 10m, max-file: '3' }
+
+  api:
+    depends_on: { postgres: { condition: service_healthy } }
+
+  migrate:
+    depends_on: { postgres: { condition: service_healthy } }
+    # Migrations run as the schema owner; the API only ever gets the runtime (atlas_app) URL.
+    environment:
+      DATABASE_URL_FILE: /run/secrets/migration_database_url
+    secrets: [migration_database_url]
+
+  backup:
+    image: postgres:17.11-alpine
+    restart: unless-stopped
+    depends_on: { postgres: { condition: service_healthy } }
+    environment:
+      PGHOST: postgres
+      PGDATABASE: atlas
+      PGUSER: atlas_owner
+      PGPASSFILE: /tmp/pgpass
+      PGSSLMODE: verify-full
+      PGSSLROOTCERT: /run/secrets/database_ca
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+    secrets: [postgres_owner_password, database_ca]
+    volumes:
+      - ${ATLAS_HOME:?Set ATLAS_HOME}/backups:/backups
+      - ./vps/backup.sh:/usr/local/bin/atlas-backup.sh:ro
+      - media_data:/photos:ro
+    entrypoint: ['/bin/sh', '/usr/local/bin/atlas-backup.sh']
+    networks: [database-egress]
+    logging:
+      driver: json-file
+      options: { max-size: 10m, max-file: '3' }
+
+  caddy:
+    image: caddy:2.10.2-alpine
+    restart: unless-stopped
+    depends_on: [customer-web, seller-center]
+    environment:
+      SHOP_DOMAIN: ${SHOP_DOMAIN:?Set shop domain, e.g. atlas.dz}
+      SELLER_DOMAIN: ${SELLER_DOMAIN:?Set seller domain, e.g. vendeur.atlas.dz}
+      ACME_EMAIL: ${ACME_EMAIL:?Set an email for Let's Encrypt notices}
+    ports: ['80:80', '443:443', '443:443/udp']
+    volumes:
+      - ./vps/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [app, edge]
+    logging:
+      driver: json-file
+      options: { max-size: 10m, max-file: '3' }
+
+networks:
+  edge: {}
+
+volumes:
+  postgres_data: {}
+  caddy_data: {}
+  caddy_config: {}
+
+secrets:
+  postgres_owner_password: { file: '${ATLAS_HOME:?Set ATLAS_HOME}/secrets/postgres-owner-password' }
+  postgres_app_password: { file: '${ATLAS_HOME:?Set ATLAS_HOME}/secrets/postgres-app-password' }
+  migration_database_url: { file: '${ATLAS_HOME:?Set ATLAS_HOME}/secrets/migration-database-url' }

@@ -1,0 +1,24 @@
+packages:
+  - apps/*
+  - packages/*
+  - packages/backend/*
+
+catalog:
+  '@types/node': 24.19.1
+  tsx: 4.23.15
+  typescript: 6.0.3
+
+allowBuilds:
+  esbuild: true
+
+storeDir: .pnpm-store
+strictPeerDependencies: true
+saveExact: true
+engineStrict: true
+confirmModulesPurge: false
+
+# Security: patched transitive versions (pnpm audit, 2026-11-09).
+overrides:
+  'body-parser@>=2.0.0 <2.4.0': 2.4.0
+  'multer@>=2.0.0 <2.5.0': 2.5.0
+  'qs@>=6.7.0 <6.16.1': 6.16.2

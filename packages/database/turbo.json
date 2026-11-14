@@ -1,0 +1,8 @@
+{
+  "extends": ["//"],
+  "tasks": {
+    "test:unit": {
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/database/migrations/**"]
+    }
+  }
+}

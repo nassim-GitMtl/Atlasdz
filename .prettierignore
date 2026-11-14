@@ -1,0 +1,21 @@
+.pnpm-store
+.turbo
+**/node_modules
+**/dist
+**/dist-test
+**/.next
+**/next-env.d.ts
+**/*.tsbuildinfo
+**/coverage
+pnpm-lock.yaml
+prototypes
+docs/phase-0
+PRODUCTION-READINESS-PROMPT.md
+mobile/package-lock.json
+mobile/.expo
+mobile/android
+mobile/ios
+
+# Tool-managed files
+AGENTS.md
+.claude/

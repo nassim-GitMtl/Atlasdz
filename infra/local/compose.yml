@@ -1,0 +1,138 @@
+name: atlas-dz-local
+
+services:
+  postgres:
+    image: postgres:17.11-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${ATLAS_POSTGRES_USER:?ATLAS_POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${ATLAS_POSTGRES_PASSWORD:?ATLAS_POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${ATLAS_POSTGRES_DB:?ATLAS_POSTGRES_DB is required}
+    command:
+      - postgres
+      - -c
+      - log_statement=none
+      - -c
+      - log_min_duration_statement=500
+      - -c
+      - password_encryption=scram-sha-256
+    ports:
+      - 127.0.0.1:5432:5432
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"
+      interval: 3s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+    networks: [atlas-local]
+
+  redis:
+    image: redis:8.10.2-alpine
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${ATLAS_REDIS_PASSWORD:?ATLAS_REDIS_PASSWORD is required}
+    command:
+      - sh
+      - -ec
+      - exec redis-server --appendonly yes --appendfsync everysec --requirepass "$${REDIS_PASSWORD}"
+    ports:
+      - 127.0.0.1:6379:6379
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - redis-cli --no-auth-warning -a "$${REDIS_PASSWORD}" ping | grep -q PONG
+      interval: 3s
+      timeout: 3s
+      retries: 20
+      start_period: 3s
+    networks: [atlas-local]
+
+  opensearch:
+    image: opensearchproject/opensearch:3.8.0
+    restart: unless-stopped
+    environment:
+      discovery.type: single-node
+      DISABLE_INSTALL_DEMO_CONFIG: 'true'
+      DISABLE_SECURITY_PLUGIN: 'true'
+      OPENSEARCH_JAVA_OPTS: -Xms512m -Xmx512m
+      bootstrap.memory_lock: 'true'
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    ports:
+      - 127.0.0.1:9200:9200
+      - 127.0.0.1:9600:9600
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl --fail --silent http://localhost:9200/_cluster/health >/dev/null
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 40s
+    networks: [atlas-local]
+
+  rabbitmq:
+    image: rabbitmq:4.3.6-management-alpine
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${ATLAS_RABBITMQ_USER:?ATLAS_RABBITMQ_USER is required}
+      RABBITMQ_DEFAULT_PASS: ${ATLAS_RABBITMQ_PASSWORD:?ATLAS_RABBITMQ_PASSWORD is required}
+      RABBITMQ_DEFAULT_VHOST: atlas_local
+    ports:
+      - 127.0.0.1:5672:5672
+      - 127.0.0.1:15672:15672
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: [CMD, rabbitmq-diagnostics, -q, ping]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+    networks: [atlas-local]
+
+  object-storage:
+    image: adobe/s3mock:5.2.2
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: actuator
+      COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS: atlas-local-objects
+      COM_ADOBE_TESTING_S3MOCK_STORE_ROOT: /s3mockroot
+      COM_ADOBE_TESTING_S3MOCK_STORE_RETAIN_FILES_ON_EXIT: 'true'
+    ports:
+      - 127.0.0.1:9090:9090
+    volumes:
+      - object-storage-data:/s3mockroot
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "wget --header='Accept: application/json' --quiet --output-document=/dev/null http://localhost:9090/actuator/health"
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    networks: [atlas-local]
+
+networks:
+  atlas-local:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data:
+  opensearch-data:
+  rabbitmq-data:
+  object-storage-data:

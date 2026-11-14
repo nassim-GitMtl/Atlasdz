@@ -1,0 +1,83 @@
+# Notification Catalog
+
+Scope amendment (2026-10-06): [ADR-011](../decisions/ADR-011-seller-fulfilled-marketplace.md) and [revised scope](22-scope-phasing.md) control this historical baseline. Warehouse, fleet, platform-owned stock, platform goods/COD custody, and unconditional settlement requirements are OUT_OF_SCOPE. Seller stock reservations, seller order processing, delivery visibility, and applicable controls remain required. Authorized safe implementation may proceed; excluded capabilities and older blanket implementation stops do not create release blockers.
+
+## Rules
+
+- Channels: in-app (`IA`), email (`EM`), SMS (`SM`), push (`PU`). Availability depends on verified destination, user preference, provider health, and legal/contractual necessity.
+- Transactional/legal notices cannot be disabled when required; marketing consent is separate and revocable.
+- Templates are locale/versioned, render-tested for Arabic RTL and French, and contain no secrets or excessive PII.
+- Each request has deterministic deduplication key, recipient resolution, event version, template version, delivery attempts, provider reference, bounce/failure reason, and correlation ID.
+- A failed notification never rolls back an order/payment/fulfillment transaction; it enters retry/DLQ and an operational alert when critical.
+
+| ID      | Trigger/Event                         | Audience                                  | Default Channels       | Required?               | Core content/action                              | Deduplication key               |
+| ------- | ------------------------------------- | ----------------------------------------- | ---------------------- | ----------------------- | ------------------------------------------------ | ------------------------------- |
+| NTF-001 | `user.registered`                     | Customer                                  | EM/IA                  | Yes where email present | Welcome and verification state                   | user+event                      |
+| NTF-002 | `user.phone_verification_requested`   | Customer                                  | SM                     | Yes                     | OTP and expiry; no password                      | challenge ID                    |
+| NTF-003 | `user.email_verification_requested`   | Customer                                  | EM                     | Yes                     | Single-use verification link                     | challenge ID                    |
+| NTF-004 | `user.password_reset_requested`       | Account owner                             | SM or EM               | Yes                     | Recovery instruction and expiry                  | challenge ID                    |
+| NTF-005 | `user.password_changed`               | Account owner                             | EM/SM/IA               | Yes                     | Security alert and revoke link                   | security event ID               |
+| NTF-006 | `user.new_session_detected`           | Account owner                             | IA/EM                  | Configurable security   | Device/time/region and revoke link               | session ID                      |
+| NTF-007 | `seller.application_submitted`        | Seller owner                              | EM/IA                  | Yes                     | Reference and review expectation                 | application+version             |
+| NTF-008 | `seller.more_information_required`    | Seller owner                              | EM/IA                  | Yes                     | Missing items and due date                       | review decision ID              |
+| NTF-009 | `seller.approved`                     | Seller owner                              | EM/IA                  | Yes                     | Approval and next steps                          | seller status event             |
+| NTF-010 | `seller.rejected`                     | Seller owner                              | EM/IA                  | Yes                     | Reason category and appeal/support path          | seller status event             |
+| NTF-011 | `seller.suspended`                    | Seller owner                              | EM/SM/IA               | Yes                     | Scope, reason, effective time, appeal            | enforcement ID                  |
+| NTF-012 | `seller.document_expiring`            | Seller owner                              | EM/IA                  | Yes                     | Document and renewal deadline                    | document+threshold              |
+| NTF-013 | `catalog.product_changes_required`    | Seller submitter                          | EM/IA                  | Yes                     | Field reasons and resubmit action                | moderation decision ID          |
+| NTF-014 | `catalog.product_approved`            | Seller submitter                          | IA                     | Yes                     | Product/offer activation result                  | moderation decision ID          |
+| NTF-015 | `catalog.product_rejected`            | Seller submitter                          | EM/IA                  | Yes                     | Reason and allowed next action                   | moderation decision ID          |
+| NTF-016 | `inventory.low_stock`                 | Seller users                              | IA/EM                  | Preference/role         | SKU/location/available quantity                  | sku+location+threshold crossing |
+| NTF-017 | `inventory.out_of_stock`              | Seller users                              | IA/EM                  | Preference/role         | SKU and affected offer                           | sku+location+state version      |
+| NTF-018 | `cart.price_changed`                  | Customer                                  | IA                     | Yes in active cart      | Affected item, old/new displayed price           | cart+line+version               |
+| NTF-019 | `cart.item_unavailable`               | Customer                                  | IA                     | Yes in active cart      | Affected item and alternatives                   | cart+line+availability version  |
+| NTF-020 | `checkout.cod_verification_requested` | Customer                                  | SM/IA                  | Yes                     | OTP/confirmation and expiry                      | COD decision ID                 |
+| NTF-021 | `checkout.cod_manual_review`          | Customer                                  | IA/EM                  | Yes                     | Pending status and expected next step            | COD decision ID                 |
+| NTF-022 | `order.created`                       | Customer                                  | EM/SM/PU/IA            | Yes                     | Order reference, amount, pending/confirmed state | order ID+state version          |
+| NTF-023 | `order.confirmed`                     | Customer                                  | EM/PU/IA               | Yes                     | Confirmed groups and estimates                   | order ID+state version          |
+| NTF-024 | `seller_order.created`                | Seller users                              | EM/PU/IA               | Yes                     | Seller order, SLA, fulfillment action            | seller order ID                 |
+| NTF-025 | `seller_order.sla_warning`            | Seller users                              | IA/EM/PU               | Yes                     | Deadline and required action                     | seller order+SLA threshold      |
+| NTF-026 | `order.cancelled`                     | Customer/Seller                           | EM/PU/IA               | Yes                     | Affected items, reason, refund next step         | cancellation ID                 |
+| NTF-027 | `payment.action_required`             | Customer                                  | EM/PU/IA               | Yes                     | Safe continue-payment action                     | payment intent+version          |
+| NTF-028 | `payment.completed`                   | Customer                                  | EM/PU/IA               | Yes                     | Amount/reference and order status                | payment transaction ID          |
+| NTF-029 | `payment.failed`                      | Customer                                  | EM/PU/IA               | Yes                     | Failure-safe retry/support action                | payment attempt ID              |
+| NTF-030 | `refund.initiated`                    | Customer                                  | EM/PU/IA               | Yes                     | Amount, method, expected timing                  | refund ID+state                 |
+| NTF-031 | `refund.completed`                    | Customer                                  | EM/PU/IA               | Yes                     | Amount, method, completion reference             | refund ID+state                 |
+| NTF-032 | `refund.failed`                       | Finance queue; customer if action changes | IA/EM                  | Yes                     | Safe status and support path                     | refund ID+state                 |
+| NTF-033 | `shipment.created`                    | Customer/Seller                           | IA/EM                  | Yes                     | Group, method, estimate                          | shipment ID+state               |
+| NTF-034 | `shipment.handed_off`                 | Customer                                  | PU/IA/EM               | Yes                     | Carrier-facing status and tracking               | shipment ID+state               |
+| NTF-035 | `shipment.out_for_delivery`           | Customer                                  | SM/PU/IA               | Yes                     | Date/range, COD due, safe instructions           | shipment ID+attempt             |
+| NTF-036 | `shipment.delivered`                  | Customer/Seller                           | PU/IA/EM               | Yes                     | Proof-safe delivery confirmation                 | shipment ID+state               |
+| NTF-037 | `shipment.delivery_failed`            | Customer/Seller/Ops                       | SM/PU/IA/EM            | Yes                     | Reason category and next step                    | shipment attempt ID             |
+| NTF-038 | `shipment.rescheduled`                | Customer                                  | SM/PU/IA               | Yes                     | New range and reason                             | shipment ID+schedule version    |
+| NTF-039 | `return.requested`                    | Customer/Seller                           | EM/PU/IA               | Yes                     | RMA, item, review state                          | return ID+state                 |
+| NTF-040 | `return.information_required`         | Customer                                  | EM/PU/IA               | Yes                     | Missing evidence and due date                    | return review action ID         |
+| NTF-041 | `return.approved`                     | Customer/Seller                           | EM/PU/IA               | Yes                     | Reverse-shipping instructions                    | return ID+state                 |
+| NTF-042 | `return.rejected`                     | Customer/Seller                           | EM/PU/IA               | Yes                     | Reason and appeal/support path                   | return ID+state                 |
+| NTF-043 | `return.received`                     | Customer/Seller                           | PU/IA                  | Yes                     | Receipt and inspection next step                 | return ID+state                 |
+| NTF-044 | `return.inspection_completed`         | Customer/Seller                           | EM/PU/IA               | Yes                     | Outcome and refund/dispute next step             | inspection ID                   |
+| NTF-045 | `review.published`                    | Customer                                  | IA                     | Preference              | Review publication                               | review ID+state                 |
+| NTF-046 | `review.moderation_required`          | Moderator queue                           | IA                     | Yes                     | Reason and review task                           | review ID+state                 |
+| NTF-047 | `support.ticket_created`              | Requester                                 | EM/IA                  | Yes                     | Ticket reference and SLA expectation             | ticket ID                       |
+| NTF-048 | `support.ticket_replied`              | Waiting party                             | EM/PU/IA               | Yes                     | New reply and safe deep link                     | message ID                      |
+| NTF-049 | `support.ticket_escalated`            | Assigned team/manager                     | IA/EM                  | Yes                     | Priority, reason, deadline                       | escalation ID                   |
+| NTF-050 | `support.ticket_resolved`             | Requester                                 | EM/PU/IA               | Yes                     | Resolution and reopen policy                     | ticket ID+state                 |
+| NTF-051 | `seller.policy_warning`               | Seller owner/manager                      | EM/IA                  | Yes                     | Metric/policy, deadline, remedy                  | enforcement ID                  |
+| NTF-052 | `settlement.generated`                | Seller finance users                      | EM/IA                  | Yes                     | Period, amount, hold/dispute link                | settlement ID+state             |
+| NTF-053 | `settlement.paid`                     | Seller finance users                      | EM/IA                  | Yes                     | Amount, payout reference, statement              | payout ID+state                 |
+| NTF-054 | `settlement.failed`                   | Seller owner and finance ops              | EM/IA                  | Yes                     | Safe failure status and action                   | payout ID+state                 |
+| NTF-055 | `cod.remittance_due`                  | Courier/logistics supervisor              | IA/PU                  | Yes                     | Expected amount and deadline                     | courier+batch+threshold         |
+| NTF-056 | `cod.discrepancy_opened`              | Finance/logistics                         | IA/EM                  | Yes                     | Expected/received delta and case                 | discrepancy ID                  |
+| NTF-057 | `provider.health_degraded`            | On-call operations                        | Pager/IA/EM            | Yes                     | Provider, impact, runbook                        | incident fingerprint+window     |
+| NTF-058 | `queue.dead_letter_threshold`         | Platform on-call                          | Pager/IA               | Yes                     | Queue, count, oldest age, runbook                | queue+threshold crossing        |
+| NTF-059 | `privacy.request_received`            | Customer/privacy team                     | EM/IA                  | Yes                     | Request reference and verification               | privacy request ID              |
+| NTF-060 | `privacy.request_completed`           | Customer                                  | EM/IA                  | Yes                     | Outcome and secure retrieval/closure             | privacy request ID+state        |
+| NTF-061 | `marketing.campaign`                  | Consented audience                        | Configured EM/SM/PU/IA | No                      | Approved localized campaign and unsubscribe      | campaign+recipient              |
+
+## Preference and fallback policy
+
+- Required security, contractual, order, payment, delivery, return, refund, seller-enforcement, and privacy messages bypass marketing opt-out but still use the minimum effective channel.
+- SMS/push content avoids full address, sensitive evidence, bank data, or detailed fraud reason.
+- If primary delivery fails, fallback occurs only through an approved channel order and deduplication key; support/operations can see delivery state.
+- Quiet hours apply to non-urgent optional messages. Time-critical delivery/security messages follow approved exception policy.
+- Template preview must cover long French, Arabic RTL, missing optional fields, pluralization, DZD amount, date range, and safe deep links.

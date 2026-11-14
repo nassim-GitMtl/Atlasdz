@@ -1,0 +1,72 @@
+name: foundation-ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: foundation-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17.11-alpine
+        env:
+          POSTGRES_USER: atlas_ci
+          POSTGRES_PASSWORD: atlas_ci_only
+          POSTGRES_DB: atlas_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U atlas_ci -d atlas_ci"
+          --health-interval 3s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      NODE_ENV: test
+      SERVICE_NAME: atlas-api-test
+      HOST: 127.0.0.1
+      PORT: 0
+      LOG_LEVEL: silent
+      DATABASE_URL: postgresql://atlas_ci:atlas_ci_only@127.0.0.1:5432/atlas_ci
+      DATABASE_SSL: 'false'
+      CORS_ALLOWED_ORIGINS: http://localhost:3001
+      REQUEST_BODY_LIMIT_BYTES: 1048576
+      ENABLE_ELECTRONIC_PAYMENTS: 'false'
+      ENABLE_REAL_PAYOUTS: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.19.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.21.0
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: docker compose --env-file .env.example -f infra/local/compose.yml config --quiet
+      - run: pnpm verify
+      - run: pnpm test:integration
+      - run: pnpm test:security
+      - run: pnpm smoke
+      - run: pnpm audit --prod --audit-level high
+
+  release-artifacts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.21.0
+      - run: docker compose --env-file infra/release/.env.example -f infra/release/compose.yml config --quiet
+      - run: docker compose --env-file infra/release/.env.example -f infra/release/compose.yml --profile operations build
+      - run: node tools/deployment/smoke-images.mjs
