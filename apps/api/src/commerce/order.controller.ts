@@ -40,8 +40,6 @@ import {
   type OrderRepositoryPort,
 } from './order-infrastructure.js';
 import type { CheckoutPolicy } from '@atlas/commerce';
-import { PASSWORD_IDENTITY } from '../identity/password/auth.controller.js';
-import type { PasswordIdentityRepository } from '../identity/password/password-identity.js';
 import { COD_RISK, type CodRiskService } from './cod-risk.js';
 type OrderRequest = AuthenticatedRequest & CorrelatedRequest;
 const id = (value: string) => {
@@ -78,9 +76,6 @@ export class CheckoutController {
     @Optional()
     @Inject(MARKETPLACE_NOTIFIER)
     private readonly notifier: MarketplaceNotifier | null = null,
-    @Optional()
-    @Inject(PASSWORD_IDENTITY)
-    private readonly identity: PasswordIdentityRepository | null = null,
     @Optional()
     @Inject(LOCAL_CHECKOUT_POLICY)
     private readonly policy: CheckoutPolicy | null = null,
@@ -135,14 +130,8 @@ export class CheckoutController {
       Object.keys(body).length !== 0
     )
       throw new SafeApplicationError('VALIDATION_FAILED');
-    // Live cash-on-delivery orders require a confirmed email address (anti-fraud).
-    if (
-      this.policy?.environment === 'live' &&
-      this.identity !== null &&
-      !(await this.identity.isEmailVerified(owner))
-    ) {
-      throw new SafeApplicationError('EMAIL_NOT_VERIFIED');
-    }
+    // Guests may order before confirming their email: an unconfirmed address keeps the
+    // new-account limit of one open order (cod-risk), and sellers see it on the order.
     // Retries of an already-placed quote return the existing order without re-checking limits
     // or sending the order emails again.
     const placed =

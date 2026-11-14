@@ -170,6 +170,9 @@ export default function SellerOrderScreen() {
                 label={signal.data.phoneVerified ? t.seller.signalPhone : t.seller.signalPhoneNo}
                 tone={signal.data.phoneVerified ? 'good' : 'wait'}
               />
+              {signal.data.emailVerified === false ? (
+                <Badge label={t.seller.signalEmailNo} tone="wait" />
+              ) : null}
               <Text style={text.body}>
                 {fill(t.seller.signalDelivered, { n: signal.data.deliveredOrders })}
               </Text>

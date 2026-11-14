@@ -6,7 +6,8 @@ workspace (Seller Center stays available in the browser; staff keep the staff co
 
 **Customer:** home (search, categories, sort, recently viewed), product and offers (favorite,
 quantity, share, ratings and reviews, similar products, seller's shop page with its rating),
-favorites, cart, checkout (saved addresses, wilaya → commune,
+favorites, cart, buy without an account (email only; a link to choose a password is emailed),
+checkout (saved addresses, wilaya → commune,
 delivery contact), order summary with cash-on-delivery terms, orders, order detail (timeline,
 cancel, confirm receipt, reorder, help request, rate the delivered items), help requests with
 replies, notifications,

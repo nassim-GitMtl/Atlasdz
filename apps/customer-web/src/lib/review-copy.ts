@@ -1,0 +1,43 @@
+/** Texts of the order page's rating forms (server page and client form share them). */
+export const reviewCopy = {
+  fr: {
+    title: 'Noter mes articles',
+    hint: 'Votre note aide les autres acheteurs. Votre nom et votre e-mail ne sont jamais affichés.',
+    rating: 'Votre note',
+    stars: (n: number) => `${n} sur 5`,
+    comment: 'Votre commentaire (facultatif)',
+    publish: 'Publier mon avis',
+    save: 'Enregistrer mon avis',
+    saved: 'Merci ! Votre avis est enregistré.',
+    hidden: 'Masqué par la modération : cet avis n’est plus visible des autres acheteurs.',
+    reply: 'Réponse du vendeur',
+    errors: {
+      auth: 'Votre session a expiré. Reconnectez-vous.',
+      conflict: 'Cet avis vient de changer. Actualisez la page.',
+      notAllowed: 'Vous pourrez noter cet article une fois livré.',
+      invalid: 'Choisissez une note de 1 à 5 (commentaire de 1 000 caractères au plus).',
+      unavailable: 'Service momentanément indisponible. Réessayez.',
+      csrf: 'La page a expiré. Rechargez-la puis réessayez.',
+    },
+  },
+  ar: {
+    title: 'قيّم مشترياتي',
+    hint: 'تقييمك يساعد المشترين الآخرين. لا يظهر اسمك ولا بريدك الإلكتروني أبدًا.',
+    rating: 'تقييمك',
+    stars: (n: number) => `${n} من 5`,
+    comment: 'تعليقك (اختياري)',
+    publish: 'نشر رأيي',
+    save: 'حفظ رأيي',
+    saved: 'شكرًا! تم حفظ رأيك.',
+    hidden: 'أخفته الإدارة: لم يعد هذا الرأي ظاهرًا للمشترين الآخرين.',
+    reply: 'ردّ البائع',
+    errors: {
+      auth: 'انتهت جلستك. سجّل الدخول مجددًا.',
+      conflict: 'تغيّر هذا الرأي للتو. حدّث الصفحة.',
+      notAllowed: 'يمكنك تقييم هذا المنتج بعد استلامه.',
+      invalid: 'اختر تقييمًا من 1 إلى 5 (تعليق لا يتجاوز 1000 حرف).',
+      unavailable: 'الخدمة غير متاحة مؤقتًا. أعد المحاولة.',
+      csrf: 'انتهت صلاحية الصفحة. أعد تحميلها.',
+    },
+  },
+} as const;

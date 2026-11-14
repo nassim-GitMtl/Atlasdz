@@ -63,4 +63,5 @@ test('sortProducts uses item price without guessing destination shipping', () =>
 
 test('formatMoney interprets contract values as minor DZD units', () => {
   assert.match(formatMoney(1_250_000, 'fr'), /12[\s\u202f]?500/);
+  assert.match(formatMoney(450_050, 'fr'), /4[\s\u202f]?500,50/);
 });

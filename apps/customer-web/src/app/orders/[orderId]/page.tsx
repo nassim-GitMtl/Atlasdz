@@ -2,9 +2,12 @@ import Link from 'next/link';
 import { UuidSchema } from '@atlas/contracts';
 import { SiteChrome } from '@/components/site-chrome';
 import { OrderForm } from '@/components/order-forms';
+import { ReviewForm } from '@/components/review-form';
+import { reviewCopy } from '@/lib/review-copy';
 import { SellerSummary, OrderError, DeliveryContactSummary } from '@/components/order-summary';
 import { customerToken } from '@/lib/cart-api';
 import { getOrder, OrderApiError } from '@/lib/orders-api';
+import { getOrderReviews } from '@/lib/reviews-api';
 import { liveCheckoutEnabled, orderText, orderDate } from '@/lib/orders-copy';
 import { orderProgress } from '@/lib/order-progress';
 import { formatMoney } from '@/lib/catalog-view';
@@ -29,6 +32,21 @@ export default async function OrderDetail({
   })()
     .then((order) => ({ order, error: undefined }))
     .catch((error: unknown) => ({ order: undefined, error }));
+  // Delivered parts of the order can be rated; a failure only hides the rating forms.
+  const reviews = new Map(
+    await Promise.all(
+      (result.order?.sellerOrders ?? [])
+        .filter((seller) => ['DELIVERY_REPORTED', 'DELIVERED'].includes(seller.status))
+        .map(
+          async (seller) =>
+            [
+              seller.id,
+              token ? await getOrderReviews(token, seller.id).catch(() => null) : null,
+            ] as const,
+        ),
+    ),
+  );
+  const rate = reviewCopy[locale];
   return (
     <SiteChrome locale={locale} pathname={path} searchParams={query}>
       <section className="page-container order-page">
@@ -119,6 +137,21 @@ export default async function OrderDetail({
                       </li>
                     ))}
                   </ol>
+                  {reviews.get(seller.id)?.canReview && result.order && (
+                    <section className="order-reviews" aria-label={rate.title}>
+                      <h3>{rate.title}</h3>
+                      <p className="auth-hint">{rate.hint}</p>
+                      {reviews.get(seller.id)?.items.map((item) => (
+                        <ReviewForm
+                          key={item.productId}
+                          orderId={result.order.id}
+                          sellerOrderId={seller.id}
+                          item={item}
+                          locale={locale}
+                        />
+                      ))}
+                    </section>
+                  )}
                 </article>
               ))}
             </div>

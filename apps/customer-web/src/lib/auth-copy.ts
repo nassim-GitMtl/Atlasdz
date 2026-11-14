@@ -4,7 +4,17 @@ export const authCopy = {
     signIn: 'Se connecter',
     signInBody: 'Retrouvez votre panier, vos commandes et vos échanges avec les vendeurs.',
     register: 'Créer un compte',
-    registerBody: 'Gratuit. Un e-mail et un mot de passe suffisent.',
+    registerBody:
+      'Conseillé : gratuit, un e-mail et un mot de passe suffisent pour suivre vos commandes.',
+    guestTitle: 'Commander sans compte',
+    guestBody:
+      'Seulement votre e-mail : nous créons votre compte et vous envoyons un lien pour choisir un mot de passe quand vous voulez.',
+    guestSubmit: 'Continuer sans compte',
+    guestExists:
+      'Un compte existe déjà avec cet e-mail. Connectez-vous ou utilisez « Mot de passe oublié ».',
+    welcomeTitle: 'Choisissez votre mot de passe',
+    welcomeBody:
+      'Votre compte a été créé avec votre commande. Choisissez un mot de passe pour vous reconnecter et suivre vos commandes.',
     email: 'Adresse e-mail',
     password: 'Mot de passe',
     passwordHint: 'Au moins 10 caractères, sans reprendre votre e-mail.',
@@ -44,6 +54,12 @@ export const authCopy = {
     signInBody: 'اعثر على سلتك وطلباتك ومحادثاتك مع البائعين.',
     register: 'إنشاء حساب',
     registerBody: 'مجاني. يكفي بريد إلكتروني وكلمة مرور.',
+    guestTitle: 'الطلب بدون حساب',
+    guestBody: 'بريدك الإلكتروني فقط: ننشئ لك حسابًا ونرسل لك رابطًا لاختيار كلمة المرور متى شئت.',
+    guestSubmit: 'المتابعة بدون حساب',
+    guestExists: 'يوجد حساب بهذا البريد. سجّل الدخول أو استعمل «نسيت كلمة المرور».',
+    welcomeTitle: 'اختر كلمة المرور',
+    welcomeBody: 'أُنشئ حسابك مع طلبك. اختر كلمة مرور لتسجيل الدخول ومتابعة طلباتك.',
     email: 'البريد الإلكتروني',
     password: 'كلمة المرور',
     passwordHint: '10 أحرف على الأقل، دون استعمال بريدك الإلكتروني.',

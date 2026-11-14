@@ -16,6 +16,20 @@ export function passwordResetMail(to: string, locale: Locale, link: string): Mai
       };
 }
 
+export function guestAccountMail(to: string, locale: Locale, link: string): MailMessage {
+  return locale === 'ar'
+    ? {
+        to,
+        subject: 'أطلس دي زد — حسابك جاهز',
+        text: `مرحبًا،\n\nشكرًا على طلبك. أنشأنا لك حسابًا بهذا البريد الإلكتروني لتتابع طلباتك.\nاختر كلمة المرور من هذا الرابط (صالح 7 أيام، ويُستعمل مرة واحدة):\n${link}\n\nإذا لم تطلب شيئًا، تجاهل هذه الرسالة.\n\nأطلس دي زد`,
+      }
+    : {
+        to,
+        subject: 'Atlas DZ — Votre compte est prêt',
+        text: `Bonjour,\n\nMerci pour votre commande. Nous avons créé votre compte avec cette adresse pour que vous puissiez suivre vos commandes.\nChoisissez votre mot de passe avec ce lien (valable 7 jours, à usage unique) :\n${link}\n\nSi vous n’avez rien commandé, ignorez ce message.\n\nAtlas DZ`,
+      };
+}
+
 export function sellerReviewedMail(
   to: string,
   locale: Locale,

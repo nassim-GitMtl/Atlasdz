@@ -15,7 +15,7 @@ import { colors } from '@/lib/theme';
 export default function LoginScreen() {
   const { t, locale } = useI18n();
   const session = useSession();
-  const [mode, setMode] = useState<'signIn' | 'register'>('signIn');
+  const [mode, setMode] = useState<'signIn' | 'register' | 'guest'>('signIn');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [step, setStep] = useState<SignInStep | null>(null);
@@ -32,6 +32,11 @@ export default function LoginScreen() {
     setBusy(true);
     setFailure(null);
     try {
+      if (mode === 'guest') {
+        await session.signInGuest(email.trim(), locale);
+        afterSignIn('customer');
+        return;
+      }
       if (mode === 'register') {
         await session.register(email.trim(), password, locale);
         afterSignIn('customer');
@@ -87,6 +92,7 @@ export default function LoginScreen() {
         options={[
           ['signIn', t.login.signInTab],
           ['register', t.login.registerTab],
+          ['guest', t.login.guestTab],
         ]}
         value={mode}
         onChange={(next) => {
@@ -103,22 +109,38 @@ export default function LoginScreen() {
         autoComplete="email"
         textContentType="emailAddress"
       />
-      <Field
-        label={t.login.password}
-        hint={mode === 'register' ? t.login.passwordHint : undefined}
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        autoCapitalize="none"
-        autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
-        textContentType={mode === 'register' ? 'newPassword' : 'password'}
-      />
-      {failure ? <Notice tone="error">{errorMessage(t, failure)}</Notice> : null}
+      {mode === 'guest' ? (
+        <Text style={text.muted}>{t.login.guestIntro}</Text>
+      ) : (
+        <Field
+          label={t.login.password}
+          hint={mode === 'register' ? t.login.passwordHint : undefined}
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          autoCapitalize="none"
+          autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
+          textContentType={mode === 'register' ? 'newPassword' : 'password'}
+        />
+      )}
+      {failure ? (
+        <Notice tone="error">
+          {mode === 'guest' && failure === 'ACCOUNT_CONFLICT'
+            ? t.login.guestExists
+            : errorMessage(t, failure)}
+        </Notice>
+      ) : null}
       {notice ? <Notice tone="success">{notice}</Notice> : null}
       <Button
-        label={mode === 'signIn' ? t.login.submitSignIn : t.login.submitRegister}
+        label={
+          mode === 'signIn'
+            ? t.login.submitSignIn
+            : mode === 'guest'
+              ? t.login.submitGuest
+              : t.login.submitRegister
+        }
         busy={busy}
-        disabled={!email.trim() || !password}
+        disabled={!email.trim() || (mode !== 'guest' && !password)}
         onPress={() => void submit()}
       />
       {mode === 'signIn' ? (

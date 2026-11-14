@@ -3,6 +3,7 @@ import {
   CloseSellerOrderInputSchema,
   CreateCheckoutQuoteInputSchema,
   UuidSchema,
+  WriteReviewInputSchema,
 } from '@atlas/contracts';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -18,6 +19,7 @@ import {
   type OrderFailure,
 } from '@/lib/orders-api';
 import { localizedHref } from '@/lib/i18n';
+import { ReviewApiError, writeReview, type ReviewFailure } from '@/lib/reviews-api';
 
 export interface OrderActionState {
   readonly error?: OrderFailure | 'invalid' | 'csrf';
@@ -131,5 +133,38 @@ export async function cancelAction(
     return { cancelled: true };
   } catch (error) {
     return failure(error);
+  }
+}
+
+export interface ReviewActionState {
+  readonly error?: ReviewFailure | 'csrf';
+  readonly saved?: boolean;
+}
+
+/** The buyer rates a delivered item (or edits that rating) from the order page. */
+export async function reviewAction(
+  _state: ReviewActionState,
+  form: FormData,
+): Promise<ReviewActionState> {
+  if (!(await authorized())) return { error: 'csrf' };
+  const token = await customerToken();
+  if (!token) return { error: 'auth' };
+  const orderId = UuidSchema.safeParse(form.get('orderId'));
+  const sellerOrderId = UuidSchema.safeParse(form.get('sellerOrderId'));
+  const productId = UuidSchema.safeParse(form.get('productId'));
+  const comment = String(form.get('comment') ?? '').trim();
+  const input = WriteReviewInputSchema.safeParse({
+    rating: Number(form.get('rating')),
+    body: comment === '' ? null : comment,
+    expectedVersion: Number(form.get('version') ?? 0),
+  });
+  if (!orderId.success || !sellerOrderId.success || !productId.success || !input.success)
+    return { error: 'invalid' };
+  try {
+    await writeReview(token, sellerOrderId.data, productId.data, input.data);
+    revalidatePath(`/orders/${orderId.data}`);
+    return { saved: true };
+  } catch (error) {
+    return { error: error instanceof ReviewApiError ? error.code : 'unavailable' };
   }
 }

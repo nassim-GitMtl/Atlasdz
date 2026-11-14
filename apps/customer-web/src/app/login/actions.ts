@@ -7,6 +7,7 @@ import {
   forwardedClientIp,
   loginCustomer,
   registerCustomer,
+  registerGuest,
   requestPasswordReset,
   resendVerification,
   resetPassword,
@@ -42,7 +43,10 @@ async function clientIp() {
 }
 
 async function startSession(email: string, password: string) {
-  const session = await loginCustomer(email, password, await clientIp());
+  await keepSession(await loginCustomer(email, password, await clientIp()));
+}
+
+async function keepSession(session: { accessToken: string; expiresAt: string }) {
   if (new Date(session.expiresAt).getTime() <= Date.now()) throw new AuthApiError('unavailable');
   (await cookies()).set(CUSTOMER_COOKIE, session.accessToken, {
     httpOnly: true,
@@ -76,6 +80,19 @@ export async function registerAction(_state: AuthActionState, form: FormData) {
   try {
     await registerCustomer(input.email, input.password, input.locale, await clientIp());
     await startSession(input.email, input.password);
+  } catch (error) {
+    return failure(error);
+  }
+  redirect(localizedHref(input.next, input.locale));
+}
+
+/** Buy without an account: only the email; the password is chosen later from the email link. */
+export async function guestAction(_state: AuthActionState, form: FormData) {
+  if (!(await trusted())) return { error: 'csrf' } satisfies AuthActionState;
+  const input = fields(form);
+  if (!input.email) return { error: 'format' } satisfies AuthActionState;
+  try {
+    await keepSession(await registerGuest(input.email, input.locale, await clientIp()));
   } catch (error) {
     return failure(error);
   }

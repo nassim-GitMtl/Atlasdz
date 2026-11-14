@@ -10,6 +10,7 @@ import {
 } from 'react';
 
 import { api, ApiError, type RequestOptions } from './api';
+import { SHOP_URL } from './config';
 import { readValue, removeValue, writeValue } from './storage';
 import type { Account, Locale, LoginResult, SellerAccount } from './types';
 
@@ -47,6 +48,8 @@ interface Session {
   /** Development builds only: the local API's demo accounts (local orders are limited to them). */
   readonly signInDemo: (actor: Actor) => Promise<void>;
   readonly register: (email: string, password: string, locale: Locale) => Promise<void>;
+  /** Buy without an account: the API creates it and emails a link to choose a password. */
+  readonly signInGuest: (email: string, locale: Locale) => Promise<void>;
   readonly registerSeller: (input: SellerRegistration) => Promise<SignInStep>;
   readonly signOut: () => Promise<void>;
   readonly refreshAccount: () => Promise<void>;
@@ -213,6 +216,17 @@ export function SessionProvider({ children }: { readonly children: ReactNode }) 
     [signIn],
   );
 
+  const signInGuest = useCallback(
+    async (email: string, locale: Locale) => {
+      const result = await api<{ accessToken: string }>('/api/v1/auth/register/guest', {
+        // The set-password link opens the shop website.
+        body: { email, locale, origin: SHOP_URL },
+      });
+      await keep({ token: result.accessToken, actor: 'customer' });
+    },
+    [keep],
+  );
+
   const registerSeller = useCallback(
     async (input: SellerRegistration) => {
       await api('/api/v1/auth/register/seller', { body: input });
@@ -240,6 +254,7 @@ export function SessionProvider({ children }: { readonly children: ReactNode }) 
       signIn,
       signInDemo,
       register,
+      signInGuest,
       registerSeller,
       signOut,
       refreshAccount,
@@ -253,6 +268,7 @@ export function SessionProvider({ children }: { readonly children: ReactNode }) 
       signIn,
       signInDemo,
       register,
+      signInGuest,
       registerSeller,
       signOut,
       refreshAccount,

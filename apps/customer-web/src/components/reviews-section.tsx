@@ -9,7 +9,7 @@ const copy = {
     outOf: (value: string) => `${value} sur 5`,
     verified: 'Achat vérifié',
     sellerReply: 'Réponse du vendeur',
-    note: 'Seuls les clients qui ont reçu l’article peuvent le noter, depuis l’application.',
+    note: 'Seuls les clients qui ont reçu l’article peuvent le noter, depuis leur commande.',
   },
   ar: {
     title: 'آراء الزبائن',
@@ -18,7 +18,7 @@ const copy = {
     outOf: (value: string) => `${value} من 5`,
     verified: 'شراء مؤكد',
     sellerReply: 'ردّ البائع',
-    note: 'يمكن فقط للزبائن الذين استلموا المنتج تقييمه، من التطبيق.',
+    note: 'يمكن فقط للزبائن الذين استلموا المنتج تقييمه، من صفحة طلبهم.',
   },
 } as const;
 

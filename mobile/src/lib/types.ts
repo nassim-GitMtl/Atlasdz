@@ -65,6 +65,8 @@ export interface PhoneStatus {
 
 export interface CustomerSignal {
   readonly phoneVerified: boolean;
+  /** False for guest orders until the buyer opens the emailed link. */
+  readonly emailVerified?: boolean;
   readonly deliveryPhoneVerified: boolean;
   readonly deliveredOrders: number;
   readonly failedDeliveries: number;

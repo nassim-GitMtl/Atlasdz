@@ -49,6 +49,16 @@ export type LoginResult =
 export type RegistrationResult =
   { readonly status: 'CREATED'; readonly userId: string } | { readonly status: 'CONFLICT' };
 
+/** A buyer who orders without signing up: signed in now, sets a password from the email later. */
+export type GuestRegistrationResult =
+  | {
+      readonly status: 'CREATED';
+      readonly userId: string;
+      readonly setPasswordToken: string;
+      readonly session: IssuedSession;
+    }
+  | { readonly status: 'CONFLICT' };
+
 export interface SellerApplication {
   readonly sellerId: string;
   readonly slug: string;
@@ -223,6 +233,61 @@ export class PasswordIdentityRepository {
           correlationId: context.correlationId,
         });
         return { status: 'CREATED', userId } as const;
+      });
+    } catch (error) {
+      if (isUniqueViolation(error)) return { status: 'CONFLICT' };
+      throw error;
+    }
+  }
+
+  /**
+   * Guest checkout: creates a customer account with an unusable random password, signs it in
+   * and returns a single-use set-password token valid 7 days (sent by email by the caller).
+   */
+  public async registerGuest(
+    input: { email: string; locale: Locale },
+    context: AuditContext,
+  ): Promise<GuestRegistrationResult> {
+    const unusable = await hashPassword(randomBytes(32).toString('base64url'));
+    const token = randomBytes(32).toString('base64url');
+    try {
+      return await inTransaction(this.pool, async (client) => {
+        const userId = await this.createUser(client, input.email, unusable, input.locale);
+        await this.assignRole(client, userId, 'CUSTOMER', null, 'Guest checkout');
+        await client.query(
+          `INSERT INTO identity.password_reset_tokens (user_id, token_hash, expires_at)
+           VALUES ($1, $2, clock_timestamp() + interval '7 days')`,
+          [userId, tokenHash(token)],
+        );
+        const user = await client.query<{ session_epoch: string }>(
+          'SELECT session_epoch FROM identity.users WHERE id = $1',
+          [userId],
+        );
+        const session = await this.issueSession(
+          client,
+          {
+            user_id: userId,
+            password_hash: unusable,
+            failed_attempts: 0,
+            locked: false,
+            user_status: 'ACTIVE',
+            actor_type: 'customer',
+            scope_type: 'GLOBAL',
+            scope_id: null,
+            session_epoch: user.rows[0]?.session_epoch ?? '0',
+          },
+          false,
+        );
+        await audit(client, {
+          actorType: 'anonymous',
+          actorId: null,
+          action: 'identity.guest_registered',
+          outcome: 'SUCCEEDED',
+          entityType: 'user',
+          entityId: userId,
+          correlationId: context.correlationId,
+        });
+        return { status: 'CREATED', userId, setPasswordToken: token, session } as const;
       });
     } catch (error) {
       if (isUniqueViolation(error)) return { status: 'CONFLICT' };
@@ -723,8 +788,10 @@ export class PasswordIdentityRepository {
       const userId = used.rows[0]?.user_id;
       if (userId === undefined) return 'INVALID';
       await client.query(
+        // Opening the emailed link proves the inbox: the address counts as confirmed.
         `UPDATE identity.password_credentials
          SET password_hash = $2, failed_attempts = 0, locked_until = NULL,
+             email_verified_at = COALESCE(email_verified_at, clock_timestamp()),
              password_changed_at = clock_timestamp(), updated_at = clock_timestamp()
          WHERE user_id = $1`,
         [userId, passwordHash],

@@ -283,6 +283,12 @@ const fr = {
     passwordHint: '10 caractères minimum, sans votre adresse e-mail.',
     submitSignIn: 'Se connecter',
     submitRegister: 'Créer mon compte',
+    guestTab: 'Sans compte',
+    submitGuest: 'Continuer sans compte',
+    guestIntro:
+      'Commandez avec votre seul e-mail : nous créons votre compte et vous envoyons un lien pour choisir un mot de passe. Créer un compte tout de suite reste conseillé.',
+    guestExists:
+      'Un compte existe déjà avec cet e-mail. Connectez-vous ou utilisez « Mot de passe oublié ».',
     forgot: 'Mot de passe oublié ?',
     forgotSent:
       'Si un compte existe pour cette adresse, un e-mail de réinitialisation a été envoyé.',
@@ -338,6 +344,7 @@ const fr = {
     signal: 'Fiabilité du client',
     signalPhone: 'Téléphone confirmé',
     signalPhoneNo: 'Téléphone non confirmé',
+    signalEmailNo: 'E-mail non confirmé (commande sans compte)',
     signalDelivered: '{n} commande(s) livrée(s)',
     signalFailed: '{n} échec(s) de livraison',
     signalCancelled: '{n} annulation(s)',
@@ -749,6 +756,11 @@ const ar: Strings = {
     passwordHint: '10 أحرف على الأقل، ولا تتضمن بريدك الإلكتروني.',
     submitSignIn: 'تسجيل الدخول',
     submitRegister: 'إنشاء حسابي',
+    guestTab: 'بدون حساب',
+    submitGuest: 'المتابعة بدون حساب',
+    guestIntro:
+      'اطلب ببريدك الإلكتروني فقط: ننشئ لك حسابًا ونرسل لك رابطًا لاختيار كلمة المرور. يبقى إنشاء حساب الآن مستحسنًا.',
+    guestExists: 'يوجد حساب بهذا البريد. سجّل الدخول أو استعمل «نسيت كلمة المرور».',
     forgot: 'نسيت كلمة المرور؟',
     forgotSent: 'إذا كان هناك حساب بهذا العنوان، فقد أرسلنا بريدًا لإعادة التعيين.',
     registered: 'تم إنشاء الحساب وأرسلنا إليك بريد التأكيد.',
@@ -802,6 +814,7 @@ const ar: Strings = {
     signal: 'موثوقية الزبون',
     signalPhone: 'الهاتف مؤكد',
     signalPhoneNo: 'الهاتف غير مؤكد',
+    signalEmailNo: 'البريد غير مؤكد (طلب بدون حساب)',
     signalDelivered: '{n} طلب مسلّم',
     signalFailed: '{n} تسليم فاشل',
     signalCancelled: '{n} إلغاء',

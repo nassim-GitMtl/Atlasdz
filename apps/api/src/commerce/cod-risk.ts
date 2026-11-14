@@ -89,6 +89,7 @@ export class CodRiskService {
       failed: string;
       age_days: string;
       phone_verified: boolean;
+      email_verified: boolean;
       phone_open: string;
     }>(
       `SELECT
@@ -102,6 +103,8 @@ export class CodRiskService {
           FROM identity.users u WHERE u.id = $1) AS age_days,
          COALESCE((SELECT phone_verified_at IS NOT NULL FROM identity.password_credentials
           WHERE user_id = $1), false) AS phone_verified,
+         COALESCE((SELECT email_verified_at IS NOT NULL FROM identity.password_credentials
+          WHERE user_id = $1), false) AS email_verified,
          (SELECT count(*) FROM commerce.seller_orders so
           JOIN commerce.orders o ON o.id = so.order_id
           JOIN commerce.checkout_quotes q ON q.id = o.quote_id
@@ -113,8 +116,9 @@ export class CodRiskService {
     if (row === undefined) return 'BLOCKED';
     if (Number(row.failed) >= this.limits.failedDeliveriesBlock) return 'BLOCKED';
     if (this.sms !== null && !row.phone_verified) return 'PHONE_NOT_VERIFIED';
+    // New accounts and unconfirmed emails (guest checkout) get the small limit.
     const allowed =
-      Number(row.age_days) < this.limits.newAccountDays
+      Number(row.age_days) < this.limits.newAccountDays || !row.email_verified
         ? this.limits.newAccountOpenOrders
         : this.limits.openOrders;
     if (Number(row.open_orders) >= allowed) return 'LIMIT_REACHED';
@@ -126,6 +130,7 @@ export class CodRiskService {
   public async customerSignal(sellerId: string, sellerOrderId: string) {
     const result = await this.pool.query<{
       phone_verified: boolean;
+      email_verified: boolean;
       phone_e164: string | null;
       delivery_phone: string | null;
       delivered: string;
@@ -134,6 +139,7 @@ export class CodRiskService {
       age_days: number;
     }>(
       `SELECT c.phone_verified_at IS NOT NULL AS phone_verified,
+         COALESCE(c.email_verified_at IS NOT NULL, false) AS email_verified,
          c.phone_e164, q.snapshot->'deliveryContact'->>'phone' AS delivery_phone,
          (SELECT count(*) FROM commerce.seller_orders s2 JOIN commerce.orders o2 ON o2.id = s2.order_id
           WHERE o2.customer_id = o.customer_id AND s2.status = 'DELIVERED') AS delivered,
@@ -154,6 +160,7 @@ export class CodRiskService {
     if (row === undefined) return null;
     return {
       phoneVerified: row.phone_verified,
+      emailVerified: row.email_verified,
       deliveryPhoneVerified:
         row.phone_verified &&
         row.delivery_phone !== null &&

@@ -4,6 +4,7 @@ import { useActionState } from 'react';
 import Link from 'next/link';
 import {
   forgotPasswordAction,
+  guestAction,
   loginAction,
   registerAction,
   resendVerificationAction,
@@ -17,12 +18,12 @@ export function AuthForm({
   locale,
   next,
 }: {
-  readonly mode: 'login' | 'register';
+  readonly mode: 'login' | 'register' | 'guest';
   readonly locale: Locale;
   readonly next: string;
 }) {
   const [state, action, pending] = useActionState(
-    mode === 'login' ? loginAction : registerAction,
+    mode === 'login' ? loginAction : mode === 'guest' ? guestAction : registerAction,
     {},
   );
   const t = authCopy[locale];
@@ -44,20 +45,22 @@ export function AuthForm({
           maxLength={254}
         />
       </label>
-      <label htmlFor={id('password')}>
-        {t.password}
-        <input
-          id={id('password')}
-          name="password"
-          type="password"
-          autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-          dir="ltr"
-          required
-          minLength={mode === 'register' ? 10 : 1}
-          maxLength={128}
-          aria-describedby={mode === 'register' ? id('hint') : undefined}
-        />
-      </label>
+      {mode !== 'guest' && (
+        <label htmlFor={id('password')}>
+          {t.password}
+          <input
+            id={id('password')}
+            name="password"
+            type="password"
+            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+            dir="ltr"
+            required
+            minLength={mode === 'register' ? 10 : 1}
+            maxLength={128}
+            aria-describedby={mode === 'register' ? id('hint') : undefined}
+          />
+        </label>
+      )}
       {mode === 'register' && (
         <p id={id('hint')} className="auth-hint">
           {t.passwordHint}
@@ -65,11 +68,21 @@ export function AuthForm({
       )}
       {state.error && (
         <p className="cart-feedback" role="alert">
-          {t[state.error]}
+          {mode === 'guest' && state.error === 'exists' ? t.guestExists : t[state.error]}
         </p>
       )}
-      <button className="button button--primary" type="submit" disabled={pending}>
-        {pending ? t.busy : mode === 'login' ? t.signIn : t.register}
+      <button
+        className={mode === 'guest' ? 'button button--secondary' : 'button button--primary'}
+        type="submit"
+        disabled={pending}
+      >
+        {pending
+          ? t.busy
+          : mode === 'login'
+            ? t.signIn
+            : mode === 'guest'
+              ? t.guestSubmit
+              : t.register}
       </button>
       {mode === 'login' && (
         <Link className="auth-hint" href={localizedHref('/forgot-password', locale)}>

@@ -35,6 +35,11 @@ export default async function Login({
             <AuthForm mode="register" locale={locale} next={next} />
           </div>
         </div>
+        <div className="cart-empty auth-guest">
+          <h2>{t.guestTitle}</h2>
+          <p>{t.guestBody}</p>
+          <AuthForm mode="guest" locale={locale} next={next} />
+        </div>
         {local && (
           <div className="cart-empty auth-local">
             <h2>{t.localTitle}</h2>

@@ -313,14 +313,8 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
     assert.equal(quote.body.dataClass, 'live');
     assert.equal(quote.body.paymentArrangement, 'CASH_ON_DELIVERY');
     assert.equal(quote.body.totalMinor, 2 * 450000 + 60000);
-    // Unverified email cannot place a live COD order.
-    const blocked = await http()
-      .post(`/api/v1/checkout/quotes/${quote.body.id}/place`)
-      .set(bearer(customer))
-      .set('Idempotency-Key', quote.body.id)
-      .send({})
-      .expect(403);
-    assert.equal(blocked.body.code, 'EMAIL_NOT_VERIFIED');
+    // An unconfirmed email no longer blocks ordering (guest checkout); it keeps the
+    // new-account limit instead. Confirming still works through the emailed link.
     await settle(() => mailer.sent.some((mail) => mail.to === 'client@example.dz'));
     const verifyLink = /verify-email\?token=([A-Za-z0-9_-]{43})/.exec(
       mailer.sent.find((mail) => mail.to === 'client@example.dz')?.text ?? '',
@@ -428,6 +422,7 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
       .expect(200);
     assert.deepEqual(signal.body, {
       phoneVerified: true,
+      emailVerified: true,
       deliveryPhoneVerified: true,
       deliveredOrders: 0,
       failedDeliveries: 0,
@@ -595,5 +590,88 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
       [offer.body.id],
     );
     assert.equal(stock.rows[0]?.available_quantity, 1);
+
+    // Guest checkout: no sign-up. The account is created for the email, signed in, and a
+    // 7-day link to choose a password is emailed. An existing address must sign in instead.
+    const guestEmail = 'invite@example.dz';
+    await http()
+      .post('/api/v1/auth/register/guest')
+      .send({ email: 'client@example.dz' })
+      .expect(409);
+    await http()
+      .post('/api/v1/auth/register/guest')
+      .send({ email: guestEmail, origin: 'https://evil.example' })
+      .expect(422);
+    const guest = await http()
+      .post('/api/v1/auth/register/guest')
+      .send({ email: guestEmail, locale: 'fr', origin: 'http://localhost:3001' })
+      .expect(201);
+    assert.equal(guest.body.actorType, 'customer');
+    const guestToken = guest.body.accessToken as string;
+    const guestCart = await http().get('/api/v1/cart').set(bearer(guestToken)).expect(200);
+    const guestFilled = await http()
+      .put(`/api/v1/cart/items/${offer.body.id}`)
+      .set(bearer(guestToken))
+      .send({ quantity: 1, expectedVersion: guestCart.body.version })
+      .expect(200);
+    await http()
+      .post('/api/v1/account/phone/start')
+      .set(bearer(guestToken))
+      .send({ phone: '0555 12 34 56' })
+      .expect(202);
+    const guestCode = /([0-9]{6})/.exec(texts.at(-1)?.message ?? '')?.[1] ?? '';
+    await http()
+      .post('/api/v1/account/phone/confirm')
+      .set(bearer(guestToken))
+      .send({ phone: '+213555123456', code: guestCode })
+      .expect(200);
+    const guestQuote = await http()
+      .post('/api/v1/checkout/quotes')
+      .set(bearer(guestToken))
+      .send({
+        expectedCartVersion: guestFilled.body.version,
+        destinationId: destination.id,
+        deliveryContact: {
+          recipientName: 'Yacine K.',
+          phone: '+213555123456',
+          addressLine: '3 rue de la Paix',
+          city: 'Oran',
+        },
+      })
+      .expect(201);
+    const guestOrder = await http()
+      .post(`/api/v1/checkout/quotes/${guestQuote.body.id}/place`)
+      .set(bearer(guestToken))
+      .set('Idempotency-Key', guestQuote.body.id)
+      .send({})
+      .expect(200);
+    const guestSignal = await http()
+      .get(`/api/v1/seller/orders/${guestOrder.body.sellerOrders[0].id}/customer-signal`)
+      .set(bearer(seller))
+      .expect(200);
+    assert.equal(guestSignal.body.emailVerified, false);
+    await settle(() => mailer.sent.some((mail) => mail.to === guestEmail));
+    const welcome = mailer.sent.find((mail) => mail.to === guestEmail);
+    assert.match(welcome?.subject ?? '', /compte est prêt/);
+    assert.doesNotMatch(welcome?.text ?? '', /mot de passe : /);
+    const setLink =
+      /localhost:3001\/reset-password\?token=([A-Za-z0-9_-]{43})&lang=fr&welcome=1/.exec(
+        welcome?.text ?? '',
+      );
+    assert.ok(setLink);
+    await http()
+      .post('/api/v1/auth/password/reset')
+      .send({ token: setLink[1], password: 'Yacine choisit 2026!' })
+      .expect(200);
+    await http()
+      .post('/api/v1/auth/login')
+      .send({ email: guestEmail, password: 'Yacine choisit 2026!' })
+      .expect(200);
+    const guestVerified = await pool.query<{ ok: boolean }>(
+      `SELECT email_verified_at IS NOT NULL AS ok FROM identity.password_credentials
+       WHERE email = $1`,
+      [guestEmail],
+    );
+    assert.equal(guestVerified.rows[0]?.ok, true);
   });
 });

@@ -203,6 +203,8 @@ export const verifyEmail = (token: string) =>
 
 const CustomerSignalSchema = z.object({
   phoneVerified: z.boolean(),
+  /** False for guest orders until the buyer opens the emailed link. */
+  emailVerified: z.boolean().optional(),
   deliveryPhoneVerified: z.boolean(),
   deliveredOrders: z.number().int(),
   failedDeliveries: z.number().int(),

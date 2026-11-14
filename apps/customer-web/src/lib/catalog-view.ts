@@ -50,7 +50,8 @@ export function formatMoney(amountMinor: number, locale: Locale): string {
   return new Intl.NumberFormat(locale === 'ar' ? 'ar-DZ' : 'fr-DZ', {
     style: 'currency',
     currency: 'DZD',
-    minimumFractionDigits: 0,
+    // Whole dinars, or both centime digits (4 500,50 DA, not 4 500,5 DA), as in the app.
+    minimumFractionDigits: amountMinor % 100 === 0 ? 0 : 2,
     maximumFractionDigits: 2,
   }).format(amountMinor / 100);
 }

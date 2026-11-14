@@ -369,6 +369,29 @@ await check('similar products on the product page', async () => {
   await page.getByText('Offres des vendeurs').waitFor({ timeout: 15000 });
   if (others.length > 0) await page.getByText('Produits similaires').waitFor({ timeout: 15000 });
 });
+await check('buy without an account: email only, signed in as a customer', async () => {
+  const guestEmail = `invite-app-${randomBytes(3).toString('hex')}@example.dz`;
+  const guest = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+    locale: 'fr-FR',
+  });
+  const gp = await guest.newPage();
+  await gp.goto(APP);
+  await gp.evaluate(() => localStorage.setItem('atlas.locale', 'fr'));
+  await gp.goto(`${APP}/login`);
+  await gp.getByRole('tab', { name: 'Sans compte' }).click({ timeout: 15000 });
+  await gp.getByLabel('Adresse e-mail').fill(guestEmail);
+  const a11yGuest = await new AxeBuilder({ page: gp }).withTags(['wcag2a', 'wcag2aa']).analyze();
+  for (const v of a11yGuest.violations)
+    a11y.push(`guest login: ${v.id} (${v.nodes.length}) ${v.help}`);
+  await gp.getByRole('button', { name: 'Continuer sans compte' }).click();
+  await gp.waitForURL((url) => !url.pathname.startsWith('/login'), { timeout: 15000 });
+  await gp.goto(`${APP}/account`);
+  await gp.getByText(guestEmail).waitFor({ timeout: 15000 });
+  await guest.close();
+});
 await check('saved address, connected devices and notifications', async () => {
   await page.goto(`${APP}/addresses`);
   await page.getByText('Amina B.').first().waitFor({ timeout: 15000 });

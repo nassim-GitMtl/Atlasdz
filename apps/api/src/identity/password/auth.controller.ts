@@ -132,6 +132,28 @@ export class AuthController {
     return { status: 'CREATED' };
   }
 
+  /**
+   * "Buy without an account": creates the customer account for this email, signs it in and
+   * emails a link to choose a password. An address that already has an account must sign in.
+   */
+  @Post('register/guest')
+  @HttpCode(201)
+  public async registerGuest(@Req() request: Request, @Body() body: unknown) {
+    this.throttle('register', request.ip ?? 'unknown');
+    const raw = object(body, ['email', 'locale', 'origin']);
+    const address = email(raw);
+    const requestedLocale = locale(raw);
+    const origin = this.allowedOrigin(raw['origin']);
+    this.throttle('register', address);
+    const result = await this.identity.registerGuest(
+      { email: address, locale: requestedLocale },
+      { correlationId: request.correlationId },
+    );
+    if (result.status === 'CONFLICT') throw new SafeApplicationError('ACCOUNT_CONFLICT');
+    this.notifier.guestAccount(address, requestedLocale, result.setPasswordToken, origin);
+    return { status: 'AUTHENTICATED', ...result.session };
+  }
+
   @Post('register/seller')
   @HttpCode(201)
   public async registerSeller(@Req() request: Request, @Body() body: unknown) {

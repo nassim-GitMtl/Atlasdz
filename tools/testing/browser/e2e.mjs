@@ -119,6 +119,147 @@ await check('forgot-password page accepts a request', async () => {
   await page.getByText('Si un compte existe').waitFor();
 });
 
+await check('guest buys without an account: email only, then a set-password link', async () => {
+  const guestEmail = `invite-${tag}@example.dz`;
+  const guest = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    locale: 'fr-FR',
+  });
+  const gp = await guest.newPage();
+  await gp.goto(SHOP + '/login?next=/cart');
+  await gp.fill('#guest-email', guestEmail);
+  await gp.click('form:has(#guest-email) button[type=submit]');
+  // The login URL itself contains "next=/cart": wait for the cart page, not the query.
+  await gp.waitForURL((url) => url.pathname === '/cart', { timeout: 15000 });
+  await gp.goto(SHOP + '/account');
+  await gp.getByText(guestEmail).waitFor({ timeout: 15000 });
+  // The same address again must sign in instead.
+  await gp.context().clearCookies();
+  await gp.goto(SHOP + '/login');
+  await gp.fill('#guest-email', guestEmail);
+  await gp.click('form:has(#guest-email) button[type=submit]');
+  await gp.getByText('Un compte existe déjà avec cet e-mail').waitFor({ timeout: 15000 });
+  let token;
+  for (let i = 0; i < 20 && !token; i += 1) {
+    token = tokenFromLog(guestEmail, 'welcome=1');
+    if (!token) await new Promise((r) => setTimeout(r, 250));
+  }
+  if (!token) throw new Error('set-password mail not logged');
+  await gp.goto(`${SHOP}/reset-password?token=${token}&welcome=1`);
+  await gp.getByText('Choisissez votre mot de passe').first().waitFor();
+  await audit(gp, 'shop /reset-password (welcome)');
+  await gp.fill('#reset-password', password);
+  await gp.click('form:has(#reset-password) button[type=submit]');
+  await gp.getByText('Mot de passe modifié').waitFor({ timeout: 15000 });
+  await guest.close();
+});
+
+await check('buyer rates a delivered item from the order page', async () => {
+  const API = process.env.ATLAS_API_URL ?? 'http://127.0.0.1:3003';
+  const json = async (path, token, init = {}) => {
+    const r = await fetch(API + path, {
+      ...init,
+      headers: {
+        'content-type': 'application/json',
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
+        ...(init.headers ?? {}),
+      },
+    });
+    const body = await r.text();
+    if (r.status >= 400) throw new Error(`${path} → ${r.status} ${body}`);
+    return body ? JSON.parse(body) : undefined;
+  };
+  const session = async (account) =>
+    (
+      await json('/api/v1/local/session', null, {
+        method: 'POST',
+        body: JSON.stringify({ account }),
+      })
+    ).accessToken;
+  // The local demo customer orders; the demo seller delivers through the API.
+  const customer = await session('customer');
+  const seller = await session('seller');
+  const stocked = new Set(
+    (await json('/api/v1/seller/offers', seller)).items
+      .filter((o) => o.status === 'APPROVED' && o.availableQuantity > 0)
+      .map((o) => o.id),
+  );
+  const place = (await json('/api/v1/delivery/destinations', seller)).items.find(
+    (d) => d.dataClass === 'synthetic',
+  );
+  const offer = (await json('/api/v1/catalog/products?limit=100')).items
+    .flatMap((p) => p.offers)
+    .find((o) => stocked.has(o.id));
+  let cart = await json('/api/v1/cart', customer);
+  for (const line of cart.items)
+    cart = await json(`/api/v1/cart/items/${line.offerId}`, customer, {
+      method: 'PUT',
+      body: JSON.stringify({ quantity: 0, expectedVersion: cart.version }),
+    });
+  cart = await json(`/api/v1/cart/items/${offer.id}`, customer, {
+    method: 'PUT',
+    body: JSON.stringify({ quantity: 1, expectedVersion: cart.version }),
+  });
+  const quote = await json('/api/v1/checkout/quotes', customer, {
+    method: 'POST',
+    body: JSON.stringify({
+      expectedCartVersion: cart.version,
+      destinationId: place.id,
+      deliveryContact: {
+        recipientName: 'Leila M.',
+        phone: '0555443322',
+        addressLine: '7 rue Didouche Mourad',
+        city: 'Alger',
+      },
+    }),
+  });
+  const order = await json(`/api/v1/checkout/quotes/${quote.id}/place`, customer, {
+    method: 'POST',
+    headers: { 'idempotency-key': quote.id },
+    body: '{}',
+  });
+  const so = order.sellerOrders[0];
+  for (const step of [
+    { action: 'ACCEPT', expectedVersion: 1 },
+    { action: 'PREPARE', expectedVersion: 2 },
+    {
+      action: 'SHIP',
+      expectedVersion: 3,
+      shipment: {
+        method: 'SELLER_ARRANGED_TEST',
+        carrier: 'Yalidine',
+        trackingReference: 'YAL-W1',
+      },
+    },
+    { action: 'REPORT_DELIVERY', expectedVersion: 4 },
+  ])
+    await json(`/api/v1/seller/orders/${so.id}/transition`, seller, {
+      method: 'POST',
+      body: JSON.stringify(step),
+    });
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, locale: 'fr-FR' });
+  const rp = await ctx.newPage();
+  await rp.goto(SHOP + '/login');
+  await rp.click('.auth-local form button[type=submit]');
+  await rp.waitForURL((url) => url.pathname === '/cart', { timeout: 15000 });
+  await rp.goto(`${SHOP}/orders/${order.id}`);
+  await rp.getByText('Noter mes articles').first().waitFor({ timeout: 15000 });
+  await rp.locator('fieldset.review-stars label').nth(3).click();
+  await rp.locator('.review-form textarea').first().fill(`Très bon produit (${tag}).`);
+  await audit(rp, 'shop /orders (rate)');
+  await rp.locator('.review-form button[type=submit]').first().click();
+  await rp.getByText('Merci ! Votre avis est enregistré.').waitFor({ timeout: 15000 });
+  await ctx.close();
+});
+
+// Seller Center (agent browser access needs the owner's approval: ATLAS_E2E_SHOP_ONLY=1 skips it)
+if (process.env.ATLAS_E2E_SHOP_ONLY === '1') {
+  await browser.close();
+  for (const r of results) console.log(r.join(' | '));
+  console.log(`ACCESSIBILITY (${a11y.length})`);
+  for (const f of a11y) console.log(' - ' + f);
+  process.exit(results.some((r) => r[0] === 'FAIL') ? 1 : 0);
+}
 // Seller Center
 const sellerEmail = `vendeur-${tag}@example.dz`;
 const sp = await mobile.newPage();

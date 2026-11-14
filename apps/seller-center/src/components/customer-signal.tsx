@@ -9,6 +9,7 @@ const copy = {
     history: (d: number, f: number, c: number) =>
       `${d} livrée(s), ${f} échec(s) de livraison, ${c} annulée(s)`,
     age: (days: number) => `Compte créé il y a ${days} jour(s)`,
+    emailNo: 'E-mail pas encore confirmé (commande sans compte)',
     warn: 'Attention : livraisons non abouties récentes',
   },
   ar: {
@@ -17,6 +18,7 @@ const copy = {
     phoneNo: 'الهاتف غير مؤكد — اتصل بالعميل قبل الشحن',
     history: (d: number, f: number, c: number) => `${d} طلب مُسلَّم، ${f} توصيل فاشل، ${c} ملغى`,
     age: (days: number) => `أُنشئ الحساب منذ ${days} يوم`,
+    emailNo: 'البريد الإلكتروني غير مؤكد بعد (طلب بدون حساب)',
     warn: 'تنبيه: عمليات توصيل فاشلة حديثة',
   },
 } as const;
@@ -36,6 +38,7 @@ export function CustomerSignalPanel({
       <p>{signal.deliveryPhoneVerified ? t.phoneOk : t.phoneNo}</p>
       <p>{t.history(signal.deliveredOrders, signal.failedDeliveries, signal.cancelledOrders)}</p>
       <p>{t.age(signal.accountAgeDays)}</p>
+      {signal.emailVerified === false && <p>{t.emailNo}</p>}
       {signal.failedDeliveries > 0 && <p className="notice error">{t.warn}</p>}
     </section>
   );

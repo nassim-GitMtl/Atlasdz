@@ -1417,7 +1417,8 @@ select {
   gap: 0.4rem;
   font-weight: 600;
 }
-.auth-form input {
+.auth-form input,
+.review-form textarea {
   width: 100%;
   min-width: 0;
   min-height: 44px;
@@ -1434,7 +1435,8 @@ select {
   font-size: 0.9rem;
   opacity: 0.8;
 }
-.auth-local {
+.auth-local,
+.auth-guest {
   margin-block-start: 1rem;
 }
 .footer-legal {
@@ -1529,4 +1531,33 @@ select {
   border-radius: 10px;
   padding: 12px;
   margin-top: 10px;
+}
+
+/* Rating delivered items on the order page. */
+.order-reviews {
+  border-top: 1px solid var(--line);
+  margin-top: 18px;
+  padding-top: 14px;
+}
+.review-form {
+  margin-top: 12px;
+}
+.review-stars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.review-stars label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: #8a5a00;
+  cursor: pointer;
 }

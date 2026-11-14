@@ -7,6 +7,7 @@ import {
   customerOrderStatusMail,
   newSellerOrderMail,
   NOTIFIED_STATUSES,
+  guestAccountMail,
   passwordResetMail,
   sellerReviewedMail,
   verifyEmailMail,
@@ -45,6 +46,25 @@ export class MarketplaceNotifier {
 
   public passwordReset(email: string, locale: 'fr' | 'ar', link: string): void {
     deliver(this.mailer, this.logger, passwordResetMail(email, locale, link));
+  }
+
+  /** Guest checkout: the account exists; a 7-day link lets the buyer choose a password. */
+  public guestAccount(
+    email: string,
+    locale: 'fr' | 'ar',
+    token: string,
+    origin?: string | null,
+  ): void {
+    const base = origin ?? this.links.customerWebOrigin ?? '';
+    deliver(
+      this.mailer,
+      this.logger,
+      guestAccountMail(
+        email,
+        locale,
+        `${base}/reset-password?token=${token}&lang=${locale}&welcome=1`,
+      ),
+    );
   }
 
   public sellerReviewed(sellerId: string, approved: boolean, reason: string | null): void {

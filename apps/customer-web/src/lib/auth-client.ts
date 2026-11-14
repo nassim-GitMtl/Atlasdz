@@ -100,6 +100,21 @@ export async function registerCustomer(
   );
 }
 
+/** Guest checkout: the API creates the account, signs it in and emails a set-password link. */
+export async function registerGuest(email: string, locale: 'fr' | 'ar', clientIp?: string) {
+  const result = LoginResponse.safeParse(
+    await post(
+      '/api/v1/auth/register/guest',
+      { email, locale, origin: process.env['CUSTOMER_WEB_ORIGIN'] },
+      clientIp,
+    ),
+  );
+  if (!result.success || result.data.status !== 'AUTHENTICATED') {
+    throw new AuthApiError('unavailable');
+  }
+  return result.data;
+}
+
 /** First X-Forwarded-For hop set by the TLS proxy; forwarded so the API can throttle per client. */
 export function forwardedClientIp(value: string | null): string | undefined {
   const first = value?.split(',')[0]?.trim();
