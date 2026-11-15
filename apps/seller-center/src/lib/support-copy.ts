@@ -6,6 +6,8 @@ export const supportCopy = {
     seller: 'Demandes vendeur',
     notice:
       'TEST LOCAL — Messages fictifs uniquement. Le vendeur organise les retours et les solutions. Aucune action ici ne rembourse, n’expédie ni ne modifie le stock. Le vendeur propose une solution ; le client confirme la clôture ou demande une intervention.',
+    liveNotice:
+      'Vous organisez les retours et les solutions avec le client. Aucune action ici ne rembourse, n’expédie ni ne modifie le stock. Vous proposez une solution ; le client confirme la clôture ou demande une intervention d’Atlas DZ.',
     empty: 'Aucune demande à afficher.',
     action: 'Action',
     body: 'Réponse ou solution proposée (5 à 2 000 caractères)',
@@ -36,6 +38,8 @@ export const supportCopy = {
     seller: 'طلبات مساعدة البائع',
     notice:
       'اختبار محلي — رسائل وهمية فقط. البائع ينظم الإرجاع والحلول. لا تنفذ هذه الإجراءات استرداد أموال أو شحنًا أو تغييرًا للمخزون. يقترح البائع حلًا ويؤكد العميل الإغلاق أو يطلب تدخل الدعم.',
+    liveNotice:
+      'أنت تنظم الإرجاع والحلول مع الزبون. لا تنفذ هذه الإجراءات استرداد أموال أو شحنًا أو تغييرًا للمخزون. تقترح حلًا ويؤكد الزبون الإغلاق أو يطلب تدخل أطلس DZ.',
     empty: 'لا توجد طلبات مساعدة للعرض.',
     action: 'الإجراء',
     body: 'الرد أو الحل المقترح (من 5 إلى 2000 حرف)',

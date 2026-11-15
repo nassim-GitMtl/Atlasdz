@@ -1,3 +1,4 @@
+import { liveCheckoutEnabled } from '@/lib/orders-copy';
 import { randomUUID } from 'node:crypto';
 import Link from 'next/link';
 import { headers } from 'next/headers';
@@ -63,7 +64,7 @@ export default async function Support({
   return (
     <Shell locale={locale} currentPath="/support" signedIn local={local}>
       <h1>{staff ? t.staff : t.title}</h1>
-      <p className="notice">{t.notice}</p>
+      <p className="notice">{liveCheckoutEnabled() ? t.liveNotice : t.notice}</p>
       <nav className="tabs" aria-label={t.title}>
         <Link href={`${href('/support', locale)}&staff=0`} aria-current={staff ? undefined : 'page'}>
           {t.seller}

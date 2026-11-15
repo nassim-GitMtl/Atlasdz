@@ -4,6 +4,8 @@ export const supportCopy = {
     title: 'Aide et retours',
     notice:
       'TEST LOCAL — Messages fictifs uniquement. Le vendeur organise les retours et les solutions. Une demande ou sa clôture ne déclenche ni remboursement, ni transport, ni mouvement de stock.',
+    liveNotice:
+      'Le vendeur organise les retours et les solutions. Une demande ou sa clôture ne déclenche ni remboursement, ni transport, ni mouvement de stock automatiques.',
     empty: 'Aucune demande. Ouvrez une commande pour contacter son vendeur.',
     create: 'Contacter le vendeur',
     category: 'Objet',
@@ -36,6 +38,8 @@ export const supportCopy = {
     title: 'المساعدة والإرجاع',
     notice:
       'اختبار محلي — رسائل وهمية فقط. البائع مسؤول عن الإرجاع والحلول. إنشاء الطلب أو إغلاقه لا ينفذ استرداد أموال أو نقلًا أو تغييرًا للمخزون.',
+    liveNotice:
+      'البائع مسؤول عن الإرجاع والحلول. إنشاء الطلب أو إغلاقه لا ينفذ تلقائيًا استرداد أموال أو نقلًا أو تغييرًا للمخزون.',
     empty: 'لا توجد طلبات مساعدة. افتح طلب شراء للتواصل مع بائعه.',
     create: 'التواصل مع البائع',
     category: 'الموضوع',

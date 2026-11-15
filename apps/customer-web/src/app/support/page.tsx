@@ -1,3 +1,4 @@
+import { liveCheckoutEnabled } from '@/lib/orders-copy';
 import { randomUUID } from 'node:crypto';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
@@ -47,7 +48,7 @@ export default async function Support({
     <SiteChrome locale={locale} pathname="/support" searchParams={query}>
       <section className="page-container order-page">
         <h1>{t.title}</h1>
-        <p className="cart-notice">{t.notice}</p>
+        <p className="cart-notice">{liveCheckoutEnabled() ? t.liveNotice : t.notice}</p>
         <Link href={localizedHref('/orders', locale)}>{t.orders}</Link>
         {' · '}
         <Link href={base}>{t.title}</Link>

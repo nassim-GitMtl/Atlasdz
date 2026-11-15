@@ -124,7 +124,11 @@ export function SiteChrome({
 }: SiteChromeProps) {
   const t = copy[locale];
   const oppositeLocale: Locale = locale === 'fr' ? 'ar' : 'fr';
-  const preview = process.env.SYNTHETIC_CATALOG_PREVIEW !== 'false';
+  // The synthetic-catalogue ribbon is for local/test runs only, never a deployed shop.
+  const preview =
+    process.env.SYNTHETIC_CATALOG_PREVIEW === 'true' ||
+    (process.env.SYNTHETIC_CATALOG_PREVIEW !== 'false' &&
+      ['local', 'test'].includes(process.env.APP_ENV ?? ''));
   const nav = navCopy[locale];
   const current = (path: string) => (pathname === path ? 'page' : undefined);
 

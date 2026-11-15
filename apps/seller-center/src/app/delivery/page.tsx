@@ -1,3 +1,4 @@
+import { liveCheckoutEnabled } from '@/lib/orders-copy';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { Shell } from '@/components/shell';
@@ -66,7 +67,7 @@ export default async function Delivery({
           <p>{t.body}</p>
         </div>
       </div>
-      <p className="notice">{t.notice}</p>
+      <p className="notice">{liveCheckoutEnabled() ? t.liveNotice : t.notice}</p>
       {result.destinations ? (
         <section className="seller-order-list">
           {result.destinations.length === 0 && <p role="status">{t.missing}</p>}
@@ -106,7 +107,7 @@ export default async function Delivery({
               </h2>
               <p>{t.baseHint}</p>
               <DeliveryRateForm
-                key={`${baseDestination.id}:${baseRate?.version ?? 0}`}
+                key={baseDestination.id}
                 destination={baseDestination}
                 rate={baseRate}
                 locale={locale}
@@ -138,7 +139,7 @@ export default async function Delivery({
                 <details>
                   <summary>{t.configure}</summary>
                   <DeliveryRateForm
-                    key={`${destination.id}:${rate?.version ?? 0}`}
+                    key={destination.id}
                     destination={destination}
                     rate={rate}
                     locale={locale}

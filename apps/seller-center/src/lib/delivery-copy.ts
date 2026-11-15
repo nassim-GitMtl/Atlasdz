@@ -20,6 +20,8 @@ export const deliveryCopy = {
     body: 'Un seul tarif par commande vendeur et destination, quel que soit le nombre d’articles. Une destination sans couverture active bloque la commande.',
     notice:
       'TEST LOCAL — Répertoire géographique de référence et destinations fictives séparées. Aucun tarif prérempli, paiement ni envoi réel. Atlas DZ ne collecte pas les fonds. Ces réglages ne sont pas une activation commerciale.',
+    liveNotice:
+      'Vos clients voient ces tarifs avant de confirmer. Vous livrez et encaissez à la livraison (vous-même ou votre transporteur) ; Atlas DZ ne collecte pas les fonds.',
     enabled: 'Desservir cette destination',
     fee: 'Frais par commande (DZD)',
     collector: 'Qui collecte le paiement à réception ?',
@@ -55,6 +57,8 @@ export const deliveryCopy = {
     body: 'رسم واحد لكل طلب بائع ووجهة مهما كان عدد المنتجات. لا يمكن الطلب إلى وجهة غير مغطاة.',
     notice:
       'اختبار محلي — دليل جغرافي مرجعي ووجهات وهمية منفصلة. لا أسعار محددة مسبقًا ولا دفع أو شحن حقيقي. أطلس لا يجمع الأموال. هذه الإعدادات لا تفعّل البيع التجاري.',
+    liveNotice:
+      'يرى زبائنك هذه الأسعار قبل التأكيد. أنت توصل وتحصّل عند الاستلام (بنفسك أو عبر ناقلك)؛ أطلس DZ لا يجمع الأموال.',
     enabled: 'تغطية هذه الوجهة',
     fee: 'الرسم لكل طلب (د.ج.)',
     collector: 'من يجمع الدفع عند الاستلام؟',
