@@ -5,7 +5,7 @@ import { Shell } from '@/components/shell';
 import { ServiceState } from '@/components/states';
 import { AdminApiError, getSellerDetail } from '@/lib/admin';
 import { accountsCopy } from '@/lib/accounts-copy';
-import { href, localeFrom, money, type SearchParams } from '@/lib/i18n';
+import { href, localeFrom, money, type SearchParams, localized } from '@/lib/i18n';
 import { orderDate, orderText } from '@/lib/orders-copy';
 import { accessToken } from '@/lib/session';
 
@@ -68,7 +68,7 @@ export default async function AdminSeller({
                   </>
                 )}
               </dl>
-              <p>{d.seller.description[locale]}</p>
+              <p>{localized(d.seller.description, locale)}</p>
               {!closed && (
                 <SellerStatusForm
                   locale={locale}
@@ -131,7 +131,7 @@ export default async function AdminSeller({
                     {d.offers.map((offer) => (
                       <tr key={offer.offerId}>
                         <td>
-                          <strong>{offer.title[locale]}</strong>
+                          <strong>{localized(offer.title, locale)}</strong>
                           {offer.promotion && (
                             <small className="promo-note">
                               {t.promo} {money(offer.promotion.priceMinor, locale)}

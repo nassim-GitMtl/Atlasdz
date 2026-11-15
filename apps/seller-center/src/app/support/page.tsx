@@ -11,7 +11,7 @@ import { localAccountsEnabled } from '@/lib/security';
 import { getSupport, getOrderSupport, listSupport } from '@/lib/api';
 import { supportCopy } from '@/lib/support-copy';
 import { orderDate } from '@/lib/orders-copy';
-import { href, localeFrom, type SearchParams } from '@/lib/i18n';
+import { href, localeFrom, type SearchParams, lang } from '@/lib/i18n';
 /** Open: needs an answer; escalated: needs staff; waiting or resolved: nothing to do now. */
 function caseTone(status: string): 'action' | 'bad' | 'wait' | 'good' {
   if (status === 'OPEN') return 'action';
@@ -81,7 +81,7 @@ export default async function Support({
               {t.refresh}
             </a>
             <Link className="button secondary small" href={href('/login', locale)}>
-              {locale === 'ar' ? 'تسجيل الدخول' : 'Se connecter'}
+              {lang(locale, 'Se connecter', 'تسجيل الدخول', 'Sign in')}
             </Link>
           </div>
         </div>

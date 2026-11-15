@@ -6,7 +6,7 @@ import { Shell } from '@/components/shell';
 import { ServiceState } from '@/components/states';
 import { OfferForm } from '@/components/forms';
 import { getOffer } from '@/lib/api';
-import { copy, href, localeFrom, type SearchParams } from '@/lib/i18n';
+import { copy, href, localeFrom, type SearchParams, lang } from '@/lib/i18n';
 import { localAccountsEnabled } from '@/lib/security';
 import { accessToken } from '@/lib/session';
 
@@ -37,12 +37,15 @@ export default async function EditOffer({
           <p>{t[result.offer.status]}</p>
           {result.offer.status === 'REJECTED' && result.offer.rejectionReason && (
             <p className="alert-box" role="status">
-              {locale === 'ar' ? 'سبب الرفض: ' : 'Motif du refus : '}
+              {lang(locale, 'Motif du refus : ', 'سبب الرفض: ', 'Refusal reason: ')}
               {result.offer.rejectionReason}
               <br />
-              {locale === 'ar'
-                ? 'عدّل العرض واحفظه لإرساله للمراجعة من جديد.'
-                : 'Corrigez l’offre puis enregistrez-la : elle repart en validation.'}
+              {lang(
+                locale,
+                'Corrigez l’offre puis enregistrez-la : elle repart en validation.',
+                'عدّل العرض واحفظه لإرساله للمراجعة من جديد.',
+                'Fix the offer, then save it: it goes back for review.',
+              )}
             </p>
           )}
           {['PENDING_REVIEW', 'APPROVED', 'REJECTED'].includes(result.offer.status) ? (

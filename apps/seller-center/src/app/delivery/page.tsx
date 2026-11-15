@@ -5,7 +5,7 @@ import { Shell } from '@/components/shell';
 import { ServiceState } from '@/components/states';
 import { DeliveryRateForm } from '@/components/delivery-rate-form';
 import { listDeliveryDestinations, listDeliveryRates } from '@/lib/api';
-import { href, localeFrom, type SearchParams } from '@/lib/i18n';
+import { href, localeFrom, type SearchParams, localized, intlLocale } from '@/lib/i18n';
 import { deliveryCopy } from '@/lib/delivery-copy';
 import { localAccountsEnabled } from '@/lib/security';
 import { accessToken } from '@/lib/session';
@@ -77,7 +77,7 @@ export default async function Delivery({
             <select id="delivery-wilaya" name="wilaya" defaultValue={selected}>
               {wilayas.map((w) => (
                 <option key={w.id} value={w.id}>
-                  {w.code} — {w.name[locale]}
+                  {w.code} — {localized(w.name, locale)}
                 </option>
               ))}
               {result.destinations.some((d) => !d.wilaya) && (
@@ -103,7 +103,7 @@ export default async function Delivery({
           {baseDestination && (
             <article className="seller-order-card">
               <h2>
-                {baseDestination.name[locale]} — {t.baseRate}
+                {localized(baseDestination.name, locale)} — {t.baseRate}
               </h2>
               <p>{t.baseHint}</p>
               <DeliveryRateForm
@@ -123,14 +123,14 @@ export default async function Delivery({
             const effective = inherited ? baseRate : rate;
             return (
               <article className="seller-order-card" key={destination.id}>
-                <h3>{destination.name[locale]}</h3>
+                <h3>{localized(destination.name, locale)}</h3>
                 <p className="badge">
                   {effective?.enabled ? t.active : t.inactive} ·{' '}
                   {inherited ? t.inherited : t.custom}
                 </p>
                 {effective?.enabled && (
                   <p>
-                    {new Intl.NumberFormat(locale === 'ar' ? 'ar-DZ' : 'fr-DZ', {
+                    {new Intl.NumberFormat(intlLocale(locale), {
                       style: 'currency',
                       currency: 'DZD',
                     }).format(effective.shippingFeeMinor / 100)}

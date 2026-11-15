@@ -12,6 +12,16 @@ const copy = {
     emailNo: 'E-mail pas encore confirmé (commande sans compte)',
     warn: 'Attention : livraisons non abouties récentes',
   },
+  en: {
+    title: 'Customer reliability',
+    phoneOk: 'Delivery phone confirmed by SMS',
+    phoneNo: 'Phone not confirmed — call the customer before shipping',
+    history: (d: number, f: number, c: number) =>
+      `${d} delivered, ${f} failed deliveries, ${c} cancelled`,
+    age: (days: number) => `Account created ${days} day(s) ago`,
+    emailNo: 'Email not confirmed yet (order without an account)',
+    warn: 'Warning: recent failed deliveries',
+  },
   ar: {
     title: 'موثوقية العميل',
     phoneOk: 'هاتف التوصيل مؤكد عبر رسالة قصيرة',

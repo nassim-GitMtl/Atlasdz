@@ -109,7 +109,7 @@ export const registerSeller = (
   input: {
     email: string;
     password: string;
-    locale: 'fr' | 'ar';
+    locale: 'fr' | 'ar' | 'en';
     storeName: string;
     descriptionFr: string;
     descriptionAr: string;
@@ -159,7 +159,7 @@ export function forwardedClientIp(value: string | null): string | undefined {
 const Accepted = z.object({ status: z.string() });
 export const requestPasswordReset = (
   email: string,
-  locale: 'fr' | 'ar',
+  locale: 'fr' | 'ar' | 'en',
   origin: string,
   clientIp?: string,
 ) => call('/api/v1/auth/password/forgot', Accepted, { body: { email, locale, origin }, clientIp });

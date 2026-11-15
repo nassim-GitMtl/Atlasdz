@@ -48,7 +48,7 @@ export const getDashboard = (token: string) =>
 const Category = z.object({
   id: z.uuid(),
   slug: z.string(),
-  title: z.object({ fr: z.string(), ar: z.string() }),
+  title: z.object({ fr: z.string(), ar: z.string(), en: z.string().optional() }),
   status: z.enum(['ACTIVE', 'INACTIVE']),
   restrictionClass: z.enum(['STANDARD', 'REVIEW_REQUIRED', 'PROHIBITED']),
   products: z.number(),
@@ -58,12 +58,12 @@ export const getCategories = (token: string) =>
   call('/api/v1/admin/categories', z.object({ items: Category.array() }), token);
 export const createCategory = (
   token: string,
-  input: { slug: string; titleFr: string; titleAr: string },
+  input: { slug: string; titleFr: string; titleAr: string; titleEn: string },
 ) => call('/api/v1/admin/categories', z.object({ status: z.string() }), token, input);
 export const updateCategory = (
   token: string,
   id: string,
-  input: { titleFr: string; titleAr: string; status: string; restrictionClass: string },
+  input: { titleFr: string; titleAr: string; titleEn: string; status: string; restrictionClass: string },
 ) =>
   call(
     `/api/v1/admin/categories/${encodeURIComponent(id)}`,

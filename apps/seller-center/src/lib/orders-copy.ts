@@ -58,6 +58,64 @@ export const orderCopy = {
     CANCELLED: 'Annulée par le client',
     EXPIRED: 'Délai de réponse expiré',
   },
+  en: {
+    deliveryContact: 'Delivery details',
+    recipientName: 'Recipient',
+    phone: 'Phone',
+    addressLine: 'Address',
+    city: 'Town / commune',
+    contactHint:
+      'Fictitious details saved with the order. No real call or shipment. The town entered does not certify coverage.',
+    contactMissing: 'Old test order without delivery details.',
+    title: 'Orders',
+    inbox: 'Orders received',
+    body: 'Only the items for your shop. The inbox stays available even if a notification fails.',
+    notice:
+      'LOCAL TEST — No payment or physical shipment. The steps below simulate seller processing. A delivery reported by the seller is not a customer confirmation.',
+    empty: 'No orders received.',
+    detail: 'Seller order details',
+    total: 'Test total',
+    shipping: 'Test delivery',
+    items: 'Items',
+    quantity: 'Quantity',
+    unit: 'Unit price',
+    deadline: 'Answer expected before',
+    recorded: 'Received on',
+    reject: 'Refuse this test order',
+    confirm: 'I confirm refusing all items of this seller order.',
+    rejected: 'Order refused. Reserved stock was released.',
+    busy: 'Working…',
+    id: 'Seller reference',
+    reason: 'Refusal reason',
+    chooseReason: 'Choose a reason',
+    OUT_OF_STOCK: 'Out of stock',
+    DELIVERY_UNAVAILABLE: 'Delivery not possible',
+    UNABLE_TO_FULFILL: 'Unable to fulfil the order',
+    LEGACY_TEST_REJECTION: 'Earlier test refusal (no detailed reason)',
+    ACCEPT: 'Accept the test order',
+    PREPARE: 'Start test preparation',
+    SHIP: 'Record the test shipment',
+    REPORT_DELIVERY: 'Report test delivery',
+    REPORT_DELIVERY_FAILED: 'Report a failed test delivery',
+    ACCEPTED: 'Accepted by the seller',
+    PREPARING: 'Being prepared',
+    SHIPPED: 'Shipped (seller statement)',
+    DELIVERY_REPORTED: 'Delivery reported — waiting for customer confirmation',
+    DELIVERED: 'Receipt confirmed by the customer',
+    DELIVERY_FAILED: 'Failed delivery reported by the seller',
+    processConfirm: 'I confirm this simulation update. It does not prove any real shipment.',
+    shippingHint: 'Use a fictitious carrier and reference only. No external service is contacted.',
+    carrier: 'Test carrier',
+    tracking: 'Test tracking reference',
+    history: 'History',
+    SELLER: 'Seller statement',
+    CUSTOMER: 'Customer action',
+    SYSTEM: 'System',
+    AWAITING_SELLER: 'Waiting for your answer',
+    REJECTED: 'Refused by the seller',
+    CANCELLED: 'Cancelled by the customer',
+    EXPIRED: 'Answer deadline passed',
+  },
   ar: {
     deliveryContact: 'بيانات التوصيل',
     recipientName: 'المستلم',
@@ -117,8 +175,8 @@ export const orderCopy = {
     EXPIRED: 'انتهت مهلة الرد',
   },
 } as const;
-export const orderDate = (value: string, locale: 'fr' | 'ar') =>
-  new Intl.DateTimeFormat(locale === 'ar' ? 'ar-DZ' : 'fr-DZ', {
+export const orderDate = (value: string, locale: 'fr' | 'ar' | 'en') =>
+  new Intl.DateTimeFormat(locale === 'ar' ? 'ar-DZ' : locale === 'en' ? 'en-GB' : 'fr-DZ', {
     dateStyle: 'medium',
     timeStyle: 'short',
     hourCycle: 'h23',
@@ -147,6 +205,24 @@ const liveOverrides = {
     carrier: 'Transporteur',
     tracking: 'Référence de suivi',
   },
+  en: {
+    contactHint: 'Details entered by the customer at checkout. Use them only to deliver this order.',
+    contactMissing: 'No details saved for this order.',
+    notice:
+      'Cash on delivery: you (or your courier) deliver and collect the full amount. Atlas DZ collects no payment. Receipt is confirmed by the customer.',
+    total: 'Total to collect',
+    shipping: 'Delivery',
+    reject: 'Refuse this order',
+    ACCEPT: 'Accept the order',
+    PREPARE: 'Start preparing',
+    SHIP: 'Record the shipment',
+    REPORT_DELIVERY: 'Report delivery',
+    REPORT_DELIVERY_FAILED: 'Report a failed delivery',
+    processConfirm: 'I confirm this order update.',
+    shippingHint: 'Enter your carrier (or “Seller delivery”) and the tracking reference.',
+    carrier: 'Carrier',
+    tracking: 'Tracking reference',
+  },
   ar: {
     contactHint: 'بيانات أدخلها العميل عند الطلب. استخدمها فقط لتوصيل هذا الطلب.',
     contactMissing: 'لا توجد بيانات توصيل مسجلة لهذا الطلب.',
@@ -168,7 +244,7 @@ const liveOverrides = {
 } as const;
 
 export type OrderText = { readonly [K in keyof (typeof orderCopy)['fr']]: string };
-export function orderText(locale: 'fr' | 'ar', live: boolean): OrderText {
+export function orderText(locale: 'fr' | 'ar' | 'en', live: boolean): OrderText {
   return live ? { ...orderCopy[locale], ...liveOverrides[locale] } : orderCopy[locale];
 }
 /** Server-only: whether this deployment runs real cash-on-delivery checkout. */

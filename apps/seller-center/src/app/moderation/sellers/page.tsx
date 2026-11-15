@@ -4,7 +4,7 @@ import { Shell } from '@/components/shell';
 import { ServiceState } from '@/components/states';
 import { listSellerApplications } from '@/lib/auth';
 import { authCopy } from '@/lib/auth-copy';
-import { href, localeFrom, type SearchParams } from '@/lib/i18n';
+import { href, localeFrom, type SearchParams, intlLocale } from '@/lib/i18n';
 import { accessToken } from '@/lib/session';
 
 export default async function SellerApplications({
@@ -48,7 +48,7 @@ export default async function SellerApplications({
                   <p dir="ltr">
                     {seller.email} · /{seller.slug} ·{' '}
                     {new Date(seller.createdAt).toLocaleDateString(
-                      locale === 'ar' ? 'ar-DZ' : 'fr-DZ',
+                      intlLocale(locale),
                     )}
                   </p>
                   <p lang="fr" dir="ltr">

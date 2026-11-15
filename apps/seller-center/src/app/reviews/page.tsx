@@ -5,7 +5,7 @@ import { ReviewReplyForm } from '@/components/forms';
 import { Shell } from '@/components/shell';
 import { ServiceState } from '@/components/states';
 import { listSellerReviews } from '@/lib/api';
-import { href, localeFrom, type SearchParams } from '@/lib/i18n';
+import { href, localeFrom, type SearchParams, localized } from '@/lib/i18n';
 import { orderDate } from '@/lib/orders-copy';
 import { localAccountsEnabled } from '@/lib/security';
 import { accessToken } from '@/lib/session';
@@ -20,6 +20,16 @@ const copy = {
     hidden: 'Masqué par Atlas DZ',
     none: 'Pas encore d’avis.',
     more: 'Avis plus anciens',
+  },
+  en: {
+    title: 'Customer reviews',
+    body: 'Reviews from buyers who received your items. A polite, useful reply reassures future customers.',
+    average: 'Average rating',
+    count: '{n} reviews',
+    waiting: 'No reply yet',
+    hidden: 'Hidden by Atlas DZ',
+    none: 'No reviews yet.',
+    more: 'Older reviews',
   },
   ar: {
     title: 'تقييمات الزبائن',
@@ -69,7 +79,7 @@ export default async function Reviews({ searchParams }: { readonly searchParams:
               <div className="order-row__head">
                 <h2>
                   <span aria-label={`${review.rating}/5`}>{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}</span>{' '}
-                  {review.productTitle[locale]}
+                  {localized(review.productTitle, locale)}
                 </h2>
                 {review.status === 'HIDDEN' ? (
                   <span className="badge badge--bad">{t.hidden}</span>

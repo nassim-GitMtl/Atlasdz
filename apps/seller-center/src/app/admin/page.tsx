@@ -11,7 +11,7 @@ import { Shell } from '@/components/shell';
 import { ServiceState } from '@/components/states';
 import { getCategories, getDashboard, getReviews, getSellers } from '@/lib/admin';
 import { adminCopy } from '@/lib/admin-copy';
-import { href, localeFrom, money, type SearchParams } from '@/lib/i18n';
+import { href, localeFrom, money, type SearchParams, localized, intlLocale } from '@/lib/i18n';
 import { accessToken } from '@/lib/session';
 
 export default async function Admin({
@@ -33,7 +33,7 @@ export default async function Admin({
     }));
   // Loaded on its own: moderation stays reachable even if one list is unavailable.
   const reviews = result.error ? null : await getReviews(token).catch(() => null);
-  const day = new Intl.DateTimeFormat(locale === 'ar' ? 'ar-DZ' : 'fr-DZ', { dateStyle: 'medium' });
+  const day = new Intl.DateTimeFormat(intlLocale(locale), { dateStyle: 'medium' });
   return (
     <Shell locale={locale} currentPath="/admin" signedIn>
       {result.error ? (
@@ -100,7 +100,7 @@ export default async function Admin({
                       </span>
                     </h3>
                     <p>
-                      {review.productTitle[locale]} · {review.sellerName} ·{' '}
+                      {localized(review.productTitle, locale)} · {review.sellerName} ·{' '}
                       {day.format(new Date(review.createdAt))}
                     </p>
                     {review.body && <blockquote>{review.body}</blockquote>}

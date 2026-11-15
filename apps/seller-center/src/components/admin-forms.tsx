@@ -83,6 +83,8 @@ export function CategoryCreateForm({ locale }: { readonly locale: Locale }) {
       <div className="field">
         <label htmlFor="cat-ar">{t.titleAr}</label>
         <input id="cat-ar" name="titleAr" lang="ar" dir="rtl" required maxLength={160} />
+        <label htmlFor="cat-en">{t.titleEn}</label>
+        <input id="cat-en" name="titleEn" lang="en" dir="ltr" maxLength={160} />
       </div>
       <Feedback state={state} locale={locale} />
       <button className="button" type="submit" disabled={pending}>
@@ -128,6 +130,18 @@ export function CategoryEditForm({
         lang="ar"
         dir="rtl"
         required
+        maxLength={160}
+      />
+      <label htmlFor={id('en')} className="sr-only">
+        {t.titleEn}
+      </label>
+      <input
+        id={id('en')}
+        name="titleEn"
+        defaultValue={category.title.en ?? ''}
+        lang="en"
+        dir="ltr"
+        placeholder={t.titleEn}
         maxLength={160}
       />
       <label htmlFor={id('status')} className="sr-only">
@@ -216,6 +230,12 @@ const actionCopy = {
     done: 'Fait.',
     conflict: 'Impossible pour le moment : des commandes sont encore en cours, ou l’état a changé.',
     error: 'Action refusée ou service indisponible.',
+  },
+  en: {
+    confirm: 'I confirm',
+    done: 'Done.',
+    conflict: 'Not possible right now: orders are still in progress, or the state changed.',
+    error: 'Action refused or service unavailable.',
   },
   ar: {
     confirm: 'أؤكد',

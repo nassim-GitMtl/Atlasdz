@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { accessToken } from '@/lib/session';
 import { trustedMutationOrigin } from '@/lib/security';
 import { actSupport } from '@/lib/api';
-import { href } from '@/lib/i18n';
+import { href, localeFrom } from '@/lib/i18n';
 export async function supportAction(
   _state: { error?: boolean },
   form: FormData,
@@ -31,6 +31,6 @@ export async function supportAction(
   }
   revalidatePath('/support');
   redirect(
-    `${href('/support', form.get('lang') === 'ar' ? 'ar' : 'fr')}${staff ? '&staff=1' : ''}&caseId=${savedId}`,
+    `${href('/support', localeFrom(form.get('lang')))}${staff ? '&staff=1' : ''}&caseId=${savedId}`,
   );
 }

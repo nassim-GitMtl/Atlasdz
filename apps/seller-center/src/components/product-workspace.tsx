@@ -7,7 +7,7 @@ import { ServiceState } from './states';
 import { ProductForm, ProductReviewForm } from './product-forms';
 import { ProductPhotoForm, RemovePhotoButton } from './auth-forms';
 import { listProductCategories, listProductSubmissions } from '@/lib/api';
-import { href, localeFrom, type SearchParams } from '@/lib/i18n';
+import { href, localeFrom, type SearchParams, localized } from '@/lib/i18n';
 import { productsCopy } from '@/lib/products-copy';
 import { localAccountsEnabled } from '@/lib/security';
 import { accessToken } from '@/lib/session';
@@ -73,8 +73,8 @@ export async function ProductWorkspace({
                   <span className={`badge ${s.status === 'APPROVED' ? 'approved' : ''}`}>
                     {t[s.status]}
                   </span>
-                  <h2 style={{ overflowWrap: 'anywhere' }}>{s.title[locale]}</h2>
-                  <p>{s.category.title[locale]}</p>
+                  <h2 style={{ overflowWrap: 'anywhere' }}>{localized(s.title, locale)}</h2>
+                  <p>{localized(s.category.title, locale)}</p>
                   {s.revisionOfSubmissionId && <p className="notice">{t.revision}</p>}
                   {s.previous && (
                     <details open={review}>

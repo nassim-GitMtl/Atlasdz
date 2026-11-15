@@ -2,7 +2,7 @@
 import { useActionState } from 'react';
 import type { NotificationReadInput } from '@atlas/contracts';
 import { readNotificationAction } from '@/app/notifications/actions';
-import { copy, type Locale } from '@/lib/i18n';
+import { copy, type Locale, lang } from '@/lib/i18n';
 
 export function NotificationReadForm({
   input,
@@ -17,7 +17,7 @@ export function NotificationReadForm({
       <input type="hidden" name="sellerOrderId" value={input.sellerOrderId} />
       <input type="hidden" name="version" value={input.version} />
       <button type="submit" className="button secondary" disabled={pending}>
-        {pending ? copy[locale].submitting : locale === 'ar' ? 'تحديد كمقروء' : 'Marquer comme lu'}
+        {pending ? copy[locale].submitting : lang(locale, 'Marquer comme lu', 'تحديد كمقروء', 'Mark as read')}
       </button>
       {state.error && (
         <p className="notice error" role="alert">

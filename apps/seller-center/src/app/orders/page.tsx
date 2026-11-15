@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { Shell } from '@/components/shell';
 import { ServiceState } from '@/components/states';
 import { listSellerOrders } from '@/lib/api';
-import { href, localeFrom, money, type SearchParams } from '@/lib/i18n';
+import { href, localeFrom, money, type SearchParams, localized, lang } from '@/lib/i18n';
 import { liveCheckoutEnabled, orderText, orderDate } from '@/lib/orders-copy';
 import { localAccountsEnabled } from '@/lib/security';
 import { accessToken } from '@/lib/session';
@@ -39,7 +39,7 @@ export default async function Orders({
           <p>{t.body}</p>
         </div>
         <a className="button secondary" href="/orders/export" download>
-          {locale === 'ar' ? 'تصدير CSV' : 'Exporter (CSV)'}
+          {lang(locale, 'Exporter (CSV)', 'تصدير CSV', 'Export (CSV)')}
         </a>
       </div>
       <p className="notice">{t.notice}</p>
@@ -56,7 +56,7 @@ export default async function Orders({
                 <h2>
                   <Link href={href(`/orders/${order.id}`, locale)}>
                     {order.snapshot.items
-                      .map((item) => `${item.title[locale]} × ${item.quantity}`)
+                      .map((item) => `${localized(item.title, locale)} × ${item.quantity}`)
                       .join(', ')}
                   </Link>
                 </h2>

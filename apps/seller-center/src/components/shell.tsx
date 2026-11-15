@@ -19,7 +19,7 @@ import type { Icon } from '@phosphor-icons/react';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { copy, href, type Locale } from '@/lib/i18n';
+import { copy, href, lang, languageNames, locales, type Locale } from '@/lib/i18n';
 import { DocumentLocale } from './document-locale';
 import { orderCopy } from '@/lib/orders-copy';
 import { deliveryCopy } from '@/lib/delivery-copy';
@@ -33,6 +33,7 @@ import { accountKind } from '@/lib/session';
 
 const groups = {
   fr: { shop: 'Ma boutique', staff: 'Équipe Atlas DZ', dashboard: 'Tableau de bord', notifications: 'Notifications', offers: 'Offres à valider', account: 'Mon compte', escalations: 'Demandes escaladées', vendors: 'Comptes vendeurs', customers: 'Comptes clients', reviews: 'Avis clients' },
+  en: { shop: 'My shop', staff: 'Atlas DZ team', dashboard: 'Dashboard', notifications: 'Notifications', offers: 'Offers to approve', account: 'My account', escalations: 'Escalated requests', vendors: 'Seller accounts', customers: 'Customer accounts', reviews: 'Customer reviews' },
   ar: { shop: 'متجري', staff: 'فريق Atlas DZ', dashboard: 'لوحة التحكم', notifications: 'الإشعارات', offers: 'عروض للمراجعة', account: 'حسابي', escalations: 'طلبات مُصعَّدة', vendors: 'حسابات البائعين', customers: 'حسابات الزبائن', reviews: 'تقييمات الزبائن' },
 } as const;
 
@@ -151,12 +152,25 @@ export async function Shell({
         <header className="topbar">
           <span className="section-label">{isStaff ? g.staff : t.workspace}</span>
           <div className="top-actions">
-            <Link
-              lang={locale === 'fr' ? 'ar' : 'fr'}
-              href={href(currentPath, locale === 'fr' ? 'ar' : 'fr')}
-            >
-              {t.language}
-            </Link>
+            <details className="language-menu">
+              <summary aria-label={lang(locale, 'Langue', 'اللغة', 'Language')}>
+                <span lang={locale}>{languageNames[locale]}</span>
+              </summary>
+              <ul>
+                {locales.map((option) => (
+                  <li key={option}>
+                    <Link
+                      href={href(currentPath, option)}
+                      hrefLang={option}
+                      lang={option}
+                      aria-current={option === locale ? 'true' : undefined}
+                    >
+                      {languageNames[option]}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </details>
             {signedIn && <LogoutForm locale={locale} />}
           </div>
         </header>

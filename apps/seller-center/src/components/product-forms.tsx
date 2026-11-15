@@ -1,7 +1,7 @@
 'use client';
 import { useActionState } from 'react';
 import { submitProductAction, reviewProductAction } from '@/app/product-actions';
-import { copy, type Locale } from '@/lib/i18n';
+import { copy, type Locale, localized } from '@/lib/i18n';
 import { productsCopy } from '@/lib/products-copy';
 import { emptyProductValues } from '@/lib/product-input';
 import type { ProductSubmission } from '@atlas/contracts';
@@ -52,7 +52,7 @@ export function ProductForm({
           <option value="">{t.choose}</option>
           {categories.map((c) => (
             <option key={c.id} value={c.id}>
-              {c.title[locale]}
+              {localized(c.title, locale)}
             </option>
           ))}
         </select>

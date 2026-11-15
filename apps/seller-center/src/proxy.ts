@@ -1,10 +1,11 @@
+import { localeFrom } from '@/lib/i18n';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export function proxy(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set(
     'x-atlas-locale',
-    request.nextUrl.searchParams.get('lang') === 'ar' ? 'ar' : 'fr',
+    localeFrom(request.nextUrl.searchParams.get('lang')),
   );
   return NextResponse.next({ request: { headers: requestHeaders } });
 }

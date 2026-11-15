@@ -3,17 +3,17 @@ import Link from 'next/link';
 import type { SellerOrder } from '@atlas/contracts';
 import { listOfferProducts, listOffers, listSellerOrders, listSupport } from '@/lib/api';
 import { dashboardCopy, fill } from '@/lib/dashboard-copy';
-import { href, money, type Locale } from '@/lib/i18n';
+import { href, money, type Locale, localized, intlLocale } from '@/lib/i18n';
 
 const LOW_STOCK = 3;
 const time = (value: string, locale: Locale) =>
-  new Intl.DateTimeFormat(locale === 'ar' ? 'ar-DZ' : 'fr-DZ', {
+  new Intl.DateTimeFormat(intlLocale(locale), {
     timeStyle: 'short',
     hourCycle: 'h23',
     timeZone: 'Africa/Algiers',
   }).format(new Date(value));
 const today = (locale: Locale) =>
-  new Intl.DateTimeFormat(locale === 'ar' ? 'ar-DZ' : 'fr-DZ', {
+  new Intl.DateTimeFormat(intlLocale(locale), {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -51,7 +51,8 @@ export async function SellerDashboard({ token, locale }: { readonly token: strin
     .filter((offer) => offer.status === 'APPROVED' && offer.availableQuantity <= LOW_STOCK)
     .sort((a, b) => a.availableQuantity - b.availableQuantity)
     .slice(0, 4);
-  const titleOf = (productId: string) => products.find((p) => p.id === productId)?.title[locale] ?? '—';
+  const titleOf = (productId: string) =>
+    localized(products.find((p) => p.id === productId)?.title, locale) ?? '—';
   const cases = support?.items ?? [];
   const more = support?.nextCursor ? '+' : '';
   const sales = deliveredSince(all);
@@ -119,7 +120,7 @@ export async function SellerDashboard({ token, locale }: { readonly token: strin
                       <td className="muted">{time(order.createdAt, locale)}</td>
                       <td>{order.deliveryContact?.recipientName ?? '—'}</td>
                       <td>
-                        {order.snapshot.items.map((item) => `${item.title[locale]} × ${item.quantity}`).join(', ')}
+                        {order.snapshot.items.map((item) => `${localized(item.title, locale)} × ${item.quantity}`).join(', ')}
                       </td>
                       <td className="num strong"><bdi>{money(order.snapshot.totalMinor, locale)}</bdi></td>
                       <td>

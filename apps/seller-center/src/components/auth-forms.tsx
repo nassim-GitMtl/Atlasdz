@@ -303,6 +303,15 @@ const photoCopy = {
     remove: 'Retirer la photo actuelle',
     removed: 'Photo retirée.',
   },
+  en: {
+    label: 'Product photo (JPEG, PNG or WebP, 5 MB max.)',
+    submit: 'Upload the photo',
+    done: 'Photo published.',
+    invalid: 'File refused: choose a JPEG, PNG or WebP image of at most 5 MB.',
+    forbidden: 'Only the seller who proposed the product, once approved, can add its photo.',
+    remove: 'Remove the current photo',
+    removed: 'Photo removed.',
+  },
   ar: {
     label: 'صورة المنتج (JPEG أو PNG أو WebP، 5 ميغابايت كحد أقصى)',
     submit: 'إرسال الصورة',

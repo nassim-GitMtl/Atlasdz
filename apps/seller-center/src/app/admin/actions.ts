@@ -57,6 +57,7 @@ export async function createCategoryAction(_s: AdminState, form: FormData) {
       slug: str(form, 'slug').toLowerCase(),
       titleFr: str(form, 'titleFr'),
       titleAr: str(form, 'titleAr'),
+      titleEn: str(form, 'titleEn'),
     }),
   );
 }
@@ -65,6 +66,7 @@ export async function updateCategoryAction(_s: AdminState, form: FormData) {
     updateCategory(token, str(form, 'id'), {
       titleFr: str(form, 'titleFr'),
       titleAr: str(form, 'titleAr'),
+      titleEn: str(form, 'titleEn'),
       status: str(form, 'status'),
       restrictionClass: str(form, 'restrictionClass'),
     }),

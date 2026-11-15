@@ -5,7 +5,7 @@ import { ApproveForm, RejectOfferForm } from '@/components/forms';
 import { Shell } from '@/components/shell';
 import { ServiceState } from '@/components/states';
 import { listPendingOffers, listProducts, listReviewProducts } from '@/lib/api';
-import { copy, href, localeFrom, money, type SearchParams } from '@/lib/i18n';
+import { copy, href, localeFrom, money, type SearchParams, localized } from '@/lib/i18n';
 import { localAccountsEnabled } from '@/lib/security';
 import { accessToken } from '@/lib/session';
 
@@ -21,6 +21,18 @@ const queueCopy = {
     handling: 'En stock · préparation {n} j',
     preorder: 'Pré-commande · {min}–{max} j',
     note: 'Valider rend l’offre visible sur la fiche produit. Le vendeur reste responsable de l’envoi et de l’encaissement à la livraison.',
+  },
+  en: {
+    pending: '{n} waiting',
+    rejected: 'Offer refused. The seller received the reason by email and can fix it.',
+    product: 'Product',
+    price: 'Price',
+    stock: 'Stock',
+    terms: 'Timing',
+    action: 'Decision',
+    handling: 'In stock · preparation {n} d',
+    preorder: 'Pre-order · {min}–{max} d',
+    note: 'Approving makes the offer visible on the product page. The seller stays responsible for shipping and collecting cash on delivery.',
   },
   ar: {
     pending: '{n} قيد الانتظار',
@@ -118,7 +130,7 @@ export default async function Moderation({
                       return (
                         <tr key={offer.id}>
                           <td>
-                            <strong>{product?.title[locale] ?? offer.productId}</strong>
+                            <strong>{localized(product?.title, locale) ?? offer.productId}</strong>
                             <small className="mono row-ref" title={offer.id}>
                               {offer.id.slice(0, 8)}
                             </small>

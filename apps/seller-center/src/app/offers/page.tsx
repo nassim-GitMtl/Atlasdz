@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { Shell } from '@/components/shell';
 import { ServiceState } from '@/components/states';
 import { listOffers, listOfferProducts } from '@/lib/api';
-import { copy, href, localeFrom, money, type SearchParams } from '@/lib/i18n';
+import { copy, href, localeFrom, money, type SearchParams, localized, lang, intlLocale } from '@/lib/i18n';
 import { localAccountsEnabled } from '@/lib/security';
 import { accessToken } from '@/lib/session';
 
@@ -92,18 +92,18 @@ export default async function Offers({
                   return (
                     <article className="offer-row" key={offer.id}>
                       <div className="product-marker" aria-hidden="true">
-                        {product?.title[locale].slice(0, 1) ?? 'A'}
+                        {localized(product?.title, locale)?.slice(0, 1) ?? 'A'}
                       </div>
                       <div className="offer-identity">
-                        <h3>{product?.title[locale] ?? offer.productId}</h3>
+                        <h3>{localized(product?.title, locale) ?? offer.productId}</h3>
                         <span className={`badge ${offer.status === 'APPROVED' ? 'approved' : offer.status === 'REJECTED' ? 'badge--bad' : ''}`}>
                           {t[offer.status]}
                         </span>
                         {offer.promotion && (
                           <small className="promo-note">
-                            {locale === 'ar' ? 'تخفيض: ' : 'Promotion : '}
+                            {lang(locale, 'Promotion : ', 'تخفيض: ', 'Sale: ')}
                             {money(offer.promotion.priceMinor, locale)} ·{' '}
-                            {new Date(offer.promotion.endsAt).toLocaleDateString(locale === 'ar' ? 'ar-DZ' : 'fr-DZ', { timeZone: 'Africa/Algiers' })}
+                            {new Date(offer.promotion.endsAt).toLocaleDateString(intlLocale(locale), { timeZone: 'Africa/Algiers' })}
                           </small>
                         )}
                         {offer.status === 'REJECTED' && offer.rejectionReason && (

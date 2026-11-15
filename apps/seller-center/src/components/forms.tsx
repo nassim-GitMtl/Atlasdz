@@ -10,7 +10,7 @@ import {
   updateOfferAction,
   loginAction,
 } from '@/app/actions';
-import { copy, type Locale } from '@/lib/i18n';
+import { copy, type Locale, localized } from '@/lib/i18n';
 import { emptyOfferValues } from '@/lib/offer-input';
 
 const promoCopy = {
@@ -21,6 +21,14 @@ const promoCopy = {
     price: 'Prix promotionnel (DZD)',
     start: 'Premier jour',
     end: 'Dernier jour',
+  },
+  en: {
+    title: 'Promotion',
+    label: 'Promotional price for a period',
+    help: 'Lower than your usual price, 90 days at most. Customers see both prices and the end date.',
+    price: 'Promotional price (DZD)',
+    start: 'First day',
+    end: 'Last day',
   },
   ar: {
     title: 'تخفيض',
@@ -97,7 +105,7 @@ export function OfferForm({
             <option value="">{t.selectProduct}</option>
             {products.map((product) => (
               <option key={product.id} value={product.id}>
-                {product.title[locale]}
+                {localized(product.title, locale)}
               </option>
             ))}
           </select>
@@ -301,6 +309,7 @@ export function LocalLoginForm({
 
 const refuseCopy = {
   fr: { refuse: 'Refuser…', reason: 'Motif envoyé au vendeur (5 à 300 caractères)', send: 'Refuser l’offre', invalid: 'Indiquez un motif de 5 à 300 caractères.' },
+  en: { refuse: 'Refuse…', reason: 'Reason sent to the seller (5 to 300 characters)', send: 'Refuse the offer', invalid: 'Give a reason of 5 to 300 characters.' },
   ar: { refuse: 'رفض…', reason: 'السبب المرسل إلى البائع (5 إلى 300 حرف)', send: 'رفض العرض', invalid: 'اكتب سببًا من 5 إلى 300 حرف.' },
 } as const;
 
@@ -358,6 +367,7 @@ export function ApproveForm({
 
 const replyCopy = {
   fr: { label: 'Votre réponse publique', send: 'Publier la réponse', update: 'Modifier la réponse', saved: 'Réponse publiée.', invalid: 'Écrivez entre 2 et 1 000 caractères.' },
+  en: { label: 'Your public reply', send: 'Publish the reply', update: 'Edit the reply', saved: 'Reply published.', invalid: 'Write between 2 and 1,000 characters.' },
   ar: { label: 'ردك العلني', send: 'نشر الرد', update: 'تعديل الرد', saved: 'تم نشر الرد.', invalid: 'اكتب بين 2 و1000 حرف.' },
 } as const;
 

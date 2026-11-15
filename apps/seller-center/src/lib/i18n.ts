@@ -1,13 +1,35 @@
-export type Locale = 'fr' | 'ar';
+export type Locale = 'fr' | 'ar' | 'en';
 export type SearchParams = Record<string, string | string[] | undefined>;
-export function localeFrom(value: string | string[] | undefined): Locale {
-  return value === 'ar' ? 'ar' : 'fr';
+export function localeFrom(value: unknown): Locale {
+  const candidate: unknown = Array.isArray(value) ? value[0] : value;
+  return candidate === 'ar' || candidate === 'en' ? candidate : 'fr';
 }
+export const locales: readonly Locale[] = ['fr', 'ar', 'en'];
+export const languageNames: Readonly<Record<Locale, string>> = {
+  fr: 'Français',
+  ar: 'العربية',
+  en: 'English',
+};
+/** Catalogue texts exist in French and Arabic; English screens read French. */
+export const contentLocale = (locale: Locale): 'fr' | 'ar' => (locale === 'ar' ? 'ar' : 'fr');
+/** One short text per language, for strings used in a single place. */
+/** A catalogue text in the reader's language: English when given, otherwise French. */
+export function localized<T extends { fr: string; ar: string; en?: string | undefined } | undefined>(
+  value: T,
+  locale: Locale,
+): T extends undefined ? string | undefined : string {
+  if (value === undefined) return undefined as never;
+  return (locale === 'en' ? (value.en ?? value.fr) : value[contentLocale(locale)]) as never;
+}
+export const lang = (locale: Locale, fr: string, ar: string, en: string): string =>
+  locale === 'ar' ? ar : locale === 'en' ? en : fr;
+export const intlLocale = (locale: Locale): string =>
+  locale === 'ar' ? 'ar-DZ' : locale === 'en' ? 'en-GB' : 'fr-DZ';
 export function href(path: string, locale: Locale): string {
   return `${path}?lang=${locale}`;
 }
 export function money(value: number, locale: Locale): string {
-  return new Intl.NumberFormat(locale === 'ar' ? 'ar-DZ' : 'fr-DZ', {
+  return new Intl.NumberFormat(intlLocale(locale), {
     style: 'currency',
     currency: 'DZD',
     // Whole dinars, or both centime digits (4 750,50 DA), as in the shop and the app.
@@ -115,6 +137,99 @@ export const copy = {
     APPROVED: 'En ligne',
     REJECTED: 'Refusée',
     SUSPENDED: 'Suspendue',
+  },
+  en: {
+    editOffer: 'Edit price and stock',
+    saveOffer: 'Save changes',
+    updatedOffer: 'Offer updated. Orders already placed keep their terms.',
+    editHelp:
+      'Enter only the stock still available for sale, excluding quantities reserved for orders. Those reservations are not changed. Prices and times of existing orders stay the same. No change to moderation status.',
+    reloadOffer: 'Reload the current values before editing',
+    offerLocked: 'This offer is refused or suspended. Editing is disabled.',
+    workspace: 'Seller Center',
+    moderation: 'Moderation',
+    offers: 'My offers',
+    signOut: 'Sign out',
+    signingOut: 'Signing out…',
+    logoutFailure: 'The server did not confirm sign-out. Try again to revoke your session.',
+    language: 'English',
+    skip: 'Skip to content',
+    responsibility: 'Your products. Your preparation. Your delivery.',
+    responsibilityBody:
+      'Atlas DZ brings your offers to customers. You stay in control of your stock and shipping.',
+    offerTitle: 'Your offers, in one place.',
+    offerBody: 'Manage what customers find in your shop.',
+    newOffer: 'Add an offer',
+    total: 'Offers in total',
+    live: 'Live',
+    pending: 'To review',
+    stock: 'Available stock',
+    empty: 'Your first offer starts here.',
+    emptyBody: 'Choose a catalogue product and enter your price, stock and delivery terms.',
+    product: 'Product',
+    price: 'Price (DZD)',
+    quantity: 'Available quantity',
+    handling: 'Preparation (days)',
+    delivery: 'Old indicative rate (DZD)',
+    status: 'Status',
+    units: 'units',
+    days: 'd',
+    free: 'Free',
+    createTitle: 'A new offer for your shop.',
+    createBody: 'Add your terms to an existing product. Your offer is reviewed before it goes live.',
+    selectProduct: 'Choose a product',
+    priceHelp: 'Unit price in dinars, up to two decimals.',
+    quantityHelp: 'Your available stock, from 0 to 1,000,000.',
+    handlingHelp: 'Time before shipping, from 0 to 30 days.',
+    preorder: 'Pre-order',
+    preorderLabel: 'Pre-order item (not in stock yet, for example imported)',
+    preorderHelp:
+      'Buyers see the estimated time and accept it before ordering. Stock becomes the number of pre-orders accepted.',
+    preorderMin: 'Estimated time: earliest (days)',
+    preorderMax: 'Estimated time: latest (days)',
+    preorderOrigin: 'Ships from (optional)',
+    preorderOriginExample: 'Turkey, China, France…',
+    deliveryHelp:
+      'Legacy field, ignored in quotes. Set rates per destination under Delivery and cash on delivery.',
+    submit: 'Send for review',
+    submitting: 'Sending…',
+    submitted: 'Your offer was sent for review.',
+    back: 'Back to offers',
+    review: 'Offers to review',
+    reviewBody: 'Check price, stock and terms before publishing.',
+    approve: 'Approve the offer',
+    approving: 'Publishing…',
+    approved: 'The offer is approved and visible in the catalogue.',
+    noReview: 'No offers waiting.',
+    seller: 'Seller',
+    offerId: 'Offer reference',
+    loggedOutTitle: 'Your shop starts here.',
+    loggedOutBody:
+      'Find your offers and prepare your presence on Atlas DZ. Production seller sign-in is not configured yet.',
+    localLink: 'Open the local test session',
+    localTitle: 'Local test accounts',
+    localBody:
+      'These synthetic accounts only check the journeys on this computer. They do not create a real account.',
+    sellerLogin: 'Continue as the test seller',
+    adminLogin: 'Continue as the test administrator',
+    localBadge: 'LOCAL · Synthetic data',
+    errorTitle: 'The workspace is briefly unavailable.',
+    retry: 'Try again',
+    reconnect: 'Back to sign-in',
+    accessTitle: 'Sign-in or permission required.',
+    accessBody: 'Your session expired or this account cannot access this area.',
+    invalid:
+      'Check the product, price, stock and terms. Use positive amounts with at most two decimals.',
+    forbidden: 'This account does not have the required permission.',
+    unauthorized: 'Your session expired. Sign in again to continue.',
+    conflict: 'This offer already exists or its status changed. Refresh the list before trying again.',
+    unavailable: 'The service is not responding. Try again in a moment.',
+    csrf: 'The request could not be verified. Reload this page and try again.',
+    localDisabled: 'Test accounts are disabled in this environment.',
+    PENDING_REVIEW: 'Under review',
+    APPROVED: 'Live',
+    REJECTED: 'Refused',
+    SUSPENDED: 'Suspended',
   },
   ar: {
     editOffer: 'تعديل السعر والمخزون',

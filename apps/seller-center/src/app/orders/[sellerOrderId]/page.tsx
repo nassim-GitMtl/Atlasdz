@@ -10,7 +10,7 @@ import { ProcessOrderForm } from '@/components/process-order-form';
 import { CustomerSignalPanel } from '@/components/customer-signal';
 import { customerSignal } from '@/lib/auth';
 import { getSellerOrder } from '@/lib/api';
-import { href, localeFrom, money, type SearchParams } from '@/lib/i18n';
+import { href, localeFrom, money, type SearchParams, localized, lang } from '@/lib/i18n';
 import { liveCheckoutEnabled, orderDate, orderText } from '@/lib/orders-copy';
 import { localAccountsEnabled } from '@/lib/security';
 import { accessToken } from '@/lib/session';
@@ -53,7 +53,7 @@ export default async function OrderDetail({
             <CustomerSignalPanel signal={signal} locale={locale} />
           )}
           <Link href={`${href('/support', locale)}&sellerOrderId=${sellerOrderId}`}>
-            {locale === 'ar' ? 'طلبات المساعدة والإرجاع' : 'Demandes d’aide et de retour'}
+            {lang(locale, 'Demandes d’aide et de retour', 'طلبات المساعدة والإرجاع', 'Help and return requests')}
           </Link>
           <p>
             {t.id}: <bdi className="mono">{result.order.id}</bdi>
@@ -61,7 +61,7 @@ export default async function OrderDetail({
           <ul className="seller-order-items">
             {result.order.snapshot.items.map((item) => (
               <li key={item.offerId}>
-                <h3>{item.title[locale]}</h3>
+                <h3>{localized(item.title, locale)}</h3>
                 <p>
                   {t.quantity}: {item.quantity} · {t.unit}:{' '}
                   <bdi>{money(item.unitPriceMinor, locale)}</bdi>
@@ -71,7 +71,7 @@ export default async function OrderDetail({
           </ul>
           {result.order.snapshot.deliveryRate && (
             <div className="notice">
-              <p>{result.order.snapshot.deliveryRate.destination.name[locale]}</p>
+              <p>{localized(result.order.snapshot.deliveryRate.destination.name, locale)}</p>
               <p>
                 {deliveryCopy[locale].collector}{' '}
                 {deliveryCopy[locale][result.order.snapshot.deliveryRate.codCollector]}
