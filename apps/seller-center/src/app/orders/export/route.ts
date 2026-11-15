@@ -32,7 +32,7 @@ export async function GET() {
       .map(cell)
       .join(','),
   );
-  const csv = `﻿${[header.map(cell).join(','), ...lines].join('\r\n')}\r\n`;
+  const csv = `\uFEFF${[header.map(cell).join(','), ...lines].join('\r\n')}\r\n`;
   return new NextResponse(csv, {
     headers: {
       'content-type': 'text/csv; charset=utf-8',
