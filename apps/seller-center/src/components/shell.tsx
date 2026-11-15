@@ -29,8 +29,8 @@ import { adminCopy } from '@/lib/admin-copy';
 import { accountKind } from '@/lib/session';
 
 const groups = {
-  fr: { shop: 'Ma boutique', staff: 'Équipe Atlas DZ', dashboard: 'Tableau de bord', notifications: 'Notifications', offers: 'Offres à valider' },
-  ar: { shop: 'متجري', staff: 'فريق Atlas DZ', dashboard: 'لوحة التحكم', notifications: 'الإشعارات', offers: 'عروض للمراجعة' },
+  fr: { shop: 'Ma boutique', staff: 'Équipe Atlas DZ', dashboard: 'Tableau de bord', notifications: 'Notifications', offers: 'Offres à valider', account: 'Mon compte', escalations: 'Demandes escaladées' },
+  ar: { shop: 'متجري', staff: 'فريق Atlas DZ', dashboard: 'لوحة التحكم', notifications: 'الإشعارات', offers: 'عروض للمراجعة', account: 'حسابي', escalations: 'طلبات مُصعَّدة' },
 } as const;
 
 interface NavItem {
@@ -103,9 +103,11 @@ export async function Shell({
     { path: '/moderation/sellers', label: authCopy[locale].sellerRequests, Icon: Storefront },
     { path: '/admin', label: adminCopy[locale].nav, Icon: Gauge },
   ];
+  // Sellers already reach support from their own menu.
+  if (kind === 'staff') staff.splice(3, 0, { path: '/support', label: g.escalations, Icon: Lifebuoy });
   const common: NavItem[] = [
     { path: '/notifications', label: g.notifications, Icon: Bell },
-    { path: '/account', label: authCopy[locale].accountTitle, Icon: UserCircle },
+    { path: '/account', label: kind === 'staff' ? g.account : authCopy[locale].accountTitle, Icon: UserCircle },
   ];
   const isStaff = kind === 'staff';
   return (

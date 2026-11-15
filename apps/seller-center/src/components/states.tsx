@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { copy, href, type Locale } from '@/lib/i18n';
 import { SellerApiError } from '@/lib/api';
+import { AdminApiError } from '@/lib/admin';
 
 export function ServiceState({
   error,
@@ -12,8 +13,10 @@ export function ServiceState({
   readonly retryPath: string;
 }) {
   const t = copy[locale];
+  // Both API clients report a refused session or missing permission the same way.
   const access =
-    error instanceof SellerApiError && ['unauthorized', 'forbidden'].includes(error.code);
+    (error instanceof SellerApiError || error instanceof AdminApiError) &&
+    ['unauthorized', 'forbidden'].includes(error.code);
   return (
     <section className="empty-state">
       <span className="empty-icon" aria-hidden="true">

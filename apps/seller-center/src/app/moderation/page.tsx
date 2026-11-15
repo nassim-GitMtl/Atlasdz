@@ -1,3 +1,4 @@
+import { fill } from '@/lib/dashboard-copy';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { ApproveForm } from '@/components/forms';
@@ -7,6 +8,31 @@ import { listPendingOffers, listProducts, listReviewProducts } from '@/lib/api';
 import { copy, href, localeFrom, money, type SearchParams } from '@/lib/i18n';
 import { localAccountsEnabled } from '@/lib/security';
 import { accessToken } from '@/lib/session';
+
+const queueCopy = {
+  fr: {
+    pending: '{n} en attente',
+    product: 'Produit',
+    price: 'Prix',
+    stock: 'Stock',
+    terms: 'Délai',
+    action: 'Décision',
+    handling: 'En stock · préparation {n} j',
+    preorder: 'Pré-commande · {min}–{max} j',
+    note: 'Valider rend l’offre visible sur la fiche produit. Le vendeur reste responsable de l’envoi et de l’encaissement à la livraison.',
+  },
+  ar: {
+    pending: '{n} قيد الانتظار',
+    product: 'المنتج',
+    price: 'السعر',
+    stock: 'المخزون',
+    terms: 'المهلة',
+    action: 'القرار',
+    handling: 'متوفر · تحضير {n} يوم',
+    preorder: 'طلب مسبق · {min}–{max} يوم',
+    note: 'الموافقة تجعل العرض ظاهرًا في صفحة المنتج. يبقى البائع مسؤولًا عن الشحن والتحصيل عند الاستلام.',
+  },
+} as const;
 
 export default async function Moderation({
   searchParams,
@@ -31,6 +57,7 @@ export default async function Moderation({
       error: undefined,
     }))
     .catch((error: unknown) => ({ offers: [], products: [], entries: [], error }));
+  const q = queueCopy[locale];
   return (
     <Shell locale={locale} currentPath="/moderation" signedIn local={local}>
       {result.error ? (
@@ -58,48 +85,58 @@ export default async function Moderation({
               <h2>{t.noReview}</h2>
             </section>
           ) : (
-            <div className="review-grid">
-              {result.offers.map((offer) => {
-                const product = result.entries.find((item) => item.id === offer.productId);
-                const seller = result.products
-                  .flatMap((item) => item.offers)
-                  .find((item) => item.seller.id === offer.sellerId)?.seller;
-                return (
-                  <article className="review-card" key={offer.id}>
-                    <div className="review-card-top">
-                      <span className="badge">{t.PENDING_REVIEW}</span>
-                      <span className="product-marker" aria-hidden="true">
-                        {product?.title[locale].slice(0, 1) ?? 'A'}
-                      </span>
-                    </div>
-                    <h2>{product?.title[locale] ?? offer.productId}</h2>
-                    <p className="seller-name">
-                      {t.seller}: {seller?.name ?? offer.sellerId}
-                    </p>
-                    <dl className="review-details">
-                      <div>
-                        <dt>{t.price}</dt>
-                        <dd>{money(offer.priceMinor, locale)}</dd>
-                      </div>
-                      <div>
-                        <dt>{t.quantity}</dt>
-                        <dd>{offer.availableQuantity}</dd>
-                      </div>
-                      <div>
-                        <dt>{t.handling}</dt>
-                        <dd>{offer.handlingDays}</dd>
-                      </div>
-                      <div>
-                        <dt>{t.delivery}</dt>
-                        <dd>{money(offer.deliveryFeeMinor, locale)}</dd>
-                      </div>
-                    </dl>
-                    <small className="mono">{offer.id}</small>
-                    <ApproveForm locale={locale} offerId={offer.id} />
-                  </article>
-                );
-              })}
-            </div>
+            <section className="panel" aria-labelledby="queue-title">
+              <div className="panel-head">
+                <h2 id="queue-title">{t.review}</h2>
+                <span>{fill(q.pending, { n: result.offers.length })}</span>
+              </div>
+              <div className="table-scroll">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">{q.product}</th>
+                      <th scope="col">{t.seller}</th>
+                      <th scope="col" className="num">{q.price}</th>
+                      <th scope="col" className="num">{q.stock}</th>
+                      <th scope="col">{q.terms}</th>
+                      <th scope="col"><span className="sr-only">{q.action}</span></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {result.offers.map((offer) => {
+                      const product = result.entries.find((item) => item.id === offer.productId);
+                      const seller = result.products
+                        .flatMap((item) => item.offers)
+                        .find((item) => item.seller.id === offer.sellerId)?.seller;
+                      return (
+                        <tr key={offer.id}>
+                          <td>
+                            <strong>{product?.title[locale] ?? offer.productId}</strong>
+                            <small className="mono row-ref" title={offer.id}>
+                              {offer.id.slice(0, 8)}
+                            </small>
+                          </td>
+                          <td>{seller?.name ?? offer.sellerId}</td>
+                          <td className="num strong">
+                            <bdi>{money(offer.priceMinor, locale)}</bdi>
+                          </td>
+                          <td className="num">{offer.availableQuantity}</td>
+                          <td>
+                            {offer.preorder
+                              ? fill(q.preorder, { min: offer.preorder.minDays, max: offer.preorder.maxDays })
+                              : fill(q.handling, { n: offer.handlingDays })}
+                          </td>
+                          <td className="end">
+                            <ApproveForm locale={locale} offerId={offer.id} />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <p className="panel-note">{q.note}</p>
+            </section>
           )}
         </>
       )}

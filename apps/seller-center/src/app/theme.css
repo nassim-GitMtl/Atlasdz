@@ -119,3 +119,10 @@ body { background: var(--surface); }
 .notice { border-radius: 12px; border-color: var(--line); background: var(--soft); font-size: 14px; }
 .eyebrow { color: var(--blue); }
 .badge { width: fit-content; }
+.row-ref { display: block; margin-top: 2px; color: var(--muted); font-size: 12px; }
+.tabs { display: flex; gap: 4px; margin: 4px 0 16px; border-bottom: 1px solid var(--line); }
+.tabs a { min-height: 44px; display: flex; align-items: center; padding: 0 14px; font-size: 14px; font-weight: 800; color: var(--muted); border-bottom: 3px solid transparent; }
+.tabs a[aria-current='page'] { color: var(--blue-hover); border-bottom-color: var(--blue); }
+.alert-box { padding: 16px 18px; border-radius: 12px; background: #fdecec; color: var(--danger); font-weight: 600; }
+.alert-box p { margin: 0 0 10px; }
+.alert-actions { display: flex; flex-wrap: wrap; gap: 8px; }

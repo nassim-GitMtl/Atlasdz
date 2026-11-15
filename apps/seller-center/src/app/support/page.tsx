@@ -5,12 +5,20 @@ import { redirect } from 'next/navigation';
 import { UuidSchema } from '@atlas/contracts';
 import { Shell } from '@/components/shell';
 import { SupportForm } from '@/components/support-form';
-import { accessToken } from '@/lib/session';
+import { accessToken, accountKind } from '@/lib/session';
 import { localAccountsEnabled } from '@/lib/security';
 import { getSupport, getOrderSupport, listSupport } from '@/lib/api';
 import { supportCopy } from '@/lib/support-copy';
 import { orderDate } from '@/lib/orders-copy';
 import { href, localeFrom, type SearchParams } from '@/lib/i18n';
+/** Open: needs an answer; escalated: needs staff; waiting or resolved: nothing to do now. */
+function caseTone(status: string): 'action' | 'bad' | 'wait' | 'good' {
+  if (status === 'OPEN') return 'action';
+  if (status === 'ESCALATED') return 'bad';
+  if (status === 'RESOLVED') return 'good';
+  return 'wait';
+}
+
 export default async function Support({
   searchParams,
 }: {
@@ -22,8 +30,9 @@ export default async function Support({
   const token = await accessToken();
   if (!token) redirect(href('/', locale));
   const local = localAccountsEnabled(process.env, (await headers()).get('host'));
-  const staff = query.staff === '1';
-  const base = `${href('/support', locale)}${staff ? '&staff=1' : ''}`;
+  // Staff open on escalations; anyone can switch with the tabs (the API decides access).
+  const staff = query.staff === '1' || (query.staff === undefined && (await accountKind()) === 'staff');
+  const base = `${href('/support', locale)}&staff=${staff ? '1' : '0'}`;
   const caseId = typeof query.caseId === 'string' ? query.caseId : undefined;
   const orderId = typeof query.sellerOrderId === 'string' ? query.sellerOrderId : undefined;
   const result = await (async () => {
@@ -55,17 +64,25 @@ export default async function Support({
     <Shell locale={locale} currentPath="/support" signedIn local={local}>
       <h1>{staff ? t.staff : t.title}</h1>
       <p className="notice">{t.notice}</p>
-      <Link href={href('/support', locale)}>{t.seller}</Link>
-      {' · '}
-      <Link href={`${href('/support', locale)}&staff=1`}>{t.staff}</Link>
+      <nav className="tabs" aria-label={t.title}>
+        <Link href={`${href('/support', locale)}&staff=0`} aria-current={staff ? undefined : 'page'}>
+          {t.seller}
+        </Link>
+        <Link href={`${href('/support', locale)}&staff=1`} aria-current={staff ? 'page' : undefined}>
+          {t.staff}
+        </Link>
+      </nav>
       {result.error ? (
-        <div role="alert">
+        <div role="alert" className="alert-box">
           <p>{t.loadError}</p>
-          <a href={base}>{t.refresh}</a>
-          {' · '}
-          <Link href={href('/login', locale)}>
-            {locale === 'ar' ? 'تسجيل الدخول' : 'Se connecter'}
-          </Link>
+          <div className="alert-actions">
+            <a className="button secondary small" href={base}>
+              {t.refresh}
+            </a>
+            <Link className="button secondary small" href={href('/login', locale)}>
+              {locale === 'ar' ? 'تسجيل الدخول' : 'Se connecter'}
+            </Link>
+          </div>
         </div>
       ) : item && result.detail ? (
         <article className="seller-order-card">
@@ -108,18 +125,22 @@ export default async function Support({
           )}
         </article>
       ) : (
-        <section className="offers-panel">
+        <section className="seller-order-list">
           {result.list?.items.length ? (
             result.list.items.map((c) => (
               <article className="seller-order-card" key={c.id}>
-                <Link href={`${base}&caseId=${c.id}`}>
-                  {c.sellerName} · {t[c.category]}
-                </Link>
-                <p>{t[c.status]}</p>
+                <div className="order-row__head">
+                  <h2>
+                    <Link href={`${base}&caseId=${c.id}`}>
+                      {c.sellerName} · {t[c.category]}
+                    </Link>
+                  </h2>
+                  <span className={`badge badge--${caseTone(c.status)}`}>{t[c.status]}</span>
+                </div>
               </article>
             ))
           ) : (
-            <p>{t.empty}</p>
+            <p className="panel-empty">{t.empty}</p>
           )}
           {result.list?.nextCursor && (
             <Link href={`${base}&cursor=${encodeURIComponent(result.list.nextCursor)}`}>
