@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 
 import {
+  CatalogCategoryListSchema,
   CatalogProductListSchema,
   CatalogCategorySchema,
   CatalogEntrySchema,
@@ -22,6 +23,7 @@ import {
   UpdateOfferInputSchema,
   UuidSchema,
   type CatalogProduct,
+  type CatalogCategoryList,
   type CatalogProductList,
   type CatalogSeller,
   type CreateOfferInput,
@@ -71,7 +73,10 @@ const PUBLIC_PRODUCTS = `
       'availableQuantity', o.available_quantity, 'handlingDays', o.handling_days,
       'deliveryFeeMinor', o.delivery_fee_minor,
       'preorder', CASE WHEN o.preorder THEN jsonb_build_object('minDays', o.preorder_min_days, 'maxDays', o.preorder_max_days, 'origin', o.preorder_origin) ELSE NULL END
-    ) ORDER BY o.price_minor, o.id) AS items
+    ) ORDER BY o.price_minor, o.id) AS items,
+      min(o.price_minor + o.delivery_fee_minor) AS best_total,
+      min(o.handling_days) AS fastest_days,
+      bool_or(o.available_quantity > 0) AS in_stock
     FROM (
       SELECT offer.*, s.slug AS seller_slug, s.name AS seller_name
       FROM offers.offers offer
@@ -550,20 +555,64 @@ export class PostgresCatalogRepository {
     });
   }
 
+  /**
+   * One page of the public catalogue, sorted and filtered in the database (so sorting covers
+   * every product, not just the first page), with the total number of matches.
+   */
   public async listProducts(input: ListProductsInput = {}): Promise<CatalogProductList> {
     const parsed = ListProductsInputSchema.parse(input);
-    const result = await this.pool.query<{ product: unknown }>(
+    const pageSize = parsed.limit ?? 24;
+    const page = parsed.page ?? 1;
+    const order = {
+      // In-stock products first; with a search, title matches before description matches.
+      recommended: `public_offers.in_stock DESC,
+        CASE WHEN $1::text IS NOT NULL AND (p.title_fr ILIKE $1 OR p.title_ar ILIKE $1) THEN 0 ELSE 1 END,
+        p.slug`,
+      'price-asc': 'public_offers.best_total ASC, p.slug',
+      'price-desc': 'public_offers.best_total DESC, p.slug',
+      fastest: 'public_offers.fastest_days ASC, public_offers.best_total ASC, p.slug',
+      newest: 'p.created_at DESC, p.slug',
+    }[parsed.sort ?? 'recommended'];
+    const filter = parsed.available ? 'AND public_offers.in_stock' : '';
+    const values = [
+      parsed.query ? `%${escapeCatalogSearch(parsed.query)}%` : null,
+      parsed.category ?? null,
+      parsed.seller ?? null,
+    ];
+    const result = await this.pool.query<{ product: unknown; total: string }>(
       `
-      SELECT ${PRODUCT_JSON} ${PUBLIC_PRODUCTS} ORDER BY p.slug, p.id LIMIT $4
+      SELECT ${PRODUCT_JSON}, count(*) OVER () AS total ${PUBLIC_PRODUCTS} ${filter}
+      ORDER BY ${order}, p.id LIMIT $4 OFFSET $5
     `,
-      [
-        parsed.query ? `%${escapeCatalogSearch(parsed.query)}%` : null,
-        parsed.category ?? null,
-        parsed.seller ?? null,
-        parsed.limit ?? 24,
-      ],
+      [...values, pageSize, (page - 1) * pageSize],
     );
-    return CatalogProductListSchema.parse({ items: result.rows.map((row) => row.product) });
+    let total = Number(result.rows[0]?.total ?? 0);
+    if (result.rows.length === 0 && page > 1) {
+      const counted = await this.pool.query<{ total: string }>(
+        `SELECT count(*) AS total ${PUBLIC_PRODUCTS} ${filter}`,
+        values,
+      );
+      total = Number(counted.rows[0]?.total ?? 0);
+    }
+    return CatalogProductListSchema.parse({
+      items: result.rows.map((row) => row.product),
+      total,
+      page,
+      pageSize,
+    });
+  }
+
+  /** Categories with at least one product on sale, for browsing filters. */
+  public async listCategories(): Promise<CatalogCategoryList> {
+    const result = await this.pool.query<{ category: unknown }>(
+      `SELECT jsonb_build_object('slug', c.slug,
+         'title', jsonb_build_object('fr', c.title_fr, 'ar', c.title_ar),
+         'productCount', count(*)) AS category
+       ${PUBLIC_PRODUCTS}
+       GROUP BY c.id, c.slug, c.title_fr, c.title_ar ORDER BY c.slug`,
+      [null, null, null],
+    );
+    return CatalogCategoryListSchema.parse({ items: result.rows.map((row) => row.category) });
   }
 
   public async getProduct(slug: string): Promise<CatalogProduct | null> {

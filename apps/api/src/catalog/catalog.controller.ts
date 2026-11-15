@@ -1,5 +1,6 @@
 import { CatalogWriteError } from '@atlas/catalog';
 import {
+  CatalogCategoryListSchema,
   CatalogProductListSchema,
   CatalogProductSchema,
   CatalogSellerSchema,
@@ -55,12 +56,21 @@ export class CatalogController {
 
   @Get('products')
   public async list(@Query() query: Record<string, unknown>) {
+    const number = (key: string) =>
+      typeof query[key] === 'string' ? { [key]: Number(query[key]) } : {};
     const parsed = ListProductsInputSchema.safeParse({
       ...query,
-      ...(typeof query['limit'] === 'string' ? { limit: Number(query['limit']) } : {}),
+      ...number('limit'),
+      ...number('page'),
+      ...(query['available'] === undefined ? {} : { available: query['available'] === 'true' }),
     });
     if (!parsed.success) throw new SafeApplicationError('VALIDATION_FAILED');
     return CatalogProductListSchema.parse(await this.catalog.listProducts(parsed.data));
+  }
+
+  @Get('categories')
+  public async categories() {
+    return CatalogCategoryListSchema.parse(await this.catalog.listCategories());
   }
 
   @Get('products/:slug')

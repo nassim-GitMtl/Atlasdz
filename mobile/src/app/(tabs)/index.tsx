@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
   FlatList,
   Pressable,
@@ -13,16 +13,24 @@ import {
 
 import { Photo } from '@/components/photo';
 import { ProductCard, SummaryCard } from '@/components/product-card';
-import { Empty, LoadState, Segmented } from '@/components/ui';
+import { Button, Empty, LoadState, Segmented } from '@/components/ui';
 import { api } from '@/lib/api';
-import { categoryImage, sortProducts, type SortMode } from '@/lib/collections';
+import { categoryImage, type SortMode } from '@/lib/collections';
 import { imageUri } from '@/lib/config';
 import { fill, localized } from '@/lib/format';
 import { useI18n } from '@/lib/i18n';
 import { useLibrary } from '@/lib/library';
 import { colors, gap, radius } from '@/lib/theme';
-import type { CatalogProductList } from '@/lib/types';
+import type { CatalogCategoryList, CatalogProduct, CatalogProductList } from '@/lib/types';
+import { usePaged } from '@/lib/use-paged';
 import { useRequest } from '@/lib/use-request';
+
+const SERVER_SORT: Record<SortMode, string> = {
+  relevance: 'recommended',
+  priceAsc: 'price-asc',
+  priceDesc: 'price-desc',
+};
+type ProductPage = CatalogProductList & { readonly nextCursor: string | null };
 
 export default function HomeScreen() {
   const { t, locale } = useI18n();
@@ -32,27 +40,26 @@ export default function HomeScreen() {
   const [category, setCategory] = useState<string | null>(null);
   const [sort, setSort] = useState<SortMode>('relevance');
 
-  // The full catalogue gives the categories; a search or category loads a filtered list.
-  const all = useRequest('all', () =>
-    api<CatalogProductList>('/api/v1/catalog/products?limit=100'),
+  // Every category with products on sale, and pages of products sorted by the API across the
+  // whole catalogue (more load as the shopper scrolls).
+  const categoryList = useRequest('categories', () =>
+    api<CatalogCategoryList>('/api/v1/catalog/categories'),
   );
-  const params = new URLSearchParams({ limit: '100' });
+  const categories = (categoryList.data?.items ?? []).map(
+    (item) => [item.slug, localized(item.title, locale)] as const,
+  );
+  const params = new URLSearchParams({ limit: '24', sort: SERVER_SORT[sort] });
   if (query) params.set('query', query);
   if (category) params.set('category', category);
-  const filteredKey = query || category ? params.toString() : null;
-  const filtered = useRequest(filteredKey, () =>
-    api<CatalogProductList>(`/api/v1/catalog/products?${params.toString()}`),
-  );
-  const shown = filteredKey ? filtered : all;
-  const products = useMemo(() => sortProducts(shown.data?.items ?? [], sort), [shown.data, sort]);
-
-  const categories = useMemo(() => {
-    const seen = new Map<string, string>();
-    for (const product of all.data?.items ?? []) {
-      seen.set(product.category.slug, localized(product.category.title, locale));
-    }
-    return [...seen.entries()];
-  }, [all.data, locale]);
+  const shown = usePaged<CatalogProduct, ProductPage>(params.toString(), async (cursor) => {
+    const page = Number(cursor ?? '1');
+    const list = await api<CatalogProductList>(
+      `/api/v1/catalog/products?${params.toString()}&page=${page}`,
+    );
+    const total = list.total ?? list.items.length;
+    return { ...list, nextCursor: page * (list.pageSize ?? 24) < total ? String(page + 1) : null };
+  });
+  const products = shown.items;
 
   const header = (
     <View style={styles.header}>
@@ -126,7 +133,7 @@ export default function HomeScreen() {
           </ScrollView>
         </>
       ) : null}
-      {!filteredKey && library.recent.length > 0 ? (
+      {!query && !category && library.recent.length > 0 ? (
         <>
           <Text style={styles.section}>{t.home.recent}</Text>
           <ScrollView
@@ -150,7 +157,9 @@ export default function HomeScreen() {
         onChange={setSort}
       />
       {shown.data ? (
-        <Text style={styles.count}>{fill(t.home.results, { n: products.length })}</Text>
+        <Text style={styles.count}>
+          {fill(t.home.results, { n: shown.data.total ?? products.length })}
+        </Text>
       ) : null}
       <LoadState
         loading={shown.loading && !shown.data}
@@ -173,6 +182,18 @@ export default function HomeScreen() {
         shown.data ? <Empty icon="search-outline" text={t.home.empty} /> : undefined
       }
       renderItem={({ item }) => <ProductCard product={item} />}
+      onEndReached={() => void shown.loadMore()}
+      onEndReachedThreshold={0.5}
+      ListFooterComponent={
+        shown.hasMore ? (
+          <Button
+            label={t.home.more}
+            variant="secondary"
+            busy={shown.loadingMore}
+            onPress={() => void shown.loadMore()}
+          />
+        ) : undefined
+      }
       refreshControl={
         <RefreshControl
           refreshing={shown.loading && !!shown.data}

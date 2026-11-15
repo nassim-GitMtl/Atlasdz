@@ -1,7 +1,8 @@
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { CatalogResults } from '@/components/catalog-results';
 import { SiteChrome } from '@/components/site-chrome';
-import { getProducts } from '@/lib/catalog-api';
+import { getCategories, getProductPage } from '@/lib/catalog-api';
+import { parseSort } from '@/lib/catalog-view';
 import { firstParam, resolveLocale, text, type SearchParams } from '@/lib/i18n';
 
 export default async function CategoryPage({
@@ -16,11 +17,18 @@ export default async function CategoryPage({
   const query = firstParam(queryParams.query)?.trim();
   const sort = firstParam(queryParams.sort);
   const availableOnly = firstParam(queryParams.available) === '1';
-  const [products, allProducts] = await Promise.all([
-    getProducts({ category: slug, query }),
-    getProducts(),
+  const pageNumber = Math.min(1000, Math.max(1, Number(firstParam(queryParams.page)) || 1));
+  const [results, categories] = await Promise.all([
+    getProductPage({
+      category: slug,
+      query,
+      sort: parseSort(sort),
+      available: availableOnly,
+      page: pageNumber,
+    }),
+    getCategories().catch(() => []),
   ]);
-  const category = allProducts.find((product) => product.category.slug === slug)?.category;
+  const category = categories.find((item) => item.slug === slug);
   const title = category ? text(category.title, locale) : slug.replaceAll('-', ' ');
 
   return (
@@ -33,11 +41,11 @@ export default async function CategoryPage({
       <div className="page-shell">
         <Breadcrumbs locale={locale} items={[{ label: title }]} />
         <CatalogResults
-          allProducts={allProducts}
+          results={results}
+          categories={categories}
           availableOnly={availableOnly}
           category={slug}
           locale={locale}
-          products={products}
           query={query}
           sort={sort}
           title={title}

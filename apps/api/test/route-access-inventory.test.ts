@@ -109,6 +109,7 @@ describe('route access inventory', () => {
       'AdminSupportController.list:permission-protected',
       'CartController.get:permission-protected',
       'CartController.set:permission-protected',
+      'CatalogController.categories:public',
       'CatalogController.list:public',
       'CatalogController.product:public',
       'CatalogController.seller:public',

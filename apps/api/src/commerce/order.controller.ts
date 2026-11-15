@@ -24,10 +24,6 @@ import {
   Req,
 } from '@nestjs/common';
 import {
-  MARKETPLACE_NOTIFIER,
-  type MarketplaceNotifier,
-} from '../notifications/marketplace-notifier.js';
-import {
   getRequestPrincipal,
   RequirePermission,
   type AuthenticatedRequest,
@@ -73,9 +69,6 @@ async function mapped<T>(operation: () => Promise<T>): Promise<T> {
 export class CheckoutController {
   constructor(
     @Inject(ORDER_REPOSITORY) private readonly orders: OrderRepositoryPort,
-    @Optional()
-    @Inject(MARKETPLACE_NOTIFIER)
-    private readonly notifier: MarketplaceNotifier | null = null,
     @Optional()
     @Inject(LOCAL_CHECKOUT_POLICY)
     private readonly policy: CheckoutPolicy | null = null,
@@ -150,7 +143,6 @@ export class CheckoutController {
     const order = await mapped(async () =>
       CustomerOrderSchema.parse(await this.orders.place(owner, quote, req.correlationId)),
     );
-    if (!placed) this.notifier?.ordersPlaced(order, owner);
     return order;
   }
 }
@@ -226,9 +218,6 @@ export class SellerOrdersController {
   constructor(
     @Inject(ORDER_REPOSITORY) private readonly orders: OrderRepositoryPort,
     @Optional()
-    @Inject(MARKETPLACE_NOTIFIER)
-    private readonly notifier: MarketplaceNotifier | null = null,
-    @Optional()
     @Inject(COD_RISK)
     private readonly risk: CodRiskService | null = null,
   ) {}
@@ -242,7 +231,6 @@ export class SellerOrdersController {
     return result;
   }
   private notify(order: SellerOrder): SellerOrder {
-    this.notifier?.sellerOrderChanged(order);
     return order;
   }
   @Post(':sellerOrderId/transition')

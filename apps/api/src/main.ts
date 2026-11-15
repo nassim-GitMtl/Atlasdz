@@ -92,6 +92,7 @@ const dispatcher = new OutboxDispatcher(
   app.get(SharedDatabasePool).pool,
   app.get<MarketplaceNotifier>(MARKETPLACE_NOTIFIER),
   logger,
+  app.get<OrderRepositoryPort>(ORDER_REPOSITORY),
 );
 dispatcher.start();
 let shuttingDown = false;

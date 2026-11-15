@@ -79,8 +79,11 @@ Real cash-on-delivery orders are **off** until you set `ATLAS_LIVE_CHECKOUT=true
 
 ### Monitoring
 
-Install the monitor once (checks HTTPS, containers, database readiness, disk, backup age and API
-error spikes every 5 minutes; emails `ALERT_EMAIL` through `secrets/smtp-url`, at most hourly):
+Install the monitor once (checks HTTPS, containers, database readiness, disk, backup age, API
+error spikes and order emails failed or stuck in the outbox every 5 minutes; emails
+`ALERT_EMAIL` through `secrets/smtp-url`, at most hourly). Order emails (new order, status,
+buyer cancellation, a reminder after 6 h without acceptance) go through the outbox and retry
+with backoff; the staff dashboard shows the same stuck count and the 30-day order funnel.
 
 ```sh
 ( crontab -l 2>/dev/null; echo '*/5 * * * * /opt/atlas-src/infra/release/vps/monitor.sh >> /var/log/atlas-monitor.log 2>&1' ) | crontab -

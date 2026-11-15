@@ -45,6 +45,12 @@ docker exec atlas-release-api-1 node -e \
   "fetch('http://127.0.0.1:3000/health/ready').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))" \
   || problems+=("API readiness check failed (database unreachable?)")
 
+# Order emails (new order, status, reminders) that failed or have waited over 30 minutes.
+stuck="$(docker exec atlas-release-postgres-1 psql -U atlas_owner -d atlas -tAc \
+  "SELECT count(*) FROM platform.outbox_events WHERE delivery_state = 'FAILED' OR (delivery_state = 'PENDING' AND occurred_at < now() - interval '30 minutes')" \
+  2>/dev/null | tr -d '[:space:]')"
+[ "${stuck:-0}" = 0 ] || problems+=("$stuck order email(s) failed or stuck in the outbox")
+
 # Disk space.
 used="$(df -P / | awk 'NR==2 {gsub("%","",$5); print $5}')"
 [ "${used:-0}" -lt 85 ] || problems+=("root disk ${used}% full")

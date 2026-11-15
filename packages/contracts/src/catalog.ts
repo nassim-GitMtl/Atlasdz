@@ -70,14 +70,49 @@ export const CatalogProductSchema = z
   .strict();
 
 export const CatalogProductListSchema = z
-  .object({ items: z.array(CatalogProductSchema).max(100) })
+  .object({
+    items: z.array(CatalogProductSchema).max(100),
+    /** Matching products in the whole catalogue (not just this page). */
+    total: z.number().int().min(0).optional(),
+    page: z.number().int().min(1).optional(),
+    pageSize: z.number().int().min(1).max(100).optional(),
+  })
   .strict();
+export const CatalogSortSchema = z.enum([
+  'recommended',
+  'price-asc',
+  'price-desc',
+  'fastest',
+  'newest',
+]);
+export type CatalogSort = z.infer<typeof CatalogSortSchema>;
+/** Categories that currently have products on sale, with how many. */
+export const CatalogCategoryListSchema = z
+  .object({
+    items: z
+      .array(
+        z
+          .object({
+            slug: CatalogSlugSchema,
+            title: CatalogLocalizedTextSchema,
+            productCount: z.number().int().min(1),
+          })
+          .strict(),
+      )
+      .max(500),
+  })
+  .strict();
+export type CatalogCategoryList = z.infer<typeof CatalogCategoryListSchema>;
 export const ListProductsInputSchema = z
   .object({
     query: z.string().trim().max(120).optional(),
     category: CatalogSlugSchema.optional(),
     seller: CatalogSlugSchema.optional(),
     limit: z.number().int().min(1).max(100).optional(),
+    page: z.number().int().min(1).max(1000).optional(),
+    sort: CatalogSortSchema.optional(),
+    /** Only products with at least one offer in stock. */
+    available: z.boolean().optional(),
   })
   .strict();
 

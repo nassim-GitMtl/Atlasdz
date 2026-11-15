@@ -1,6 +1,7 @@
 import {
   CatalogProductListSchema,
   CatalogProductSchema,
+  CatalogCategoryListSchema,
   CatalogSellerSchema,
   DeliveryDestinationSchema,
   ReviewPageSchema,
@@ -129,4 +130,48 @@ export async function getDestinations() {
       'destinations',
     )
   ).items;
+}
+
+export interface ProductPage {
+  readonly items: CatalogProduct[];
+  /** Matches in the whole catalogue. */
+  readonly total: number;
+  readonly page: number;
+  readonly pageSize: number;
+}
+
+/** One page of results, sorted and filtered by the API across the whole catalogue. */
+export async function getProductPage(
+  filters: ProductFilters & {
+    readonly sort?: string | undefined;
+    readonly available?: boolean;
+    readonly page?: number;
+    readonly limit?: number;
+  } = {},
+): Promise<ProductPage> {
+  const query = new URLSearchParams();
+  if (filters.query) query.set('query', filters.query);
+  if (filters.category) query.set('category', filters.category);
+  if (filters.seller) query.set('seller', filters.seller);
+  if (filters.sort) query.set('sort', filters.sort);
+  if (filters.available) query.set('available', 'true');
+  if (filters.page && filters.page > 1) query.set('page', String(filters.page));
+  query.set('limit', String(filters.limit ?? 24));
+  const result = await requestJson(
+    `/api/v1/catalog/products?${query.toString()}`,
+    CatalogProductListSchema,
+    'product list',
+  );
+  return {
+    items: result.items,
+    total: result.total ?? result.items.length,
+    page: result.page ?? 1,
+    pageSize: result.pageSize ?? result.items.length,
+  };
+}
+
+/** Categories that have products on sale (the browsing filters). */
+export async function getCategories() {
+  return (await requestJson('/api/v1/catalog/categories', CatalogCategoryListSchema, 'categories'))
+    .items;
 }

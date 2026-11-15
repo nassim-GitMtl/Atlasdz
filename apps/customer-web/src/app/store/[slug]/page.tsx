@@ -6,7 +6,7 @@ import { ProductGrid } from '@/components/product-card';
 import { SiteChrome } from '@/components/site-chrome';
 import { ReviewsSection } from '@/components/reviews-section';
 import { EmptyState } from '@/components/states';
-import { CatalogNotFoundError, getProducts, getReviews, getSeller } from '@/lib/catalog-api';
+import { CatalogNotFoundError, getProductPage, getReviews, getSeller } from '@/lib/catalog-api';
 import { copy, resolveLocale, text, type SearchParams } from '@/lib/i18n';
 
 export default async function StorePage({
@@ -26,7 +26,7 @@ export default async function StorePage({
     throw error;
   }
   const [products, reviews] = await Promise.all([
-    getProducts({ seller: slug }),
+    getProductPage({ seller: slug, limit: 100 }).then((page) => page.items),
     getReviews('sellers', slug).catch(() => null),
   ]);
   const t = copy[locale];

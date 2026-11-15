@@ -1311,4 +1311,45 @@ describe('LOCAL/TEST synthetic identity with PostgreSQL and catalog HTTP', () =>
     );
     assert.equal(inStock.preorder ?? null, null);
   });
+
+  it('pages, sorts and counts the whole public catalogue, with category counts', async () => {
+    const http = () => request(app.getHttpServer());
+    type Page = {
+      items: { slug: string; offers: { priceMinor: number; deliveryFeeMinor: number }[] }[];
+      total: number;
+      page: number;
+      pageSize: number;
+    };
+    const get = async (q: string) =>
+      (await http().get(`/api/v1/catalog/products?${q}`).expect(200)).body as Page;
+    const all = await get('limit=100');
+    assert.equal(all.total, all.items.length);
+    assert.ok(all.total >= 3);
+    const best = (p: Page['items'][number]) =>
+      Math.min(...p.offers.map((o) => o.priceMinor + o.deliveryFeeMinor));
+    // Price order holds across pages, not just within the first one.
+    const first = await get('limit=2&page=1&sort=price-asc');
+    const second = await get('limit=2&page=2&sort=price-asc');
+    assert.equal(first.total, all.total);
+    assert.equal(first.items.length, 2);
+    const firstItem = first.items[1];
+    const secondItem = second.items[0];
+    assert.ok(firstItem && secondItem && best(firstItem) <= best(secondItem));
+    const beyond = await get(`limit=2&page=${all.total + 5}`);
+    assert.equal(beyond.items.length, 0);
+    assert.equal(beyond.total, all.total);
+    await http().get('/api/v1/catalog/products?sort=cheapest').expect(422);
+    await http().get('/api/v1/catalog/products?page=0').expect(422);
+    const categories = (await http().get('/api/v1/catalog/categories').expect(200)).body as {
+      items: { slug: string; productCount: number }[];
+    };
+    assert.equal(
+      categories.items.reduce((sum, category) => sum + category.productCount, 0),
+      all.total,
+    );
+    for (const category of categories.items) {
+      const inCategory = await get(`limit=100&category=${category.slug}`);
+      assert.equal(inCategory.total, category.productCount);
+    }
+  });
 });

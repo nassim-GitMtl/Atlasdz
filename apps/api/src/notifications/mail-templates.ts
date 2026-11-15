@@ -77,6 +77,40 @@ export function newSellerOrderMail(
       };
 }
 
+export function sellerOrderReminderMail(
+  to: string,
+  locale: Locale,
+  link: string,
+  totalDzd: string,
+  deadline: string,
+): MailMessage {
+  return locale === 'ar'
+    ? {
+        to,
+        subject: 'أطلس دي زد — تذكير: طلب في انتظار قبولك',
+        text: `مرحبًا،\n\nطلب بقيمة ${totalDzd} دج لا يزال في انتظار قبولك. بعد ${deadline} يُلغى تلقائيًا ويُبلَّغ الزبون:\n${link}\n\nأطلس دي زد`,
+      }
+    : {
+        to,
+        subject: 'Atlas DZ — Rappel : commande à accepter',
+        text: `Bonjour,\n\nUne commande de ${totalDzd} DA attend toujours votre réponse. Après le ${deadline}, elle sera annulée automatiquement et le client prévenu :\n${link}\n\nAtlas DZ`,
+      };
+}
+
+export function sellerOrderCancelledMail(to: string, locale: Locale, link: string): MailMessage {
+  return locale === 'ar'
+    ? {
+        to,
+        subject: 'أطلس دي زد — ألغى الزبون طلبًا',
+        text: `مرحبًا،\n\nألغى الزبون هذا الطلب. لا تحضّره ولا ترسله:\n${link}\n\nأطلس دي زد`,
+      }
+    : {
+        to,
+        subject: 'Atlas DZ — Commande annulée par le client',
+        text: `Bonjour,\n\nLe client a annulé cette commande : ne la préparez pas et ne l’expédiez pas.\n${link}\n\nAtlas DZ`,
+      };
+}
+
 export function verifyEmailMail(to: string, locale: Locale, link: string): MailMessage {
   return locale === 'ar'
     ? {

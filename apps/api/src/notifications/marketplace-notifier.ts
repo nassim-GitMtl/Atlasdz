@@ -7,6 +7,8 @@ import {
   customerOrderStatusMail,
   newSellerOrderMail,
   NOTIFIED_STATUSES,
+  sellerOrderCancelledMail,
+  sellerOrderReminderMail,
   guestAccountMail,
   passwordResetMail,
   sellerReviewedMail,
@@ -108,34 +110,100 @@ export class MarketplaceNotifier {
       .catch(() => this.logger.warn({ code: 'MAIL_LOOKUP_FAILED' }, 'verification email failed'));
   }
 
-  /** Customer emails for seller-driven status changes. */
-  public sellerOrderChanged(order: SellerOrder): void {
-    if (order.dataClass !== 'live') return;
-    if (!(NOTIFIED_STATUSES as readonly string[]).includes(order.status)) return;
-    const status = order.status as NotifiedStatus;
-    void this.identity
-      .customerForSellerOrder(order.id)
-      .then((contact) => {
-        if (contact === null) return;
-        deliver(
-          this.mailer,
-          this.logger,
-          customerOrderStatusMail(
-            contact.email,
-            contact.locale,
-            status,
-            order.snapshot.sellerName,
-            this.shopLink(`/orders/${contact.orderId}`, contact.locale),
-            status === 'SHIPPED' && order.shipment
-              ? {
-                  carrier: order.shipment.carrier,
-                  trackingReference: order.shipment.trackingReference,
-                }
-              : null,
-          ),
-        );
-      })
-      .catch(() => this.logger.warn({ code: 'MAIL_LOOKUP_FAILED' }, 'customer lookup failed'));
+  private sellerLink(sellerOrderId: string, locale: 'fr' | 'ar'): string {
+    return this.links.sellerWebOrigin
+      ? `${this.links.sellerWebOrigin}/orders/${sellerOrderId}?lang=${locale}`
+      : `/orders/${sellerOrderId}`;
+  }
+
+  private async sellerContact(sellerId: string) {
+    return (await this.identity.sellerContacts([sellerId])).find(
+      (contact) => contact.sellerId === sellerId,
+    );
+  }
+
+  // The methods below are awaited by the outbox dispatcher: a failure is retried there
+  // (with backoff) instead of being lost, and stays visible until it succeeds.
+
+  /** The seller learns about a new order and its acceptance deadline. */
+  public async newSellerOrder(order: SellerOrder): Promise<void> {
+    const contact = await this.sellerContact(order.snapshot.sellerId);
+    if (!contact) return;
+    await this.mailer.send(
+      newSellerOrderMail(
+        contact.email,
+        contact.locale,
+        this.sellerLink(order.id, contact.locale),
+        formatDzd(order.snapshot.totalMinor),
+        formatDate(order.acceptanceDeadline, contact.locale),
+      ),
+    );
+  }
+
+  /** One reminder when an order still waits for the seller's answer. */
+  public async sellerOrderReminder(order: SellerOrder): Promise<void> {
+    const contact = await this.sellerContact(order.snapshot.sellerId);
+    if (!contact) return;
+    await this.mailer.send(
+      sellerOrderReminderMail(
+        contact.email,
+        contact.locale,
+        this.sellerLink(order.id, contact.locale),
+        formatDzd(order.snapshot.totalMinor),
+        formatDate(order.acceptanceDeadline, contact.locale),
+      ),
+    );
+  }
+
+  /** The buyer cancelled: the seller must not prepare or ship it. */
+  public async sellerOrderCancelled(order: SellerOrder): Promise<void> {
+    const contact = await this.sellerContact(order.snapshot.sellerId);
+    if (!contact) return;
+    await this.mailer.send(
+      sellerOrderCancelledMail(
+        contact.email,
+        contact.locale,
+        this.sellerLink(order.id, contact.locale),
+      ),
+    );
+  }
+
+  /** The buyer's confirmation, listing every seller of the order. */
+  public async customerOrderPlaced(order: CustomerOrder, customerId: string): Promise<void> {
+    const contact = await this.identity.emailForUser(customerId);
+    if (contact === null) return;
+    await this.mailer.send(
+      customerOrderPlacedMail(
+        contact.email,
+        contact.locale,
+        this.shopLink(`/orders/${order.id}`, contact.locale),
+        formatDzd(order.quote.totalMinor),
+        order.sellerOrders.map((sellerOrder) => sellerOrder.snapshot.sellerName),
+      ),
+    );
+  }
+
+  /**
+   * Buyer emails for seller-driven status changes (accepted, shipped, delivered…). `status` is
+   * the one the event recorded: the order may have moved on before the email is sent.
+   */
+  public async customerOrderStatus(order: SellerOrder, eventStatus: string): Promise<void> {
+    if (!(NOTIFIED_STATUSES as readonly string[]).includes(eventStatus)) return;
+    const status = eventStatus as NotifiedStatus;
+    const contact = await this.identity.customerForSellerOrder(order.id);
+    if (contact === null) return;
+    await this.mailer.send(
+      customerOrderStatusMail(
+        contact.email,
+        contact.locale,
+        status,
+        order.snapshot.sellerName,
+        this.shopLink(`/orders/${contact.orderId}`, contact.locale),
+        status === 'SHIPPED' && order.shipment
+          ? { carrier: order.shipment.carrier, trackingReference: order.shipment.trackingReference }
+          : null,
+      ),
+    );
   }
 
   /** Awaited by the outbox dispatcher so a failed lookup is retried. */
@@ -152,54 +220,5 @@ export class MarketplaceNotifier {
         null,
       ),
     );
-  }
-
-  public ordersPlaced(order: CustomerOrder, customerId?: string): void {
-    if (order.paymentState !== 'CASH_ON_DELIVERY') return;
-    if (customerId !== undefined) {
-      void this.identity
-        .emailForUser(customerId)
-        .then((contact) => {
-          if (contact === null) return;
-          deliver(
-            this.mailer,
-            this.logger,
-            customerOrderPlacedMail(
-              contact.email,
-              contact.locale,
-              this.shopLink(`/orders/${order.id}`, contact.locale),
-              formatDzd(order.quote.totalMinor),
-              order.sellerOrders.map((sellerOrder) => sellerOrder.snapshot.sellerName),
-            ),
-          );
-        })
-        .catch(() => this.logger.warn({ code: 'MAIL_LOOKUP_FAILED' }, 'customer lookup failed'));
-    }
-    const sellerOrders = order.sellerOrders;
-    void this.identity
-      .sellerContacts(sellerOrders.map((sellerOrder) => sellerOrder.snapshot.sellerId))
-      .then((contacts) => {
-        for (const sellerOrder of sellerOrders) {
-          const contact = contacts.find((c) => c.sellerId === sellerOrder.snapshot.sellerId);
-          if (!contact) continue;
-          const link = this.links.sellerWebOrigin
-            ? `${this.links.sellerWebOrigin}/orders/${sellerOrder.id}?lang=${contact.locale}`
-            : `/orders/${sellerOrder.id}`;
-          deliver(
-            this.mailer,
-            this.logger,
-            newSellerOrderMail(
-              contact.email,
-              contact.locale,
-              link,
-              formatDzd(sellerOrder.snapshot.totalMinor),
-              formatDate(sellerOrder.acceptanceDeadline, contact.locale),
-            ),
-          );
-        }
-      })
-      .catch(() =>
-        this.logger.warn({ code: 'MAIL_LOOKUP_FAILED' }, 'seller contact lookup failed'),
-      );
   }
 }

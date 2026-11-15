@@ -1,49 +1,48 @@
 import { SlidersHorizontal } from '@phosphor-icons/react/dist/ssr';
 import Link from 'next/link';
 
-import type { CatalogProduct } from '@atlas/contracts';
+import type { CatalogCategoryList } from '@atlas/contracts';
 
-import { parseSort, sortProducts } from '@/lib/catalog-view';
+import type { ProductPage } from '@/lib/catalog-api';
+import { parseSort } from '@/lib/catalog-view';
 import { copy, localizedHref, text, type Locale } from '@/lib/i18n';
 
 import { EmptyState } from './states';
 import { ProductGrid } from './product-card';
 
 interface CatalogResultsProps {
-  readonly allProducts: readonly CatalogProduct[];
+  /** One page, already sorted and filtered by the API across the whole catalogue. */
+  readonly results: ProductPage;
+  readonly categories: CatalogCategoryList['items'];
   readonly availableOnly: boolean;
   readonly category?: string | undefined;
   readonly locale: Locale;
-  readonly products: readonly CatalogProduct[];
   readonly query?: string | undefined;
   readonly sort?: string | undefined;
   readonly title: string;
 }
 
-function categories(products: readonly CatalogProduct[]): CatalogProduct['category'][] {
-  const unique = new Map<string, CatalogProduct['category']>();
-  for (const product of products) unique.set(product.category.slug, product.category);
-  return [...unique.values()].sort((left, right) => left.slug.localeCompare(right.slug));
-}
-
 export function CatalogResults({
-  allProducts,
+  results,
+  categories,
   availableOnly,
   category,
   locale,
-  products,
   query,
   sort,
   title,
 }: CatalogResultsProps) {
   const t = copy[locale];
-  const visible = sortProducts(
-    availableOnly
-      ? products.filter((product) => product.offers.some((offer) => offer.availableQuantity > 0))
-      : products,
-    parseSort(sort),
-  );
-  const catalogCategories = categories(allProducts);
+  const path = category ? `/category/${category}` : '/search';
+  const pages = Math.max(1, Math.ceil(results.total / Math.max(1, results.pageSize)));
+  // Links keep the search, filter and sort; only the page changes.
+  const pageHref = (page: number) =>
+    localizedHref(path, locale, {
+      ...(query ? { query } : {}),
+      ...(sort ? { sort } : {}),
+      ...(availableOnly ? { available: '1' } : {}),
+      ...(page > 1 ? { page: String(page) } : {}),
+    });
 
   return (
     <>
@@ -51,7 +50,7 @@ export function CatalogResults({
         <p className="eyebrow">{t.browseKicker}</p>
         <h1>{title}</h1>
         <p className="result-count">
-          <strong>{visible.length}</strong> {visible.length === 1 ? t.result : t.results}
+          <strong>{results.total}</strong> {results.total === 1 ? t.result : t.results}
         </p>
       </header>
       <section className="filter-panel" aria-labelledby="filters-title">
@@ -66,17 +65,17 @@ export function CatalogResults({
           >
             {t.allCategories}
           </Link>
-          {catalogCategories.map((item) => (
+          {categories.map((item) => (
             <Link
               className={category === item.slug ? 'is-selected' : ''}
               href={localizedHref(`/category/${item.slug}`, locale, query ? { query } : {})}
               key={item.slug}
             >
-              {text(item.title, locale)}
+              {text(item.title, locale)} <span className="chip-count">{item.productCount}</span>
             </Link>
           ))}
         </nav>
-        <form className="sort-form" action={category ? `/category/${category}` : '/search'}>
+        <form className="sort-form" action={path}>
           <input name="lang" type="hidden" value={locale} />
           {query ? <input name="query" type="hidden" value={query} /> : null}
           <label className="availability-check">
@@ -90,25 +89,42 @@ export function CatalogResults({
               <option value="price-asc">{t.priceLow}</option>
               <option value="price-desc">{t.priceHigh}</option>
               <option value="fastest">{t.fastest}</option>
+              <option value="newest">{t.newest}</option>
             </select>
           </label>
           <button className="button button--secondary" type="submit">
             {t.apply}
           </button>
           {(availableOnly || sort || query) && (
-            <Link
-              className="clear-filter"
-              href={localizedHref(category ? `/category/${category}` : '/search', locale)}
-            >
+            <Link className="clear-filter" href={localizedHref(path, locale)}>
               {t.clear}
             </Link>
           )}
         </form>
       </section>
-      {visible.length > 0 ? (
-        <ProductGrid locale={locale} products={visible} />
+      {results.items.length > 0 ? (
+        <ProductGrid locale={locale} products={results.items} />
       ) : (
         <EmptyState locale={locale} />
+      )}
+      {pages > 1 && (
+        <nav className="pagination" aria-label={t.pageOf(results.page, pages)}>
+          {results.page > 1 ? (
+            <Link className="button button--secondary" href={pageHref(results.page - 1)} rel="prev">
+              {t.previousPage}
+            </Link>
+          ) : (
+            <span />
+          )}
+          <span aria-current="page">{t.pageOf(results.page, pages)}</span>
+          {results.page < pages ? (
+            <Link className="button button--secondary" href={pageHref(results.page + 1)} rel="next">
+              {t.nextPage}
+            </Link>
+          ) : (
+            <span />
+          )}
+        </nav>
       )}
     </>
   );

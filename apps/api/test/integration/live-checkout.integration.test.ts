@@ -21,7 +21,14 @@ import {
 } from '../../src/identity/password/credential-crypto.js';
 import { PasswordIdentityRepository } from '../../src/identity/password/password-identity.js';
 import { LogMailer } from '../../src/notifications/mailer.js';
-import { MarketplaceNotifier } from '../../src/notifications/marketplace-notifier.js';
+import {
+  MARKETPLACE_NOTIFIER,
+  MarketplaceNotifier,
+} from '../../src/notifications/marketplace-notifier.js';
+import {
+  ORDER_REPOSITORY,
+  type OrderRepositoryPort,
+} from '../../src/commerce/order-infrastructure.js';
 import { OutboxDispatcher } from '../../src/notifications/outbox-dispatcher.js';
 import { createLogger as createTestLogger } from '@atlas/platform';
 
@@ -48,6 +55,11 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
   let app: INestApplication;
   let identity: PasswordIdentityRepository;
   let mediaDirectory: string;
+  let dispatcher: OutboxDispatcher;
+  /** Sends what the API queued (order emails), as the API's background dispatcher does. */
+  const flush = async () => {
+    while ((await dispatcher.drain()) > 0);
+  };
   const mailer = new LogMailer();
   const texts: { to: string; message: string }[] = [];
   const sms = {
@@ -102,6 +114,12 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
       },
     });
     await app.init();
+    dispatcher = new OutboxDispatcher(
+      pool,
+      app.get<MarketplaceNotifier>(MARKETPLACE_NOTIFIER),
+      createTestLogger({ service: 'outbox-test', environment: 'test', level: 'silent' }),
+      app.get<OrderRepositoryPort>(ORDER_REPOSITORY),
+    );
   });
 
   after(async () => {
@@ -380,6 +398,23 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
     const sellerOrder = order.body.sellerOrders[0];
     assert.equal(sellerOrder.dataClass, 'live');
 
+    // The seller is emailed through the retrying outbox, then reminded once while it waits.
+    await flush();
+    assert.ok(
+      mailer.sent.some(
+        (mail) => mail.to === 'boutique@example.dz' && /Nouvelle commande/.test(mail.subject),
+      ),
+    );
+    assert.equal(await dispatcher.remind(0), 1);
+    assert.equal(await dispatcher.remind(0), 0);
+    assert.equal(
+      mailer.sent.filter(
+        (mail) =>
+          mail.to === 'boutique@example.dz' && /Rappel : commande à accepter/.test(mail.subject),
+      ).length,
+      1,
+    );
+
     // A brand-new account may only have one open COD order.
     const cart2 = await http().get('/api/v1/cart').set(bearer(customer)).expect(200);
     const refilled = await http()
@@ -464,6 +499,7 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
       .send({ expectedVersion: 5 })
       .expect(200);
     assert.equal(confirmed.body.status, 'DELIVERED');
+    await flush();
     await settle(
       () =>
         mailer.sent.filter((mail) => mail.to === 'client@example.dz').length >= 5 &&
@@ -566,15 +602,7 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
       environment: 'test',
       level: 'silent',
     });
-    const dispatcher = new OutboxDispatcher(
-      pool,
-      new MarketplaceNotifier(identity, mailer, silent, {
-        sellerWebOrigin: null,
-        customerWebOrigin: 'http://localhost:3001',
-      }),
-      silent,
-    );
-    while ((await dispatcher.drain()) > 0);
+    await flush();
     assert.ok(
       mailer.sent.some(
         (mail) => mail.to === 'client@example.dz' && /pas répondu à temps/.test(mail.text),

@@ -2,7 +2,7 @@ import type { CatalogProduct } from '@atlas/contracts';
 
 import type { Locale } from './i18n';
 
-export type ProductSort = 'recommended' | 'price-asc' | 'price-desc' | 'fastest';
+export type ProductSort = 'recommended' | 'price-asc' | 'price-desc' | 'fastest' | 'newest';
 type CatalogOffer = CatalogProduct['offers'][number];
 
 export function offerTotal(offer: CatalogOffer): number {
@@ -42,7 +42,8 @@ export function sortProducts(
 }
 
 export function parseSort(value: string | undefined): ProductSort {
-  if (value === 'price-asc' || value === 'price-desc' || value === 'fastest') return value;
+  if (value === 'price-asc' || value === 'price-desc' || value === 'fastest' || value === 'newest')
+    return value;
   return 'recommended';
 }
 

@@ -205,7 +205,30 @@ export class AdminService {
             AND so.closed_at > clock_timestamp() - interval '30 days') AS failed_deliveries_30d,
         (SELECT count(*) FROM commerce.seller_orders so JOIN commerce.orders o ON o.id = so.order_id
           WHERE o.payment_state = 'CASH_ON_DELIVERY' AND so.status = 'EXPIRED'
-            AND so.closed_at > clock_timestamp() - interval '30 days') AS expired_orders_30d`,
+            AND so.closed_at > clock_timestamp() - interval '30 days') AS expired_orders_30d,
+        (SELECT count(*) FROM platform.outbox_events WHERE delivery_state = 'FAILED'
+          OR (delivery_state = 'PENDING' AND occurred_at < clock_timestamp() - interval '30 minutes'))
+          AS stuck_notifications,
+        (SELECT count(*) FROM commerce.checkout_quotes q
+          WHERE q.snapshot->>'paymentArrangement' = 'CASH_ON_DELIVERY'
+            AND q.created_at > clock_timestamp() - interval '30 days') AS funnel_checkouts_30d,
+        (SELECT count(*) FROM commerce.seller_orders so JOIN commerce.orders o ON o.id = so.order_id
+          WHERE o.payment_state = 'CASH_ON_DELIVERY'
+            AND so.created_at > clock_timestamp() - interval '30 days') AS funnel_seller_orders_30d,
+        (SELECT count(*) FROM commerce.seller_order_history h
+          JOIN commerce.seller_orders so ON so.id = h.seller_order_id JOIN commerce.orders o ON o.id = so.order_id
+          WHERE o.payment_state = 'CASH_ON_DELIVERY' AND h.status = 'ACCEPTED'
+            AND h.occurred_at > clock_timestamp() - interval '30 days') AS funnel_accepted_30d,
+        (SELECT count(*) FROM commerce.seller_orders so JOIN commerce.orders o ON o.id = so.order_id
+          WHERE o.payment_state = 'CASH_ON_DELIVERY' AND so.status = 'DELIVERED'
+            AND so.closed_at > clock_timestamp() - interval '30 days') AS funnel_delivered_30d,
+        (SELECT COALESCE(round(percentile_cont(0.5) WITHIN GROUP (
+            ORDER BY extract(epoch FROM h.occurred_at - so.created_at) / 60)), 0)
+          FROM commerce.seller_order_history h
+          JOIN commerce.seller_orders so ON so.id = h.seller_order_id JOIN commerce.orders o ON o.id = so.order_id
+          WHERE o.payment_state = 'CASH_ON_DELIVERY' AND h.status = 'ACCEPTED'
+            AND h.occurred_at > clock_timestamp() - interval '30 days')
+          AS median_acceptance_minutes_30d`,
     );
     const row = result.rows[0] ?? {};
     return Object.fromEntries(

@@ -145,6 +145,7 @@ describe('seller-fulfilled catalog HTTP boundary', () => {
       throw new Error('Unexpected product review');
     },
     listProducts: async () => ({ items: [] }),
+    listCategories: async () => ({ items: [] }),
     getProduct: async () => null,
     getSeller: async () => null,
     listSellerOffers: async () => [],

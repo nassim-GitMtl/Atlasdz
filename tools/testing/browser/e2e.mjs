@@ -379,6 +379,19 @@ await check('pre-order: badge, accepted delay, estimated dates on the order', as
   }
 });
 
+await check('search covers the whole catalogue: server sorting and true totals', async () => {
+  const all = await api('/api/v1/catalog/products?limit=100&sort=price-desc');
+  const sp2 = await mobile.newPage();
+  await sp2.goto(`${SHOP}/search?sort=price-desc&lang=fr`);
+  await sp2.locator('.result-count strong').waitFor({ timeout: 15000 });
+  if ((await sp2.locator('.result-count strong').innerText()).trim() !== String(all.total))
+    throw new Error('result count differs from the catalogue total');
+  const firstTitle = await sp2.locator('.product-grid h3, .product-grid h2').first().innerText();
+  if (!firstTitle.includes(all.items[0].title.fr)) throw new Error(`not sorted: ${firstTitle}`);
+  await audit(sp2, 'shop /search (sorted)');
+  await sp2.close();
+});
+
 // Seller Center (agent browser access needs the owner's approval: ATLAS_E2E_SHOP_ONLY=1 skips it)
 if (process.env.ATLAS_E2E_SHOP_ONLY === '1') {
   await browser.close();

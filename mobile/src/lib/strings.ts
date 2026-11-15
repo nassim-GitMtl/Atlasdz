@@ -27,6 +27,7 @@ const fr = {
     seeAll: 'Tout voir',
   },
   home: {
+    more: 'Voir plus de produits',
     tagline: 'Les offres des vendeurs algériens, payées à la livraison.',
     search: 'Rechercher un produit',
     all: 'Tout',
@@ -525,6 +526,7 @@ const ar: Strings = {
     seeAll: 'عرض الكل',
   },
   home: {
+    more: 'عرض المزيد من المنتجات',
     tagline: 'عروض البائعين الجزائريين، والدفع عند الاستلام.',
     search: 'ابحث عن منتج',
     all: 'الكل',

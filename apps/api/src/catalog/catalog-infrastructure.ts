@@ -7,6 +7,7 @@ export const CATALOG_REPOSITORY = Symbol('atlas.catalog.repository');
 export type CatalogRepositoryPort = Pick<
   PostgresCatalogRepository,
   | 'listProducts'
+  | 'listCategories'
   | 'getProduct'
   | 'getSeller'
   | 'createOffer'
