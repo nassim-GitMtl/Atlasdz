@@ -316,13 +316,15 @@ await check('shop without an account: cart kept, email asked at checkout', async
 await check('pre-order: badge, accepted delay, estimated dates on the order', async () => {
   const sellerToken = await localToken('seller');
   const customerToken = await localToken('customer');
-  // The demo catalogue's own offer (other journeys tweak the seller's extra offers).
+  // The demo catalogue's own offer: local checkout only takes the synthetic demo products, and
+  // other journeys leave extra approved products on the demo seller.
+  const demo = new Set(['air-fryer-5l', 'coffee-maker-compact', 'earbuds-wireless']);
+  const catalog = (await api('/api/v1/catalog/products?limit=100')).items;
+  const demoProducts = new Set(catalog.filter((p) => demo.has(p.slug)).map((p) => p.id));
   const offer = (await api('/api/v1/seller/offers', sellerToken)).items
-    .filter((o) => o.status === 'APPROVED' && o.availableQuantity > 0)
+    .filter((o) => o.status === 'APPROVED' && o.availableQuantity > 0 && demoProducts.has(o.productId))
     .sort((a, b) => b.availableQuantity - a.availableQuantity)[0];
-  const product = (await api('/api/v1/catalog/products?limit=100')).items.find((p) =>
-    p.offers.some((o) => o.id === offer.id),
-  );
+  const product = catalog.find((p) => p.offers.some((o) => o.id === offer.id));
   const terms = (preorder, expectedVersion) =>
     api(`/api/v1/seller/offers/${offer.id}`, sellerToken, {
       method: 'POST',
