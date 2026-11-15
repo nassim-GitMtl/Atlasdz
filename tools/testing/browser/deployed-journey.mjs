@@ -288,10 +288,15 @@ await step('guest checks out with delivery to Alger', bp, async () => {
 });
 await step('emails: buyer confirmation and set-password link, seller new-order notice', bp, async () => {
   await mailLink(buyerEmail, 'reset-password');
-  const end = Date.now() + 30000;
-  while (Date.now() < end && (await mailSubjects(sellerEmail)).length < 3) await new Promise((r) => setTimeout(r, 1000));
-  const subjects = (await mailSubjects(sellerEmail)).join(' | ');
-  if (!/commande/i.test(subjects)) throw new Error(`seller emails: ${subjects}`);
+  const wanted = [/Nouvelle commande/i, /offre est en ligne/i];
+  const end = Date.now() + 45000;
+  let subjects = '';
+  while (Date.now() < end) {
+    subjects = (await mailSubjects(sellerEmail)).join(' | ');
+    if (wanted.every((re) => re.test(subjects))) break;
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  if (!wanted.every((re) => re.test(subjects))) throw new Error(`seller emails: ${subjects}`);
 });
 
 // --- Seller fulfils ---
@@ -363,7 +368,8 @@ await step('staff delete the customer account, then the vendor account', st, asy
   const customer = st.locator('li', { hasText: buyerEmail });
   await customer.locator('input[name=confirm]').check();
   await customer.locator('button').click();
-  await st.getByText('Fait.').first().waitFor({ timeout: 15000 });
+  // Deleted: the account no longer matches its old email.
+  await customer.waitFor({ state: 'detached', timeout: 15000 });
   await st.goto(`${SELLER}/admin/sellers`);
   await st.locator('tr', { hasText: store }).getByRole('link').click();
   const zone = st.locator('.danger-zone');
