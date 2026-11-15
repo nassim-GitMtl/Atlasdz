@@ -14,6 +14,7 @@ export type CatalogRepositoryPort = Pick<
   | 'getSellerOffer'
   | 'updateOffer'
   | 'approveOffer'
+  | 'rejectOffer'
   | 'listSellerOffers'
   | 'listPendingOffers'
   | 'listProductCategories'

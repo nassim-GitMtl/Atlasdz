@@ -8,6 +8,7 @@ import {
   CreateOfferInputSchema,
   ListProductsInputSchema,
   SafeApplicationError,
+  RejectOfferInputSchema,
   SellerOfferSchema,
   UpdateOfferInputSchema,
   UuidSchema,
@@ -205,6 +206,36 @@ export class AdminOffersController {
     try {
       return SellerOfferSchema.parse(
         await this.catalog.approveOffer(principal.userId, offerId, request.correlationId),
+      );
+    } catch (error) {
+      return translateWriteError(error);
+    }
+  }
+
+  @Post(':offerId/reject')
+  @RequirePermission('offer.approve', { scope: { type: 'GLOBAL' }, minimumAssurance: 'MFA' })
+  @RateLimited('authenticated', 'catalog.offers.reject')
+  public async reject(
+    @Req() request: CatalogRequest,
+    @Param('offerId') offerId: string,
+    @Body() body: unknown,
+  ) {
+    const principal = getRequestPrincipal(request);
+    if (principal.actorType !== 'staff' || principal.scope.type !== 'GLOBAL') {
+      throw new SafeApplicationError('FORBIDDEN');
+    }
+    if (!UuidSchema.safeParse(offerId).success)
+      throw new SafeApplicationError('RESOURCE_NOT_FOUND');
+    const input = RejectOfferInputSchema.safeParse(body);
+    if (!input.success) throw new SafeApplicationError('VALIDATION_FAILED');
+    try {
+      return SellerOfferSchema.parse(
+        await this.catalog.rejectOffer(
+          principal.userId,
+          offerId,
+          input.data.reason,
+          request.correlationId,
+        ),
       );
     } catch (error) {
       return translateWriteError(error);

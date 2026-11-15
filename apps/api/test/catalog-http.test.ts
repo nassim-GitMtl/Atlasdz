@@ -168,6 +168,9 @@ describe('seller-fulfilled catalog HTTP boundary', () => {
     approveOffer: async () => {
       throw new Error('Unexpected approval');
     },
+    rejectOffer: async () => {
+      throw new Error('Unexpected refusal');
+    },
   };
 
   async function create(identity?: ReturnType<typeof identityFor>) {

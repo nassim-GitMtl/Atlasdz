@@ -35,7 +35,17 @@ export default async function EditOffer({
         <section className="form-panel">
           <p className="mono">{result.offer.id}</p>
           <p>{t[result.offer.status]}</p>
-          {['PENDING_REVIEW', 'APPROVED'].includes(result.offer.status) ? (
+          {result.offer.status === 'REJECTED' && result.offer.rejectionReason && (
+            <p className="alert-box" role="status">
+              {locale === 'ar' ? 'سبب الرفض: ' : 'Motif du refus : '}
+              {result.offer.rejectionReason}
+              <br />
+              {locale === 'ar'
+                ? 'عدّل العرض واحفظه لإرساله للمراجعة من جديد.'
+                : 'Corrigez l’offre puis enregistrez-la : elle repart en validation.'}
+            </p>
+          )}
+          {['PENDING_REVIEW', 'APPROVED', 'REJECTED'].includes(result.offer.status) ? (
             <OfferForm
               key={result.offer.rowVersion}
               offer={result.offer}

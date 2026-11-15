@@ -17,7 +17,7 @@ export const REMINDER_AFTER_HOURS = 6;
 /**
  * Drains the transactional outbox inside the API process (single-VPS deployment).
  * Live order events become emails: new order (seller, and the buyer's confirmation), status
- * changes (buyer), buyer cancellation (seller), expiry (buyer). A failed send is retried with
+ * changes (buyer), buyer cancellation (seller), expiry (buyer); staff offer decisions (seller). A failed send is retried with
  * backoff, then parked as FAILED (counted on the staff dashboard and by the VPS monitor).
  */
 export class OutboxDispatcher {
@@ -39,7 +39,27 @@ export class OutboxDispatcher {
     });
   }
 
+  /** Staff approved or refused an offer: the seller is told, with the reason when refused. */
+  private async offerDecision(claim: OutboxClaim): Promise<void> {
+    const { offerId, sellerId, reason } = claim.data;
+    if (this.notifier === null || typeof offerId !== 'string' || typeof sellerId !== 'string')
+      return;
+    const title = await this.pool.query<{ fr: string; ar: string }>(
+      `SELECT p.title_fr AS fr, p.title_ar AS ar
+       FROM offers.offers o JOIN catalog.products p ON p.id = o.product_id WHERE o.id = $1`,
+      [offerId],
+    );
+    const row = title.rows[0];
+    if (!row) return;
+    const refusal = claim.eventType === 'offer.rejected' && typeof reason === 'string' ? reason : null;
+    await this.notifier.offerDecision(sellerId, offerId, row, refusal);
+  }
+
   private async handle(claim: OutboxClaim): Promise<void> {
+    if (claim.eventType === 'offer.activated' || claim.eventType === 'offer.rejected') {
+      await this.offerDecision(claim);
+      return;
+    }
     const { sellerOrderId, sellerId, orderId, status, dataClass } = claim.data;
     if (
       this.notifier === null ||

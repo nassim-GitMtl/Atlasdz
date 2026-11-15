@@ -14,6 +14,7 @@ import {
   sellerReviewedMail,
   verifyEmailMail,
   type NotifiedStatus,
+  offerDecisionMail,
 } from './mail-templates.js';
 import { deliver, type Mailer } from './mailer.js';
 
@@ -152,6 +153,23 @@ export class MarketplaceNotifier {
         formatDzd(order.snapshot.totalMinor),
         formatDate(order.acceptanceDeadline, contact.locale),
       ),
+    );
+  }
+
+  /** Staff approved (reason null) or refused one of the seller's offers. */
+  public async offerDecision(
+    sellerId: string,
+    offerId: string,
+    title: { readonly fr: string; readonly ar: string },
+    reason: string | null,
+  ): Promise<void> {
+    const contact = await this.sellerContact(sellerId);
+    if (!contact) return;
+    const link = this.links.sellerWebOrigin
+      ? `${this.links.sellerWebOrigin}/offers/${offerId}?lang=${contact.locale}`
+      : `/offers/${offerId}`;
+    await this.mailer.send(
+      offerDecisionMail(contact.email, contact.locale, link, title[contact.locale], reason),
     );
   }
 

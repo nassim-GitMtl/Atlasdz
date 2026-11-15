@@ -99,6 +99,7 @@ describe('route access inventory', () => {
     assert.deepEqual(inventory.sort(), [
       'AdminOffersController.approve:permission-protected',
       'AdminOffersController.list:permission-protected',
+      'AdminOffersController.reject:permission-protected',
       'AdminProductsController.catalogProducts:permission-protected',
       'AdminProductsController.list:permission-protected',
       'AdminProductsController.review:permission-protected',

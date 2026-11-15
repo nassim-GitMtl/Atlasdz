@@ -134,7 +134,17 @@ export const SellerOfferSchema = CreateOfferInputSchema.extend({
   currency: z.literal('DZD'),
   status: z.enum(['PENDING_REVIEW', 'APPROVED', 'REJECTED', 'SUSPENDED']),
   rowVersion: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
+  /** Why staff refused the offer; set only while status is REJECTED. */
+  rejectionReason: z.string().max(300).nullish(),
 }).strict();
+/** Staff refusal of a pending offer; the reason is shown to the seller. */
+export const RejectOfferInputSchema = z
+  .object({ reason: z.string().trim().min(5).max(300) })
+  .strict();
+export type RejectOfferInput = z.infer<typeof RejectOfferInputSchema>;
+export const OfferRejectedV1PayloadSchema = z
+  .object({ offerId: UuidSchema, sellerId: UuidSchema, reason: z.string().min(5).max(300) })
+  .strict();
 export const UpdateOfferInputSchema = CreateOfferInputSchema.omit({
   productId: true,
   deliveryFeeMinor: true,

@@ -1,7 +1,7 @@
 import { fill } from '@/lib/dashboard-copy';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { ApproveForm } from '@/components/forms';
+import { ApproveForm, RejectOfferForm } from '@/components/forms';
 import { Shell } from '@/components/shell';
 import { ServiceState } from '@/components/states';
 import { listPendingOffers, listProducts, listReviewProducts } from '@/lib/api';
@@ -12,6 +12,7 @@ import { accessToken } from '@/lib/session';
 const queueCopy = {
   fr: {
     pending: '{n} en attente',
+    rejected: 'Offre refusée. Le vendeur a reçu le motif par e-mail et peut la corriger.',
     product: 'Produit',
     price: 'Prix',
     stock: 'Stock',
@@ -23,6 +24,7 @@ const queueCopy = {
   },
   ar: {
     pending: '{n} قيد الانتظار',
+    rejected: 'تم رفض العرض. تلقى البائع السبب بالبريد ويمكنه تعديله.',
     product: 'المنتج',
     price: 'السعر',
     stock: 'المخزون',
@@ -72,6 +74,11 @@ export default async function Moderation({
             </div>
             <span className="large-count">{result.offers.length}</span>
           </div>
+          {params.rejected === '1' && (
+            <p role="status" className="notice">
+              {q.rejected}
+            </p>
+          )}
           {params.approved === '1' && (
             <p role="status" className="notice success">
               {t.approved}
@@ -127,7 +134,10 @@ export default async function Moderation({
                               : fill(q.handling, { n: offer.handlingDays })}
                           </td>
                           <td className="end">
-                            <ApproveForm locale={locale} offerId={offer.id} />
+                            <div className="decision">
+                              <ApproveForm locale={locale} offerId={offer.id} />
+                              <RejectOfferForm locale={locale} offerId={offer.id} />
+                            </div>
                           </td>
                         </tr>
                       );

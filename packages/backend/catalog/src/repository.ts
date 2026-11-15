@@ -20,6 +20,7 @@ import {
   EventEnvelopeSchema,
   ListProductsInputSchema,
   SellerOfferSchema,
+  RejectOfferInputSchema,
   UpdateOfferInputSchema,
   UuidSchema,
   type CatalogProduct,
@@ -97,7 +98,7 @@ const PUBLIC_PRODUCTS = `
 const OFFER_COLUMNS = `id, seller_id AS "sellerId", product_id AS "productId",
   price_minor AS "priceMinor", currency, available_quantity AS "availableQuantity",
   handling_days AS "handlingDays", delivery_fee_minor AS "deliveryFeeMinor", status,
-  row_version AS "rowVersion",
+  row_version AS "rowVersion", rejection_reason AS "rejectionReason",
   CASE WHEN preorder THEN jsonb_build_object('minDays', preorder_min_days, 'maxDays', preorder_max_days, 'origin', preorder_origin) ELSE NULL END AS preorder`;
 
 /** Column values for an offer's pre-order terms (all null when the item is in stock). */
@@ -270,9 +271,9 @@ async function recordMutation(
   offer: SellerOffer,
   variantId: string,
   context: CatalogWriteContext,
-  action: 'offer.created' | 'offer.activated' | 'offer.updated',
+  action: 'offer.created' | 'offer.activated' | 'offer.updated' | 'offer.rejected',
 ): Promise<void> {
-  const actorType = action === 'offer.activated' ? 'staff' : 'seller_user';
+  const actorType = action === 'offer.activated' || action === 'offer.rejected' ? 'staff' : 'seller_user';
   const time = await client.query<{ occurredAt: Date }>('SELECT clock_timestamp() AS "occurredAt"');
   const occurredAt = time.rows[0]?.occurredAt.toISOString();
   const envelope = EventEnvelopeSchema.parse({
@@ -288,7 +289,9 @@ async function recordMutation(
     causationId: null,
     actor: { type: actorType, id: context.actorUserId },
     data:
-      action === 'offer.updated'
+      action === 'offer.rejected'
+        ? { offerId: offer.id, sellerId: offer.sellerId, reason: offer.rejectionReason ?? '' }
+        : action === 'offer.updated'
         ? {
             offerId: offer.id,
             sellerId: offer.sellerId,
@@ -684,11 +687,14 @@ export class PostgresCatalogRepository {
       );
       if (!found.rows[0]) throw new CatalogWriteError('OFFER_NOT_FOUND');
       const prior = SellerOfferSchema.parse(found.rows[0]);
-      if (!['PENDING_REVIEW', 'APPROVED'].includes(prior.status))
+      if (!['PENDING_REVIEW', 'APPROVED', 'REJECTED'].includes(prior.status))
         throw new CatalogWriteError('OFFER_STATE_CONFLICT');
       if (prior.rowVersion !== data.expectedVersion)
         throw new CatalogWriteError('OFFER_STATE_CONFLICT');
+      // A refused offer is resubmitted by saving it, even unchanged.
+      const resubmit = prior.status === 'REJECTED';
       if (
+        !resubmit &&
         prior.priceMinor === data.priceMinor &&
         prior.availableQuantity === data.availableQuantity &&
         prior.handlingDays === data.handlingDays &&
@@ -705,6 +711,8 @@ export class PostgresCatalogRepository {
       const result = await client.query(
         `UPDATE offers.offers SET price_minor=$3,available_quantity=$4,handling_days=$5,
            preorder=$6,preorder_min_days=$7,preorder_max_days=$8,preorder_origin=$9,
+           status=CASE WHEN status='REJECTED' THEN 'PENDING_REVIEW' ELSE status END,
+           rejection_reason=NULL,
            row_version=row_version+1 WHERE id=$1 AND seller_id=$2 RETURNING ${OFFER_COLUMNS}`,
         [
           offerId,
@@ -812,6 +820,45 @@ export class PostgresCatalogRepository {
       );
       const offer = SellerOfferSchema.parse(updated.rows[0]);
       await recordMutation(client, offer, variantId, context, 'offer.activated');
+      return offer;
+    });
+  }
+
+  /** Staff refuses a pending offer; the seller sees the reason and can edit to resubmit. */
+  public async rejectOffer(
+    actorUserId: string,
+    offerId: string,
+    reason: string,
+    correlationId: string,
+  ): Promise<SellerOffer> {
+    const context = {
+      actorUserId: UuidSchema.parse(actorUserId),
+      correlationId: CorrelationIdSchema.parse(correlationId),
+    };
+    const id = UuidSchema.parse(offerId);
+    const text = RejectOfferInputSchema.parse({ reason }).reason;
+    return transaction(this.pool, async (client) => {
+      const located = await client.query<{ sellerId: string; variantId: string }>(
+        'SELECT seller_id AS "sellerId", variant_id AS "variantId" FROM offers.offers WHERE id = $1',
+        [id],
+      );
+      const location = located.rows[0];
+      if (location === undefined) throw new CatalogWriteError('OFFER_NOT_FOUND');
+      await lockSeller(client, location.sellerId);
+      const locked = await client.query(
+        `SELECT ${OFFER_COLUMNS} FROM offers.offers WHERE id = $1 AND seller_id = $2 FOR UPDATE`,
+        [id, location.sellerId],
+      );
+      if (locked.rows[0] === undefined) throw new CatalogWriteError('OFFER_NOT_FOUND');
+      if (SellerOfferSchema.parse(locked.rows[0]).status !== 'PENDING_REVIEW')
+        throw new CatalogWriteError('OFFER_NOT_PENDING');
+      const updated = await client.query(
+        `UPDATE offers.offers SET status = 'REJECTED', rejection_reason = $2,
+           row_version = row_version + 1 WHERE id = $1 RETURNING ${OFFER_COLUMNS}`,
+        [id, text],
+      );
+      const offer = SellerOfferSchema.parse(updated.rows[0]);
+      await recordMutation(client, offer, location.variantId, context, 'offer.rejected');
       return offer;
     });
   }

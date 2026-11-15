@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import {
   approveOffer,
+  rejectOffer,
   createLocalSession,
   createOffer,
   updateOffer,
@@ -120,6 +121,26 @@ export async function approveOfferAction(
   }
   revalidatePath('/moderation');
   redirect(`${href('/moderation', localeFrom(String(form.get('lang'))))}&approved=1`);
+}
+
+/** Staff refuses a pending offer with a reason the seller receives by email and sees. */
+export async function rejectOfferAction(
+  _state: ActionState,
+  form: FormData,
+): Promise<ActionState> {
+  if (!(await validOrigin())) return { error: 'csrf' };
+  const token = await accessToken();
+  if (!token) return { error: 'unauthorized' };
+  const id = UuidSchema.safeParse(form.get('offerId'));
+  const reason = String(form.get('reason') ?? '').trim();
+  if (!id.success || reason.length < 5 || reason.length > 300) return { error: 'invalid' };
+  try {
+    await rejectOffer(token, id.data, reason);
+  } catch (error) {
+    return { error: error instanceof SellerApiError ? error.code : 'unavailable' };
+  }
+  revalidatePath('/moderation');
+  redirect(`${href('/moderation', localeFrom(String(form.get('lang'))))}&rejected=1`);
 }
 
 export async function updateOfferAction(_state: ActionState, form: FormData): Promise<ActionState> {

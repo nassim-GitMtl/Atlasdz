@@ -23,7 +23,7 @@ import { PasswordIdentityRepository } from '../../src/identity/password/password
 import { LogMailer } from '../../src/notifications/mailer.js';
 import {
   MARKETPLACE_NOTIFIER,
-  MarketplaceNotifier,
+  type MarketplaceNotifier,
 } from '../../src/notifications/marketplace-notifier.js';
 import {
   ORDER_REPOSITORY,
@@ -272,10 +272,55 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
         deliveryFeeMinor: 0,
       })
       .expect(201);
+    // Staff refuses with a reason; the seller is emailed, sees it, edits and resubmits.
+    await http()
+      .post(`/api/v1/admin/offers/${offer.body.id}/reject`)
+      .set(bearer(staff))
+      .send({ reason: 'x' })
+      .expect(422);
+    await http()
+      .post(`/api/v1/admin/offers/${offer.body.id}/reject`)
+      .set(bearer(seller))
+      .send({ reason: 'Photo et prix incohérents.' })
+      .expect(403);
+    const refused = await http()
+      .post(`/api/v1/admin/offers/${offer.body.id}/reject`)
+      .set(bearer(staff))
+      .send({ reason: 'Prix incohérent avec la description.' })
+      .expect((response) => assert.ok([200, 201].includes(response.status)));
+    assert.equal(refused.body.status, 'REJECTED');
+    assert.equal(refused.body.rejectionReason, 'Prix incohérent avec la description.');
+    await flush();
+    assert.ok(
+      mailer.sent.some(
+        (mail) =>
+          mail.to === 'boutique@example.dz' &&
+          /Offre non validée/.test(mail.subject) &&
+          /Prix incohérent/.test(mail.text),
+      ),
+    );
+    const resubmitted = await http()
+      .post(`/api/v1/seller/offers/${offer.body.id}`)
+      .set(bearer(seller))
+      .send({
+        priceMinor: 450000,
+        availableQuantity: 3,
+        handlingDays: 2,
+        expectedVersion: refused.body.rowVersion,
+      })
+      .expect((response) => assert.ok([200, 201].includes(response.status)));
+    assert.equal(resubmitted.body.status, 'PENDING_REVIEW');
+    assert.equal(resubmitted.body.rejectionReason, null);
     await http()
       .post(`/api/v1/admin/offers/${offer.body.id}/approve`)
       .set(bearer(staff))
       .expect((response) => assert.ok([200, 201].includes(response.status)));
+    await flush();
+    assert.ok(
+      mailer.sent.some(
+        (mail) => mail.to === 'boutique@example.dz' && /Votre offre est en ligne/.test(mail.subject),
+      ),
+    );
     const destinations = await http()
       .get('/api/v1/delivery/destinations')
       .set(bearer(seller))
@@ -597,11 +642,6 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
         randomUUID(),
       ],
     );
-    const silent = createTestLogger({
-      service: 'outbox-test',
-      environment: 'test',
-      level: 'silent',
-    });
     await flush();
     assert.ok(
       mailer.sent.some(

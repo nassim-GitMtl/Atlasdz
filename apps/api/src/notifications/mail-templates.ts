@@ -193,3 +193,36 @@ export function customerOrderStatusMail(
         text: `Bonjour,\n\nLe vendeur « ${sellerName} » ${statusText.fr[status]}.${tracking}\n${link}\n\nAtlas DZ`,
       };
 }
+
+/** Staff decision on a seller's offer: online, or refused with the reason to fix. */
+export function offerDecisionMail(
+  to: string,
+  locale: Locale,
+  link: string,
+  title: string,
+  reason: string | null,
+): MailMessage {
+  if (locale === 'ar')
+    return reason === null
+      ? {
+          to,
+          subject: `أطلس دي زد — عرضك منشور: ${title}`,
+          text: `مرحبًا،\n\nتمت الموافقة على عرضك «${title}» وأصبح ظاهرًا للزبائن.\n${link}\n\nأطلس دي زد`,
+        }
+      : {
+          to,
+          subject: `أطلس دي زد — لم تتم الموافقة على عرضك: ${title}`,
+          text: `مرحبًا،\n\nلم تتم الموافقة على عرضك «${title}».\nالسبب: ${reason}\n\nعدّل العرض وأعد حفظه لإرساله للمراجعة من جديد:\n${link}\n\nأطلس دي زد`,
+        };
+  return reason === null
+    ? {
+        to,
+        subject: `Atlas DZ — Votre offre est en ligne : ${title}`,
+        text: `Bonjour,\n\nVotre offre « ${title} » a été validée : elle est visible par les clients.\n${link}\n\nAtlas DZ`,
+      }
+    : {
+        to,
+        subject: `Atlas DZ — Offre non validée : ${title}`,
+        text: `Bonjour,\n\nVotre offre « ${title} » n’a pas été validée.\nMotif : ${reason}\n\nModifiez-la puis enregistrez-la pour la renvoyer en validation :\n${link}\n\nAtlas DZ`,
+      };
+}

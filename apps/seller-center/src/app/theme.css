@@ -1,5 +1,5 @@
 /* Atlas DZ blue design (approved 2026-11-15). Loaded after globals.css. */
-:root { --blue: #2957f5; --blue-hover: #1e40c8; --soft: #eef2ff; --surface: #f5f7fa; --danger: #b42318; --warning: #8a4b00; --success: #146c2e; }
+:root { --border: #8792a6; --blue: #2957f5; --blue-hover: #1e40c8; --soft: #eef2ff; --surface: #f5f7fa; --danger: #b42318; --warning: #8a4b00; --success: #146c2e; }
 body { background: var(--surface); }
 :focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
 .button { border-radius: 10px; font-size: 14px; font-weight: 800; gap: 8px; }
@@ -126,3 +126,11 @@ body { background: var(--surface); }
 .alert-box { padding: 16px 18px; border-radius: 12px; background: #fdecec; color: var(--danger); font-weight: 600; }
 .alert-box p { margin: 0 0 10px; }
 .alert-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.decision { display: flex; justify-content: flex-end; align-items: flex-start; gap: 8px; flex-wrap: wrap; }
+.refuse summary { list-style: none; cursor: pointer; }
+.refuse summary::-webkit-details-marker { display: none; }
+.refuse[open] summary { background: var(--surface); }
+.refuse-form { margin-top: 8px; display: grid; gap: 6px; min-width: 240px; text-align: start; }
+.refuse-form label { font-size: 13px; font-weight: 700; }
+.refuse-form textarea { font: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid var(--border, #8792a6); border-radius: 8px; }
+.reject-reason { display: block; color: var(--danger); font-size: 13px; }

@@ -15,7 +15,7 @@ import {
 } from '@/components/ui';
 import { errorCode } from '@/lib/api';
 import { dinarsText, parseDinars } from '@/lib/collections';
-import { localized } from '@/lib/format';
+import { fill, localized } from '@/lib/format';
 import { useI18n } from '@/lib/i18n';
 import { useSession } from '@/lib/session';
 import { errorMessage } from '@/lib/strings';
@@ -59,6 +59,11 @@ export default function OfferScreen() {
                 : 'bad'
           }
         />
+      ) : null}
+      {offer.data?.status === 'REJECTED' && offer.data.rejectionReason ? (
+        <Notice tone="error">
+          {fill(t.catalog.rejectedReason, { reason: offer.data.rejectionReason })}
+        </Notice>
       ) : null}
       {isNew || offer.data ? (
         // Keyed by offer (not version): after a save the form keeps its "saved" confirmation

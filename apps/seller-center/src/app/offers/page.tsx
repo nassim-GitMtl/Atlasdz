@@ -96,9 +96,12 @@ export default async function Offers({
                       </div>
                       <div className="offer-identity">
                         <h3>{product?.title[locale] ?? offer.productId}</h3>
-                        <span className={`badge ${offer.status === 'APPROVED' ? 'approved' : ''}`}>
+                        <span className={`badge ${offer.status === 'APPROVED' ? 'approved' : offer.status === 'REJECTED' ? 'badge--bad' : ''}`}>
                           {t[offer.status]}
                         </span>
+                        {offer.status === 'REJECTED' && offer.rejectionReason && (
+                          <small className="reject-reason">{offer.rejectionReason}</small>
+                        )}
                         <small className="mono">{offer.id}</small>
                         <Link href={href(`/offers/${offer.id}`, locale)}>{t.editOffer}</Link>
                       </div>

@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import {
   OfferActivatedV1PayloadSchema,
+  OfferRejectedV1PayloadSchema,
   OfferCreatedV1PayloadSchema,
   OfferUpdatedV1PayloadSchema,
   ProductSubmissionChangedV1PayloadSchema,
@@ -62,6 +63,7 @@ const registeredPayloads: ReadonlyMap<string, z.ZodType> = new Map<string, z.Zod
   ['offer.created:1', OfferCreatedV1PayloadSchema],
   ['offer.activated:1', OfferActivatedV1PayloadSchema],
   ['offer.updated:1', OfferUpdatedV1PayloadSchema],
+  ['offer.rejected:1', OfferRejectedV1PayloadSchema],
   ['product_submission.changed:1', ProductSubmissionChangedV1PayloadSchema],
   ['seller_order.routed:1', OrderRoutingV1PayloadSchema],
   ['seller_order.closed:1', OrderRoutingV1PayloadSchema],

@@ -4,6 +4,7 @@ import { useActionState, useState } from 'react';
 import type { CatalogEntry, SellerOffer } from '@atlas/contracts';
 import {
   approveOfferAction,
+  rejectOfferAction,
   createOfferAction,
   updateOfferAction,
   loginAction,
@@ -235,6 +236,37 @@ export function LocalLoginForm({
         {pending ? t.submitting : account === 'seller' ? t.sellerLogin : t.adminLogin}
       </button>
     </form>
+  );
+}
+
+const refuseCopy = {
+  fr: { refuse: 'Refuser…', reason: 'Motif envoyé au vendeur (5 à 300 caractères)', send: 'Refuser l’offre', invalid: 'Indiquez un motif de 5 à 300 caractères.' },
+  ar: { refuse: 'رفض…', reason: 'السبب المرسل إلى البائع (5 إلى 300 حرف)', send: 'رفض العرض', invalid: 'اكتب سببًا من 5 إلى 300 حرف.' },
+} as const;
+
+/** Refusal needs a reason; it is emailed to the seller, who can edit and resubmit. */
+export function RejectOfferForm({ locale, offerId }: { readonly locale: Locale; readonly offerId: string }) {
+  const [state, action, pending] = useActionState(rejectOfferAction, {});
+  const t = refuseCopy[locale];
+  const id = `refuse-${offerId}`;
+  return (
+    <details className="refuse">
+      <summary className="button secondary small">{t.refuse}</summary>
+      <form action={action} className="refuse-form">
+        <input type="hidden" name="lang" value={locale} />
+        <input type="hidden" name="offerId" value={offerId} />
+        <label htmlFor={id}>{t.reason}</label>
+        <textarea id={id} name="reason" required minLength={5} maxLength={300} rows={3} />
+        {state.error && (
+          <p className="notice error" role="alert">
+            {state.error === 'invalid' ? t.invalid : copy[locale][state.error]}
+          </p>
+        )}
+        <button className="button secondary small" type="submit" disabled={pending}>
+          {pending ? '…' : t.send}
+        </button>
+      </form>
+    </details>
   );
 }
 

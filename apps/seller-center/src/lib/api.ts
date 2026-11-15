@@ -145,6 +145,10 @@ export const updateOffer = (token: string, id: string, input: UpdateOfferInput) 
   request(`/api/v1/seller/offers/${encodeURIComponent(id)}`, SellerOfferSchema, token, input);
 export const approveOffer = (token: string, id: string) =>
   request(`/api/v1/admin/offers/${encodeURIComponent(id)}/approve`, SellerOfferSchema, token, {});
+export const rejectOffer = (token: string, id: string, reason: string) =>
+  request(`/api/v1/admin/offers/${encodeURIComponent(id)}/reject`, SellerOfferSchema, token, {
+    reason,
+  });
 export const createLocalSession = (account: 'seller' | 'admin') =>
   request('/api/v1/local/session', SessionSchema, undefined, { account });
 export async function revokeSellerSession(token: string): Promise<void> {
