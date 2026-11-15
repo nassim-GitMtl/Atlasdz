@@ -9,14 +9,17 @@ import type { CatalogProduct } from '@atlas/contracts';
 import { compareOffers, formatMoney, offerTotal } from '@/lib/catalog-view';
 import { copy, localizedHref, type Locale } from '@/lib/i18n';
 import { AddCartForm } from './cart-forms';
+import { preorderCopy, preorderText } from '@/lib/preorder';
 
 type Offer = CatalogProduct['offers'][number];
 
 export function OfferSelector({
   offers,
+  productSlug,
   locale,
 }: {
   readonly offers: readonly Offer[];
+  readonly productSlug: string;
   readonly locale: Locale;
 }) {
   const ordered = useMemo(() => [...offers].sort(compareOffers), [offers]);
@@ -66,10 +69,17 @@ export function OfferSelector({
                 </span>
               </span>
               <span className="offer-meta">
-                <span>
-                  <Clock aria-hidden="true" size={16} />
-                  {t.preparation} {offer.handlingDays} {offer.handlingDays === 1 ? t.day : t.days}
-                </span>
+                {offer.preorder ? (
+                  <span className="preorder-note">
+                    <strong className="preorder-badge">{preorderCopy[locale].badge}</strong>
+                    {preorderText(offer.preorder, locale)}
+                  </span>
+                ) : (
+                  <span>
+                    <Clock aria-hidden="true" size={16} />
+                    {t.preparation} {offer.handlingDays} {offer.handlingDays === 1 ? t.day : t.days}
+                  </span>
+                )}
                 <span>
                   <Truck aria-hidden="true" size={16} />
                   {t.shippingAtCheckout}
@@ -102,6 +112,8 @@ export function OfferSelector({
       <AddCartForm
         key={selected.id}
         offerId={selected.id}
+        productSlug={productSlug}
+        preorder={Boolean(selected.preorder)}
         locale={locale}
         disabled={selected.availableQuantity === 0}
       />

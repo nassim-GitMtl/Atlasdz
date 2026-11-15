@@ -5,6 +5,14 @@ export const orderCopy = {
     phone: 'Téléphone',
     addressLine: 'Rue, numéro et appartement',
     city: 'Ville / commune',
+    preorder: 'Cochez la case d’acceptation de la précommande pour continuer.',
+    guestEmail: 'Adresse e-mail (pour suivre la commande)',
+    guestEmailHint:
+      'Pas besoin de compte : nous le créons avec cet e-mail et vous envoyons un lien pour choisir un mot de passe. Déjà client ?',
+    guestSignIn: 'Se connecter',
+    exists:
+      'Un compte existe déjà avec cet e-mail : connectez-vous pour terminer la commande (votre panier est conservé).',
+    limited: 'Trop de tentatives. Réessayez dans quelques minutes.',
     contactHint:
       'Utilisez uniquement des coordonnées fictives. Elles seront enregistrées avec la commande et visibles par ses vendeurs, sans envoi ni appel réel.',
     phoneHint:
@@ -114,6 +122,13 @@ export const orderCopy = {
     phone: 'الهاتف',
     addressLine: 'الشارع ورقم المبنى والشقة',
     city: 'المدينة / البلدية',
+    preorder: 'ضع علامة الموافقة على الطلب المسبق للمتابعة.',
+    guestEmail: 'البريد الإلكتروني (لمتابعة الطلب)',
+    guestEmailHint:
+      'لا حاجة إلى حساب: ننشئه بهذا البريد ونرسل لك رابطًا لاختيار كلمة المرور. لديك حساب؟',
+    guestSignIn: 'تسجيل الدخول',
+    exists: 'يوجد حساب بهذا البريد: سجّل الدخول لإتمام الطلب (سلتك محفوظة).',
+    limited: 'محاولات كثيرة. أعد المحاولة بعد دقائق.',
     contactHint:
       'استخدم بيانات وهمية فقط. ستُحفظ مع الطلب وتظهر للبائعين المعنيين، دون شحن أو اتصال فعلي.',
     phoneHint:

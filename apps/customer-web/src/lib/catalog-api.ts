@@ -2,12 +2,13 @@ import {
   CatalogProductListSchema,
   CatalogProductSchema,
   CatalogSellerSchema,
+  DeliveryDestinationSchema,
   ReviewPageSchema,
   type CatalogProduct,
   type CatalogSeller,
   type ReviewPage,
 } from '@atlas/contracts';
-import type { z } from 'zod';
+import { z } from 'zod';
 
 const DEFAULT_API_BASE_URL = 'http://127.0.0.1:3000';
 const REQUEST_TIMEOUT_MS = 5_000;
@@ -117,4 +118,15 @@ export function getReviews(kind: 'products' | 'sellers', slug: string): Promise<
     ReviewPageSchema,
     'reviews',
   );
+}
+
+/** Wilayas and communes for the checkout form (public: needed before any account exists). */
+export async function getDestinations() {
+  return (
+    await requestJson(
+      '/api/v1/delivery/destinations',
+      z.object({ items: DeliveryDestinationSchema.array().max(2000) }),
+      'destinations',
+    )
+  ).items;
 }

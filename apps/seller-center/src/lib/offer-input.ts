@@ -1,7 +1,8 @@
 import { CreateOfferInputSchema, UpdateOfferInputSchema } from '@atlas/contracts';
 
 export type OfferValues = Readonly<
-  Record<'productId' | 'price' | 'quantity' | 'handlingDays' | 'deliveryFee', string>
+  Record<'productId' | 'price' | 'quantity' | 'handlingDays' | 'deliveryFee', string> &
+    Partial<Record<'preorder' | 'preorderMin' | 'preorderMax' | 'preorderOrigin', string>>
 >;
 export const emptyOfferValues: OfferValues = {
   productId: '',
@@ -9,6 +10,10 @@ export const emptyOfferValues: OfferValues = {
   quantity: '',
   handlingDays: '',
   deliveryFee: '',
+  preorder: '',
+  preorderMin: '',
+  preorderMax: '',
+  preorderOrigin: '',
 };
 
 export function moneyToMinor(value: string): number | undefined {
@@ -23,6 +28,19 @@ function integer(value: string): number | undefined {
   return /^\d{1,7}$/.test(value.trim()) ? Number(value) : undefined;
 }
 
+/** Pre-order terms when the box is ticked ("yes"); null for an item in stock. */
+function preorderOf(values: OfferValues) {
+  if (values.preorder !== 'yes') return {};
+  const origin = (values.preorderOrigin ?? '').trim();
+  return {
+    preorder: {
+      minDays: integer(values.preorderMin ?? ''),
+      maxDays: integer(values.preorderMax ?? ''),
+      origin: origin === '' ? null : origin,
+    },
+  };
+}
+
 export function parseOfferValues(values: OfferValues) {
   return CreateOfferInputSchema.safeParse({
     productId: values.productId,
@@ -30,6 +48,7 @@ export function parseOfferValues(values: OfferValues) {
     availableQuantity: integer(values.quantity),
     handlingDays: integer(values.handlingDays),
     deliveryFeeMinor: moneyToMinor(values.deliveryFee),
+    ...preorderOf(values),
   });
 }
 export function parseOfferUpdate(values: OfferValues, version: string) {
@@ -38,5 +57,6 @@ export function parseOfferUpdate(values: OfferValues, version: string) {
     priceMinor: moneyToMinor(values.price),
     availableQuantity: integer(values.quantity),
     handlingDays: integer(values.handlingDays),
+    ...preorderOf(values),
   });
 }

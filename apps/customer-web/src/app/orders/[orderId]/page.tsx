@@ -75,7 +75,11 @@ export default async function OrderDetail({
                   <p className="order-status" role="status">
                     {t[seller.status]}
                   </p>
-                  <SellerSummary snapshot={seller.snapshot} locale={locale} />
+                  <SellerSummary
+                    snapshot={seller.snapshot}
+                    locale={locale}
+                    placedAt={seller.createdAt}
+                  />
                   <Link href={`${localizedHref('/support', locale)}&sellerOrderId=${seller.id}`}>
                     {locale === 'ar'
                       ? 'التواصل مع البائع / طلب إرجاع'

@@ -1,10 +1,9 @@
 'use server';
 
-import { cookies, headers } from 'next/headers';
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import {
   AuthApiError,
-  forwardedClientIp,
   loginCustomer,
   registerCustomer,
   registerGuest,
@@ -13,7 +12,8 @@ import {
   resetPassword,
 } from '@/lib/auth-client';
 import type { AuthError } from '@/lib/auth-copy';
-import { CUSTOMER_COOKIE } from '@/lib/cart-api';
+import { clientIp, keepCustomerSession } from '@/lib/customer-session';
+import { mergeGuestCart } from '@/lib/guest-cart';
 import { customerTrustedOrigin } from '@/lib/customer-security';
 import { localizedHref } from '@/lib/i18n';
 
@@ -38,23 +38,14 @@ async function trusted() {
   return customerTrustedOrigin(process.env, h.get('origin'), h.get('host'));
 }
 
-async function clientIp() {
-  return forwardedClientIp((await headers()).get('x-forwarded-for'));
-}
-
 async function startSession(email: string, password: string) {
   await keepSession(await loginCustomer(email, password, await clientIp()));
 }
 
+/** Signs in and brings along what the visitor put in the cart while signed out. */
 async function keepSession(session: { accessToken: string; expiresAt: string }) {
-  if (new Date(session.expiresAt).getTime() <= Date.now()) throw new AuthApiError('unavailable');
-  (await cookies()).set(CUSTOMER_COOKIE, session.accessToken, {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: (process.env['CUSTOMER_WEB_ORIGIN'] ?? '').startsWith('https:'),
-    path: '/',
-    expires: new Date(session.expiresAt),
-  });
+  const token = await keepCustomerSession(session);
+  await mergeGuestCart(token).catch(() => undefined);
 }
 
 function failure(error: unknown): AuthActionState {

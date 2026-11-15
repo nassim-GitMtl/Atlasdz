@@ -97,6 +97,7 @@ export class CheckoutController {
           input.data.expectedCartVersion,
           input.data.destinationId,
           input.data.deliveryContact,
+          input.data.acceptPreorder === true,
         ),
       ),
     );

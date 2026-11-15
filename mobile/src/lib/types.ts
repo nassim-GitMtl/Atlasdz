@@ -26,6 +26,7 @@ export type {
   OrderNotification,
 } from '../../../packages/contracts/src/notifications';
 export type { SupportCase, SupportDetail } from '../../../packages/contracts/src/support';
+export type { Preorder } from '../../../packages/contracts/src/catalog';
 export type {
   OrderReviews,
   OwnReview,

@@ -5,16 +5,19 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Photo } from '@/components/photo';
 import { Badge, Button, Card, Empty, LoadState, Notice, Screen, text } from '@/components/ui';
-import { errorCode } from '@/lib/api';
+import { api, errorCode } from '@/lib/api';
 import { useCart } from '@/lib/cart';
 import { imageUri } from '@/lib/config';
 import { formatMoney, localized } from '@/lib/format';
+import { buildGuestCart } from '@/lib/guest-cart';
 import { useI18n } from '@/lib/i18n';
 import { useSession } from '@/lib/session';
 import { errorMessage } from '@/lib/strings';
 import { colors, radius } from '@/lib/theme';
-import type { CartLine, CustomerCart } from '@/lib/types';
+import type { CartLine, CatalogProduct, CustomerCart } from '@/lib/types';
 import { useRequest } from '@/lib/use-request';
+import { PreorderNote } from '@/components/preorder-note';
+import { preorderSpan } from '@/lib/preorder';
 
 export default function CartScreen() {
   const { t, locale } = useI18n();
@@ -24,7 +27,25 @@ export default function CartScreen() {
   const cart = useRequest(signedIn ? 'cart' : null, () =>
     session.request<CustomerCart>('/api/v1/cart'),
   );
-  const { reload } = cart;
+  // Signed out: the phone's cart, priced from the live catalogue (no account needed to shop).
+  const lines = badge.guestLines;
+  const slugs = [...new Set(lines.map((line) => line.slug))].sort();
+  const products = useRequest(signedIn ? null : `guest-products:${slugs.join(',')}`, async () => {
+    const found = await Promise.all(
+      slugs.map(
+        async (slug) =>
+          [
+            slug,
+            await api<CatalogProduct>(`/api/v1/catalog/products/${encodeURIComponent(slug)}`).catch(
+              () => null,
+            ),
+          ] as const,
+      ),
+    );
+    return new Map(found);
+  });
+  const source = signedIn ? cart : products;
+  const reload = source.reload;
   useFocusEffect(
     useCallback(() => {
       void reload();
@@ -34,6 +55,10 @@ export default function CartScreen() {
   const [failure, setFailure] = useState<string | null>(null);
 
   async function setQuantity(line: CartLine, quantity: number) {
+    if (!signedIn) {
+      badge.setGuestQuantity(line.offerId, quantity);
+      return;
+    }
     if (!cart.data) return;
     setBusy(line.offerId);
     setFailure(null);
@@ -51,24 +76,16 @@ export default function CartScreen() {
     }
   }
 
-  if (!signedIn) {
-    return (
-      <Screen>
-        <Empty
-          icon="cart-outline"
-          text={t.common.signInNeeded}
-          action={<Button label={t.common.signIn} onPress={() => router.push('/login')} />}
-        />
-      </Screen>
-    );
-  }
-
-  const data = cart.data;
+  const data = signedIn
+    ? cart.data
+    : products.data
+      ? buildGuestCart(lines, products.data)
+      : undefined;
   return (
-    <Screen refreshing={cart.loading && !!data} onRefresh={() => void reload()}>
+    <Screen refreshing={source.loading && !!data} onRefresh={() => void reload()}>
       <LoadState
-        loading={cart.loading && !data}
-        error={data ? undefined : cart.error}
+        loading={source.loading && !data}
+        error={data ? undefined : source.error}
         onRetry={() => void reload()}
       />
       {failure ? <Notice tone="error">{errorMessage(t, failure)}</Notice> : null}
@@ -99,6 +116,7 @@ export default function CartScreen() {
               {line.lineSubtotalMinor !== null ? (
                 <Text style={text.price}>{formatMoney(line.lineSubtotalMinor, locale)}</Text>
               ) : null}
+              {line.offer?.preorder ? <PreorderNote preorder={line.offer.preorder} /> : null}
               {line.state === 'UNAVAILABLE' ? (
                 <Badge label={t.cart.unavailable} tone="bad" />
               ) : null}
@@ -145,7 +163,15 @@ export default function CartScreen() {
           <Button
             label={t.cart.checkout}
             disabled={!data.items.some((line) => line.state === 'AVAILABLE')}
-            onPress={() => router.push('/checkout')}
+            onPress={() => {
+              // Pre-order items: checkout asks the buyer to accept the widest delivery window.
+              const span = preorderSpan(
+                data.items.map((line) => ({ preorder: line.offer?.preorder })),
+              );
+              router.push(
+                span ? `/checkout?preorderMin=${span.min}&preorderMax=${span.max}` : '/checkout',
+              );
+            }}
           />
         </Card>
       ) : null}

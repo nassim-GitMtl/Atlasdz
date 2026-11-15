@@ -82,6 +82,11 @@ const fr = {
     decrease: 'Retirer un article',
   },
   checkout: {
+    email: 'Adresse e-mail (pour suivre la commande)',
+    emailHint:
+      'Pas besoin de compte : nous le créons avec cet e-mail et vous envoyons un lien pour choisir un mot de passe.',
+    guestExists:
+      'Un compte existe déjà avec cet e-mail : connectez-vous pour terminer la commande (votre panier est conservé).',
     title: 'Livraison',
     saved: 'Adresses enregistrées',
     wilaya: 'Wilaya',
@@ -222,6 +227,7 @@ const fr = {
     replied: 'Réponse publiée.',
   },
   slip: {
+    preorder: 'précommande',
     share: 'Partager le bon de livraison',
     title: 'Bon de livraison',
     order: 'Commande',
@@ -232,6 +238,22 @@ const fr = {
     collect: 'À encaisser à la livraison',
     test: 'commande de test, rien à encaisser',
     tracking: 'Suivi',
+  },
+  preorder: {
+    badge: 'Précommande',
+    window: 'Livraison estimée sous {min} à {max} jours',
+    origin: 'Provenance : {origin}',
+    between: 'Livraison estimée entre le {from} et le {to}',
+    add: 'Précommander',
+    accept:
+      'J’accepte la précommande : article pas encore en stock, livraison estimée sous {min} à {max} jours.',
+    acceptNeeded: 'Acceptez le délai de précommande pour continuer.',
+    toggle: 'Article en précommande (pas encore en stock, par exemple importé)',
+    help: 'Les acheteurs voient le délai estimé et l’acceptent avant de commander. Le stock devient le nombre de précommandes acceptées.',
+    minDays: 'Délai estimé : au plus tôt (jours)',
+    maxDays: 'Délai estimé : au plus tard (jours)',
+    originField: 'Provenance (facultatif)',
+    invalid: 'Délai de précommande : de 1 à 180 jours, le plus tard après le plus tôt.',
   },
   addresses: {
     title: 'Mes adresses',
@@ -459,6 +481,7 @@ const fr = {
     SUPPORT_CONFLICT: 'Cette demande vient de changer. Actualisez.',
     REVIEW_CONFLICT: 'Cet avis vient de changer. Actualisez.',
     REVIEW_NOT_ALLOWED: 'Vous pourrez noter cet article une fois livré.',
+    PREORDER_ACCEPTANCE_REQUIRED: 'Acceptez le délai de précommande pour continuer.',
     ACCOUNT_HAS_OPEN_ORDERS:
       'Terminez ou annulez vos commandes en cours avant de supprimer le compte.',
     PAYLOAD_TOO_LARGE: 'La photo est trop lourde.',
@@ -557,6 +580,9 @@ const ar: Strings = {
     decrease: 'إزالة قطعة',
   },
   checkout: {
+    email: 'البريد الإلكتروني (لمتابعة الطلب)',
+    emailHint: 'لا حاجة إلى حساب: ننشئه بهذا البريد ونرسل لك رابطًا لاختيار كلمة المرور.',
+    guestExists: 'يوجد حساب بهذا البريد: سجّل الدخول لإتمام الطلب (سلتك محفوظة).',
     title: 'التوصيل',
     saved: 'العناوين المحفوظة',
     wilaya: 'الولاية',
@@ -695,6 +721,7 @@ const ar: Strings = {
     replied: 'تم نشر الرد.',
   },
   slip: {
+    preorder: 'طلب مسبق',
     share: 'مشاركة وصل التسليم',
     title: 'وصل التسليم',
     order: 'الطلب',
@@ -705,6 +732,22 @@ const ar: Strings = {
     collect: 'المبلغ المستحق عند التسليم',
     test: 'طلب تجريبي، لا شيء للتحصيل',
     tracking: 'التتبع',
+  },
+  preorder: {
+    badge: 'طلب مسبق',
+    window: 'التوصيل المتوقع خلال {min} إلى {max} يومًا',
+    origin: 'المصدر: {origin}',
+    between: 'التوصيل المتوقع بين {from} و{to}',
+    add: 'اطلب مسبقًا',
+    accept:
+      'أوافق على الطلب المسبق: المنتج غير متوفر بعد، والتوصيل المتوقع خلال {min} إلى {max} يومًا.',
+    acceptNeeded: 'وافق على مدة الطلب المسبق للمتابعة.',
+    toggle: 'منتج بالطلب المسبق (غير متوفر بعد، مثلاً مستورد)',
+    help: 'يرى المشترون المدة المتوقعة ويوافقون عليها قبل الطلب. يصبح المخزون عدد الطلبات المسبقة المقبولة.',
+    minDays: 'المدة المتوقعة: على الأقل (أيام)',
+    maxDays: 'المدة المتوقعة: على الأكثر (أيام)',
+    originField: 'المصدر (اختياري)',
+    invalid: 'مدة الطلب المسبق: من 1 إلى 180 يومًا، والأقصى بعد الأدنى.',
   },
   addresses: {
     title: 'عناويني',
@@ -927,6 +970,7 @@ const ar: Strings = {
     SUPPORT_CONFLICT: 'تغيّر هذا الطلب للتو. حدّث الصفحة.',
     REVIEW_CONFLICT: 'تغيّر هذا الرأي للتو. حدّث الصفحة.',
     REVIEW_NOT_ALLOWED: 'يمكنك تقييم هذا المنتج بعد استلامه.',
+    PREORDER_ACCEPTANCE_REQUIRED: 'وافق على مدة الطلب المسبق للمتابعة.',
     ACCOUNT_HAS_OPEN_ORDERS: 'أكمل طلباتك الجارية أو ألغها قبل حذف الحساب.',
     PAYLOAD_TOO_LARGE: 'حجم الصورة كبير جدًا.',
     UNSUPPORTED_MEDIA_TYPE: 'صيغة الصورة غير مدعومة.',

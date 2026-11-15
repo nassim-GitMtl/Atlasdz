@@ -16,6 +16,7 @@ import { z } from 'zod';
 import { customerApiOrigin } from './customer-security';
 
 export type OrderFailure =
+  | 'preorder'
   | 'auth'
   | 'changed'
   | 'expired'
@@ -86,6 +87,7 @@ async function request<T>(
         SUPPORT_CONFLICT: 'conflict',
         RESOURCE_NOT_FOUND: 'missing',
         COD_LIMIT_REACHED: 'codLimit',
+        PREORDER_ACCEPTANCE_REQUIRED: 'preorder',
       };
       throw new OrderApiError(
         error.success ? (codes[error.data.code] ?? 'unavailable') : 'unavailable',
@@ -108,11 +110,13 @@ export const createQuote = (
   expectedCartVersion: number,
   destinationId: string,
   deliveryContact: DeliveryContact,
+  acceptPreorder = false,
 ) =>
   request('/api/v1/checkout/quotes', CheckoutQuoteSchema, token, {
     expectedCartVersion,
     destinationId,
     deliveryContact,
+    ...(acceptPreorder ? { acceptPreorder: true } : {}),
   });
 export const getQuote = (token: string, id: string) =>
   request(`/api/v1/checkout/quotes/${encodeURIComponent(id)}`, CheckoutQuoteSchema, token);

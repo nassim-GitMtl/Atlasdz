@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import type { CatalogEntry, SellerOffer } from '@atlas/contracts';
 import {
   approveOfferAction,
@@ -36,8 +36,16 @@ export function OfferForm({
           quantity: String(offer.availableQuantity),
           handlingDays: String(offer.handlingDays),
           deliveryFee: (offer.deliveryFeeMinor / 100).toFixed(2),
+          preorder: offer.preorder ? 'yes' : '',
+          preorderMin: offer.preorder ? String(offer.preorder.minDays) : '',
+          preorderMax: offer.preorder ? String(offer.preorder.maxDays) : '',
+          preorderOrigin: offer.preorder?.origin ?? '',
         }
       : { ...emptyOfferValues, productId: preselectedProductId });
+  const [preorder, setPreorder] = useState(values.preorder === 'yes');
+  const preorderMin = values.preorderMin ?? '';
+  const preorderMax = values.preorderMax ?? '';
+  const preorderOrigin = values.preorderOrigin ?? '';
   return (
     <form action={action} className="offer-form">
       <input type="hidden" name="lang" value={locale} />
@@ -114,6 +122,58 @@ export function OfferForm({
           />
           <small id="handling-help">{t.handlingHelp}</small>
         </div>
+        <fieldset className="field preorder-fields">
+          <legend>{t.preorder}</legend>
+          <label htmlFor="preorder">
+            <input
+              id="preorder"
+              name="preorder"
+              type="checkbox"
+              value="yes"
+              checked={preorder}
+              onChange={(event) => setPreorder(event.target.checked)}
+            />{' '}
+            {t.preorderLabel}
+          </label>
+          <small>{t.preorderHelp}</small>
+          {preorder && (
+            <>
+              <label htmlFor="preorderMin">{t.preorderMin}</label>
+              <input
+                id="preorderMin"
+                name="preorderMin"
+                type="number"
+                min="1"
+                max="180"
+                step="1"
+                required
+                defaultValue={preorderMin}
+                placeholder="20"
+              />
+              <label htmlFor="preorderMax">{t.preorderMax}</label>
+              <input
+                id="preorderMax"
+                name="preorderMax"
+                type="number"
+                min="1"
+                max="180"
+                step="1"
+                required
+                defaultValue={preorderMax}
+                placeholder="35"
+              />
+              <label htmlFor="preorderOrigin">{t.preorderOrigin}</label>
+              <input
+                id="preorderOrigin"
+                name="preorderOrigin"
+                type="text"
+                maxLength={60}
+                defaultValue={preorderOrigin}
+                placeholder={t.preorderOriginExample}
+              />
+            </>
+          )}
+        </fieldset>
         {!offer && (
           <div className="field">
             <label htmlFor="deliveryFee">{t.delivery}</label>

@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Button, Card, Checkbox, LoadState, Notice, Screen, text } from '@/components/ui';
@@ -12,6 +12,7 @@ import { useSession } from '@/lib/session';
 import { errorMessage } from '@/lib/strings';
 import type { CheckoutQuote, CustomerOrder } from '@/lib/types';
 import { useRequest } from '@/lib/use-request';
+import { PreorderNote } from '@/components/preorder-note';
 
 export default function ReviewScreen() {
   const { quoteId } = useLocalSearchParams<{ quoteId: string }>();
@@ -73,14 +74,17 @@ export default function ReviewScreen() {
             <Card key={seller.sellerId}>
               <Text style={text.heading}>{seller.sellerName}</Text>
               {seller.items.map((item) => (
-                <View key={item.offerId} style={styles.row}>
-                  <Text style={[text.body, styles.grow]}>
-                    {localized(item.title, locale)} × {item.quantity}
-                  </Text>
-                  <Text style={text.body}>
-                    {formatMoney(item.unitPriceMinor * item.quantity, locale)}
-                  </Text>
-                </View>
+                <Fragment key={item.offerId}>
+                  <View style={styles.row}>
+                    <Text style={[text.body, styles.grow]}>
+                      {localized(item.title, locale)} × {item.quantity}
+                    </Text>
+                    <Text style={text.body}>
+                      {formatMoney(item.unitPriceMinor * item.quantity, locale)}
+                    </Text>
+                  </View>
+                  {item.preorder ? <PreorderNote preorder={item.preorder} /> : null}
+                </Fragment>
               ))}
               <View style={styles.row}>
                 <Text style={[text.muted, styles.grow]}>{t.review.shipping}</Text>

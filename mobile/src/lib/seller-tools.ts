@@ -75,7 +75,9 @@ export function deliverySlip(order: SellerOrder, t: Strings['slip'], locale: Loc
   }
   lines.push(`${t.items} :`);
   for (const item of order.snapshot.items) {
-    lines.push(`- ${localized(item.title, locale)} × ${item.quantity}`);
+    lines.push(
+      `- ${localized(item.title, locale)} × ${item.quantity}${item.preorder ? ` (${t.preorder})` : ''}`,
+    );
   }
   lines.push(
     order.paymentState === 'CASH_ON_DELIVERY'

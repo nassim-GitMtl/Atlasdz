@@ -238,6 +238,28 @@ await check('edit an offer', async () => {
   await page.getByText('Enregistré.').waitFor({ timeout: 15000 });
 });
 let submissionId = null;
+await check('pre-order terms in the offer form', async () => {
+  await page.goto(`${APP}/catalog`);
+  await page.getByRole('tab', { name: 'Offres' }).click();
+  await page.getByRole('link').first().click({ timeout: 15000 });
+  const toggle = page.getByRole('checkbox', { name: /Article en précommande/ });
+  await toggle.click({ timeout: 15000 });
+  await page.getByLabel('Délai estimé : au plus tôt (jours)').fill('20');
+  await page.getByLabel('Délai estimé : au plus tard (jours)').fill('35');
+  await page.getByLabel('Provenance (facultatif)').fill('Turquie');
+  await scan('offer pre-order');
+  await page.getByRole('button', { name: 'Enregistrer l’offre' }).click();
+  await page.getByText('Enregistré.').waitFor({ timeout: 15000 });
+  await page.reload();
+  const kept = page.getByRole('checkbox', { name: /Article en précommande/ });
+  await kept.waitFor({ timeout: 30000 });
+  if ((await kept.getAttribute('aria-checked')) !== 'true')
+    throw new Error('the pre-order terms were not kept after reloading');
+  // Back in stock, so the other journeys keep ordering without the pre-order step.
+  await page.getByRole('checkbox', { name: /Article en précommande/ }).click();
+  await page.getByRole('button', { name: 'Enregistrer l’offre' }).click();
+  await page.getByText('Enregistré.').waitFor({ timeout: 15000 });
+});
 await check('submit a new product', async () => {
   await page.goto(`${APP}/seller/product/new`);
   await page.getByRole('button', { name: /^Catégorie:/ }).click({ timeout: 15000 });

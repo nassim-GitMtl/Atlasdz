@@ -21,6 +21,7 @@ import { errorMessage } from '@/lib/strings';
 import { colors, radius } from '@/lib/theme';
 import type { CatalogProduct, CatalogProductList, ReviewPage } from '@/lib/types';
 import { useRequest } from '@/lib/use-request';
+import { PreorderNote } from '@/components/preorder-note';
 
 export default function ProductScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -52,15 +53,12 @@ export default function ProductScreen() {
     if (item) viewed(summarize(item));
   }, [item, viewed]);
 
+  // No account needed to shop: signed out, the cart is kept on the phone until checkout.
   async function addToCart(offerId: string) {
-    if (session.status !== 'signedIn') {
-      router.push('/login');
-      return;
-    }
     setAdding(offerId);
     setFailure(null);
     try {
-      await cart.add(offerId, quantity);
+      await cart.add(offerId, quantity, slug);
       setAdded(offerId);
     } catch (error) {
       setFailure(errorCode(error));
@@ -154,9 +152,11 @@ export default function ProductScreen() {
                 {offer.availableQuantity > 0
                   ? fill(t.product.stock, { n: offer.availableQuantity })
                   : t.product.outOfStock}
-                {' · '}
-                {fill(t.product.handling, { n: offer.handlingDays })}
+                {offer.preorder
+                  ? null
+                  : ` · ${fill(t.product.handling, { n: offer.handlingDays })}`}
               </Text>
+              {offer.preorder ? <PreorderNote preorder={offer.preorder} /> : null}
               <Text style={text.muted}>{t.product.deliveryNote}</Text>
               {!buying ? null : added === offer.id ? (
                 <>
@@ -169,7 +169,7 @@ export default function ProductScreen() {
                 </>
               ) : (
                 <Button
-                  label={t.product.add}
+                  label={offer.preorder ? t.preorder.add : t.product.add}
                   disabled={offer.availableQuantity < quantity}
                   busy={adding === offer.id}
                   onPress={() => void addToCart(offer.id)}

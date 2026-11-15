@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CatalogLocalizedTextSchema, CatalogProductSchema } from './catalog.js';
+import { CatalogLocalizedTextSchema, CatalogProductSchema, PreorderSchema } from './catalog.js';
 import { IsoTimestampSchema, UuidSchema } from './primitives.js';
 import { CodCollectorSchema, DeliveryDestinationSchema } from './delivery.js';
 
@@ -29,6 +29,8 @@ export const CreateCheckoutQuoteInputSchema = z
     expectedCartVersion: z.number().int().min(1).max(2_147_483_646),
     destinationId: UuidSchema,
     deliveryContact: DeliveryContactSchema,
+    /** Required when the cart holds pre-order items: the buyer accepts the estimated delay. */
+    acceptPreorder: z.literal(true).optional(),
   })
   .strict();
 export const CloseSellerOrderInputSchema = z
@@ -80,6 +82,7 @@ export const OrderItemSnapshotSchema = z
     unitPriceMinor: z.number().int().min(1).max(2_000_000_000),
     offerVersion: z.number().int().positive(),
     handlingDays: z.number().int().min(0).max(30),
+    preorder: PreorderSchema.nullish(),
   })
   .strict();
 export const SellerOrderSnapshotSchema = z
@@ -104,6 +107,8 @@ export const SellerOrderSnapshotSchema = z
 export const CheckoutQuoteSchema = z
   .object({
     id: UuidSchema,
+    /** The buyer accepted the pre-order delay (kept as proof with the quote). */
+    preorderAccepted: z.boolean().optional(),
     cartVersion: z.number().int().min(1),
     createdAt: IsoTimestampSchema,
     expiresAt: IsoTimestampSchema,

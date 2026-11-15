@@ -60,6 +60,14 @@ export const copy = {
     priceHelp: 'Prix unitaire en dinars, jusqu’à deux décimales.',
     quantityHelp: 'Votre stock disponible, de 0 à 1 000 000.',
     handlingHelp: 'Temps avant expédition, de 0 à 30 jours.',
+    preorder: 'Précommande',
+    preorderLabel: 'Article en précommande (pas encore en stock, par exemple importé)',
+    preorderHelp:
+      'Les acheteurs voient le délai estimé et l’acceptent avant de commander. Le stock devient le nombre de précommandes acceptées.',
+    preorderMin: 'Délai estimé : au plus tôt (jours)',
+    preorderMax: 'Délai estimé : au plus tard (jours)',
+    preorderOrigin: 'Provenance (facultatif)',
+    preorderOriginExample: 'Turquie, Chine, France…',
     deliveryHelp:
       'Champ historique, ignoré au devis. Configurez les tarifs par destination dans Livraison et paiement à réception.',
     submit: 'Envoyer pour validation',
@@ -145,6 +153,14 @@ export const copy = {
     priceHelp: 'سعر الوحدة بالدينار، مع منزلتين عشريتين كحد أقصى.',
     quantityHelp: 'المخزون المتوفر من 0 إلى 1 000 000.',
     handlingHelp: 'المدة قبل الشحن من 0 إلى 30 يوماً.',
+    preorder: 'طلب مسبق',
+    preorderLabel: 'منتج بالطلب المسبق (غير متوفر بعد، مثلاً مستورد)',
+    preorderHelp:
+      'يرى المشترون المدة المتوقعة ويوافقون عليها قبل الطلب. يصبح المخزون عدد الطلبات المسبقة المقبولة.',
+    preorderMin: 'المدة المتوقعة: على الأقل (أيام)',
+    preorderMax: 'المدة المتوقعة: على الأكثر (أيام)',
+    preorderOrigin: 'المصدر (اختياري)',
+    preorderOriginExample: 'تركيا، الصين، فرنسا…',
     deliveryHelp:
       'حقل قديم لا يُستخدم في عرض السعر. اضبط التعريفة حسب الوجهة في التوصيل والدفع عند الاستلام.',
     submit: 'إرسال للمراجعة',

@@ -8,7 +8,7 @@ import {
 } from '@atlas/contracts';
 import { Body, Controller, Get, HttpCode, Inject, Param, Post, Req } from '@nestjs/common';
 import {
-  AuthenticatedOnly,
+  Public,
   getRequestPrincipal,
   RequirePermission,
   type AuthenticatedRequest,
@@ -34,13 +34,10 @@ function seller(req: Request) {
 @Controller('api/v1/delivery')
 export class DeliveryDestinationsController {
   constructor(@Inject(ORDER_REPOSITORY) private readonly orders: OrderRepositoryPort) {}
+  /** Public reference data: shoppers pick their commune before any account exists. */
   @Get('destinations')
-  @AuthenticatedOnly()
-  @RateLimited('authenticated', 'commerce.delivery.destinations')
-  async list(@Req() req: Request) {
-    const p = getRequestPrincipal(req);
-    if (!['customer', 'seller_user'].includes(p.actorType))
-      throw new SafeApplicationError('FORBIDDEN');
+  @Public()
+  async list() {
     return mapped(async () => ({
       items: DeliveryDestinationSchema.array().parse(await this.orders.listDestinations()),
     }));

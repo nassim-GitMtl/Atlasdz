@@ -23,6 +23,7 @@ export const SafeErrorCodeSchema = z.enum([
   'SUPPORT_CONFLICT',
   'REVIEW_CONFLICT',
   'REVIEW_NOT_ALLOWED',
+  'PREORDER_ACCEPTANCE_REQUIRED',
   'CART_CONFLICT',
   'CART_OFFER_UNAVAILABLE',
   'CART_LIMIT_REACHED',
@@ -77,6 +78,10 @@ export const SAFE_ERROR_DEFINITIONS: Readonly<
   },
   SUPPORT_CONFLICT: { status: 409, message: 'The support case changed. Reload before continuing.' },
   REVIEW_CONFLICT: { status: 409, message: 'The review changed. Reload before continuing.' },
+  PREORDER_ACCEPTANCE_REQUIRED: {
+    status: 422,
+    message: 'The cart holds pre-order items: accept the estimated delivery time to continue.',
+  },
   REVIEW_NOT_ALLOWED: {
     status: 409,
     message: 'Only items of your own orders that were delivered can be reviewed.',

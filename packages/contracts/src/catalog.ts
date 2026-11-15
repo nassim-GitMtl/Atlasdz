@@ -25,6 +25,20 @@ export const CatalogSellerSchema = z
   })
   .strict();
 
+/**
+ * A pre-order offer: the item is not in stock yet (often imported). The buyer sees the estimated
+ * delivery window and accepts it before ordering; the stock is the number of pre-orders taken.
+ */
+export const PreorderSchema = z
+  .object({
+    minDays: z.number().int().min(1).max(180),
+    maxDays: z.number().int().min(1).max(180),
+    origin: z.string().trim().min(2).max(60).nullable(),
+  })
+  .strict()
+  .refine((value) => value.maxDays >= value.minDays, 'maxDays must not be below minDays');
+export type Preorder = z.infer<typeof PreorderSchema>;
+
 export const CatalogOfferSchema = z
   .object({
     id: UuidSchema,
@@ -34,6 +48,7 @@ export const CatalogOfferSchema = z
     availableQuantity: QuantitySchema,
     handlingDays: z.number().int().min(0).max(30),
     deliveryFeeMinor: MoneyMinorSchema,
+    preorder: PreorderSchema.nullish(),
   })
   .strict();
 
@@ -73,6 +88,8 @@ export const CreateOfferInputSchema = z
     availableQuantity: QuantitySchema,
     handlingDays: z.number().int().min(0).max(30),
     deliveryFeeMinor: MoneyMinorSchema,
+    /** Null or absent: in stock. */
+    preorder: PreorderSchema.nullish(),
   })
   .strict();
 

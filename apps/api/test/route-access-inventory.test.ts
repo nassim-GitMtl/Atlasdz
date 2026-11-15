@@ -124,7 +124,7 @@ describe('route access inventory', () => {
       'CustomerReviewsController.forOrder:permission-protected',
       'CustomerReviewsController.remove:permission-protected',
       'CustomerReviewsController.write:permission-protected',
-      'DeliveryDestinationsController.list:authenticated-only',
+      'DeliveryDestinationsController.list:public',
       'HealthController.live:public',
       'HealthController.ready:public',
       'OrderNotificationsController.list:permission-protected',

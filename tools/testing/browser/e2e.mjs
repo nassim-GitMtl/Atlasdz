@@ -252,6 +252,133 @@ await check('buyer rates a delivered item from the order page', async () => {
   await ctx.close();
 });
 
+const API_BASE = process.env.ATLAS_API_URL ?? 'http://127.0.0.1:3003';
+const api = async (path, token, init = {}) => {
+  const r = await fetch(API_BASE + path, {
+    ...init,
+    headers: {
+      'content-type': 'application/json',
+      ...(token ? { authorization: `Bearer ${token}` } : {}),
+      ...(init.headers ?? {}),
+    },
+  });
+  const body = await r.text();
+  if (r.status >= 400) throw new Error(`${path} → ${r.status} ${body}`);
+  return body ? JSON.parse(body) : undefined;
+};
+const localToken = async (account) =>
+  (await api('/api/v1/local/session', null, { method: 'POST', body: JSON.stringify({ account }) }))
+    .accessToken;
+const fillCheckout = async (p) => {
+  await p.selectOption('#checkout-wilaya', 'test');
+  const value = await p
+    .locator('#checkout-destination option:not([disabled])')
+    .first()
+    .getAttribute('value');
+  await p.selectOption('#checkout-destination', value);
+  await p.fill('#checkout-recipientName', 'Nadia K.');
+  await p.fill('#checkout-phone', '0555112233');
+  await p.fill('#checkout-addressLine', '5 rue des Frères Bouadou');
+  await p.fill('#checkout-city', 'Constantine');
+};
+
+await check('shop without an account: cart kept, email asked at checkout', async () => {
+  const sellerToken = await localToken('seller');
+  const stocked = new Set(
+    (await api('/api/v1/seller/offers', sellerToken)).items
+      .filter((o) => o.status === 'APPROVED' && o.availableQuantity > 0)
+      .map((o) => o.id),
+  );
+  const product = (await api('/api/v1/catalog/products?limit=100')).items.find((p) =>
+    p.offers.some((o) => stocked.has(o.id)),
+  );
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, locale: 'fr-FR' });
+  const gp = await ctx.newPage();
+  await gp.goto(`${SHOP}/product/${product.slug}`);
+  await gp.click('.cart-add-form button[type=submit]');
+  await gp.locator('.cart-add-form [role=status]').waitFor({ timeout: 15000 });
+  await gp.goto(`${SHOP}/cart`);
+  await gp.getByText(product.title.fr).first().waitFor({ timeout: 15000 });
+  await audit(gp, 'shop /cart (guest)');
+  const guestEmail = `panier-${tag}@example.dz`;
+  await fillCheckout(gp);
+  await gp.fill('#checkout-email', guestEmail);
+  await gp.click('.order-form button[type=submit]');
+  // Locally only the demo customer may place orders; the account and its cart exist anyway.
+  await gp.waitForLoadState('networkidle');
+  await gp.goto(`${SHOP}/account`);
+  await gp.getByText(guestEmail).waitFor({ timeout: 15000 });
+  await gp.goto(`${SHOP}/cart`);
+  await gp.getByText(product.title.fr).first().waitFor({ timeout: 15000 });
+  await ctx.close();
+});
+
+await check('pre-order: badge, accepted delay, estimated dates on the order', async () => {
+  const sellerToken = await localToken('seller');
+  const customerToken = await localToken('customer');
+  // The demo catalogue's own offer (other journeys tweak the seller's extra offers).
+  const offer = (await api('/api/v1/seller/offers', sellerToken)).items
+    .filter((o) => o.status === 'APPROVED' && o.availableQuantity > 0)
+    .sort((a, b) => b.availableQuantity - a.availableQuantity)[0];
+  const product = (await api('/api/v1/catalog/products?limit=100')).items.find((p) =>
+    p.offers.some((o) => o.id === offer.id),
+  );
+  const terms = (preorder, expectedVersion) =>
+    api(`/api/v1/seller/offers/${offer.id}`, sellerToken, {
+      method: 'POST',
+      body: JSON.stringify({
+        priceMinor: offer.priceMinor,
+        availableQuantity: Math.max(offer.availableQuantity, 5),
+        handlingDays: offer.handlingDays,
+        preorder,
+        expectedVersion,
+      }),
+    });
+  await terms({ minDays: 20, maxDays: 35, origin: 'Turquie' }, offer.rowVersion);
+  try {
+    let cart = await api('/api/v1/cart', customerToken);
+    for (const line of cart.items)
+      cart = await api(`/api/v1/cart/items/${line.offerId}`, customerToken, {
+        method: 'PUT',
+        body: JSON.stringify({ quantity: 0, expectedVersion: cart.version }),
+      });
+    const ctx = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      locale: 'fr-FR',
+    });
+    const pp = await ctx.newPage();
+    await pp.goto(SHOP + '/login');
+    await pp.click('.auth-local form button[type=submit]');
+    await pp.waitForURL((url) => url.pathname === '/cart', { timeout: 15000 });
+    await pp.goto(`${SHOP}/product/${product.slug}`);
+    await pp.getByText('Livraison estimée sous 20 à 35 jours').first().waitFor({ timeout: 15000 });
+    const radio = pp.locator(`input[name=selected-offer][value="${offer.id}"]`);
+    if (!(await radio.isChecked()))
+      await pp.locator(`label:has(input[value="${offer.id}"])`).click();
+    await pp.getByRole('button', { name: 'Précommander' }).click();
+    await pp.locator('.cart-add-form [role=status]').waitFor({ timeout: 15000 });
+    await pp.goto(`${SHOP}/cart`);
+    await fillCheckout(pp);
+    await pp.check('input[name=acceptPreorder]');
+    await audit(pp, 'shop /cart (pre-order)');
+    await pp.click('.order-form button[type=submit]');
+    await pp.waitForURL(/\/checkout\/[0-9a-f-]{36}/, { timeout: 15000 });
+    await pp.getByText('Précommande').first().waitFor();
+    await pp.click('.order-form button[type=submit]');
+    await pp.waitForURL(/\/orders\/[0-9a-f-]{36}/, { timeout: 15000 });
+    await pp
+      .getByText(/Livraison estimée entre le/)
+      .first()
+      .waitFor({ timeout: 15000 });
+    await audit(pp, 'shop /orders (pre-order)');
+    await ctx.close();
+  } finally {
+    // Placing the order reserved stock, which changed the offer's version: re-read it.
+    const latest = await api(`/api/v1/seller/offers/${offer.id}`, sellerToken);
+    await terms(null, latest.rowVersion);
+  }
+});
+
 // Seller Center (agent browser access needs the owner's approval: ATLAS_E2E_SHOP_ONLY=1 skips it)
 if (process.env.ATLAS_E2E_SHOP_ONLY === '1') {
   await browser.close();

@@ -117,6 +117,12 @@ export default async function Offers({
                           <dt>{t.handling}</dt>
                           <dd>
                             {offer.handlingDays} <small>{t.days}</small>
+                            {offer.preorder && (
+                              <small className="badge">
+                                {t.preorder} · {offer.preorder.minDays}–{offer.preorder.maxDays}{' '}
+                                {t.days}
+                              </small>
+                            )}
                           </dd>
                         </div>
                         <div>

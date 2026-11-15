@@ -9,6 +9,7 @@ import {
 } from '@/app/orders/actions';
 import { orderText } from '@/lib/orders-copy';
 import { localizedHref, type Locale } from '@/lib/i18n';
+import { preorderCopy } from '@/lib/preorder';
 
 export function OrderForm({
   kind,
@@ -17,6 +18,8 @@ export function OrderForm({
   locale,
   destinations = [],
   live = false,
+  guest = false,
+  preorder = null,
 }: {
   readonly kind: 'quote' | 'place' | 'cancel' | 'receipt';
   readonly id?: string;
@@ -24,6 +27,10 @@ export function OrderForm({
   readonly locale: Locale;
   readonly destinations?: readonly DeliveryDestination[];
   readonly live?: boolean;
+  /** Signed out: the email is asked with the delivery details and creates the account. */
+  readonly guest?: boolean;
+  /** Pre-order items in the cart: the buyer must accept this delivery window. */
+  readonly preorder?: { readonly min: number; readonly max: number } | null;
 }) {
   const [contact, setContact] = useState<DeliveryContact>({
     recipientName: '',
@@ -112,6 +119,26 @@ export function OrderForm({
           >
             <legend>{t.deliveryContact}</legend>
             <p id="contact-hint">{t.contactHint}</p>
+            {guest && (
+              <label htmlFor="checkout-email">
+                {t.guestEmail}
+                <input
+                  id="checkout-email"
+                  name="email"
+                  type="email"
+                  dir="ltr"
+                  autoComplete="email"
+                  inputMode="email"
+                  required
+                  maxLength={254}
+                  aria-describedby="checkout-email-hint"
+                />
+                <span id="checkout-email-hint" className="auth-hint">
+                  {t.guestEmailHint}{' '}
+                  <a href={localizedHref('/login', locale, { next: '/cart' })}>{t.guestSignIn}</a>
+                </span>
+              </label>
+            )}
             {(
               [
                 ['recipientName', 2, 120],
@@ -141,6 +168,12 @@ export function OrderForm({
             <p id="contact-phone-hint">{t.phoneHint}</p>
           </fieldset>
           {destinations.length === 0 && <p role="status">{t.noDestinations}</p>}
+          {preorder && (
+            <label className="terms-check preorder-accept">
+              <input type="checkbox" name="acceptPreorder" value="yes" required />{' '}
+              {preorderCopy[locale].accept(preorder.min, preorder.max)}
+            </label>
+          )}
         </>
       )}
       {kind === 'cancel' && <p>{t.cancelHint}</p>}

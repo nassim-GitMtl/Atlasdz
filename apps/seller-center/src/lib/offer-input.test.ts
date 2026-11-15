@@ -62,3 +62,24 @@ test('offers reject zero price, invalid product, excessive stock and fractional 
     true,
   );
 });
+
+test('pre-order terms are sent only when the box is ticked', () => {
+  const base = {
+    productId: '70000000-0000-4000-8000-000000000001',
+    price: '1500',
+    quantity: '5',
+    handlingDays: '2',
+    deliveryFee: '0',
+    preorder: '',
+    preorderMin: '20',
+    preorderMax: '35',
+    preorderOrigin: ' Turquie ',
+  };
+  const inStock = parseOfferValues(base);
+  assert.ok(inStock.success);
+  assert.equal(inStock.data.preorder, undefined);
+  const preorder = parseOfferValues({ ...base, preorder: 'yes' });
+  assert.ok(preorder.success);
+  assert.deepEqual(preorder.data.preorder, { minDays: 20, maxDays: 35, origin: 'Turquie' });
+  assert.equal(parseOfferValues({ ...base, preorder: 'yes', preorderMax: '10' }).success, false);
+});

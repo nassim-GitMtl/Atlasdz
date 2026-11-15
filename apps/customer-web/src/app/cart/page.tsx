@@ -3,7 +3,9 @@ import Link from 'next/link';
 import { headers } from 'next/headers';
 import { OrderForm } from '@/components/order-forms';
 import { OrderError } from '@/components/order-summary';
-import { listDestinations } from '@/lib/orders-api';
+import { getDestinations } from '@/lib/catalog-api';
+import { guestCart, readGuestCart } from '@/lib/guest-cart';
+import { preorderCopy, preorderSpan, preorderText } from '@/lib/preorder';
 import { customerCheckoutEnabled } from '@/lib/customer-security';
 import { liveCheckoutEnabled, orderText } from '@/lib/orders-copy';
 import { SiteChrome } from '@/components/site-chrome';
@@ -23,15 +25,18 @@ export default async function CartPage({
   const t = cartCopy[locale];
   const token = await customerToken();
   const checkout = customerCheckoutEnabled(process.env, (await headers()).get('host'));
+  // Signed-out shoppers have a cookie cart; the email is asked at checkout.
   const result = token
     ? await getCart(token)
         .then((cart) => ({ cart, error: undefined }))
         .catch((error: unknown) => ({ cart: undefined, error }))
-    : { cart: undefined, error: new CartApiError('auth') };
+    : await guestCart(await readGuestCart())
+        .then((cart) => ({ cart, error: undefined }))
+        .catch((error: unknown) => ({ cart: undefined, error }));
   const destinations =
-    checkout && token && result.cart?.items.length
-      ? await listDestinations(token)
-          .then((data) => ({ items: data.items, error: undefined }))
+    checkout && result.cart?.items.length
+      ? await getDestinations()
+          .then((items) => ({ items, error: undefined }))
           .catch((error: unknown) => ({ items: undefined, error }))
       : { items: [], error: undefined };
   return (
@@ -79,6 +84,12 @@ export default async function CartPage({
                             </p>
                           </>
                         )}
+                        {line.offer?.preorder && (
+                          <p className="preorder-note">
+                            <strong className="preorder-badge">{preorderCopy[locale].badge}</strong>{' '}
+                            {preorderText(line.offer.preorder, locale)}
+                          </p>
+                        )}
                         {line.state !== 'AVAILABLE' && (
                           <p className="cart-feedback" role="status">
                             {line.state === 'UNAVAILABLE' ? t.unavailableLine : t.insufficient}
@@ -112,6 +123,10 @@ export default async function CartPage({
                         version={result.cart.version}
                         locale={locale}
                         destinations={destinations.items}
+                        guest={!token}
+                        preorder={preorderSpan(
+                          result.cart.items.map((line) => ({ preorder: line.offer?.preorder })),
+                        )}
                       />
                     ) : (
                       <OrderError error={destinations.error} locale={locale} path="/cart" />

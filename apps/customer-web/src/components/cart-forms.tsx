@@ -11,6 +11,7 @@ import {
   type CartActionState,
 } from '@/app/cart/actions';
 import { cartCopy } from '@/lib/cart-copy';
+import { preorderCopy } from '@/lib/preorder';
 import { localizedHref, type Locale } from '@/lib/i18n';
 
 function Feedback({ state, locale }: { readonly state: CartActionState; readonly locale: Locale }) {
@@ -30,10 +31,14 @@ function Feedback({ state, locale }: { readonly state: CartActionState; readonly
 }
 export function AddCartForm({
   offerId,
+  productSlug,
+  preorder = false,
   locale,
   disabled,
 }: {
   readonly offerId: string;
+  readonly productSlug: string;
+  readonly preorder?: boolean;
   readonly locale: Locale;
   readonly disabled: boolean;
 }) {
@@ -42,9 +47,10 @@ export function AddCartForm({
   return (
     <form action={action} className="cart-add-form">
       <input type="hidden" name="offerId" value={offerId} />
+      <input type="hidden" name="productSlug" value={productSlug} />
       <input type="hidden" name="lang" value={locale} />
       <button className="button button--primary" type="submit" disabled={disabled || pending}>
-        {pending ? t.busy : t.add}
+        {pending ? t.busy : preorder ? preorderCopy[locale].add : t.add}
       </button>
       <Feedback state={state} locale={locale} />
     </form>

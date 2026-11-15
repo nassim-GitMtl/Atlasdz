@@ -2,7 +2,17 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Text } from 'react-native';
 
-import { Badge, Button, Card, Field, LoadState, Notice, Screen, text } from '@/components/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  Checkbox,
+  Field,
+  LoadState,
+  Notice,
+  Screen,
+  text,
+} from '@/components/ui';
 import { errorCode } from '@/lib/api';
 import { dinarsText, parseDinars } from '@/lib/collections';
 import { localized } from '@/lib/format';
@@ -11,6 +21,7 @@ import { useSession } from '@/lib/session';
 import { errorMessage } from '@/lib/strings';
 import type { CatalogEntry, SellerOffer } from '@/lib/types';
 import { useRequest } from '@/lib/use-request';
+import { parsePreorder } from '@/lib/preorder';
 
 /** Creates an offer on a catalogue product (`/seller/offer/new?productId=`) or edits one. */
 export default function OfferScreen() {
@@ -50,9 +61,10 @@ export default function OfferScreen() {
         />
       ) : null}
       {isNew || offer.data ? (
-        // Keyed so the form starts from the loaded offer (or empty for a new one).
+        // Keyed by offer (not version): after a save the form keeps its "saved" confirmation
+        // and the next save uses the reloaded version.
         <OfferForm
-          key={offer.data ? `${offer.data.id}-${offer.data.rowVersion}` : 'new'}
+          key={offer.data ? offer.data.id : 'new'}
           offer={offer.data ?? null}
           productId={offer.data?.productId ?? productId ?? ''}
           onSaved={(saved) => {
@@ -79,6 +91,11 @@ function OfferForm({
   const [price, setPrice] = useState(offer ? dinarsText(offer.priceMinor) : '');
   const [stock, setStock] = useState(offer ? String(offer.availableQuantity) : '');
   const [handling, setHandling] = useState(offer ? String(offer.handlingDays) : '2');
+  // Pre-order: not in stock yet (often imported); buyers accept the estimated window.
+  const [isPreorder, setIsPreorder] = useState(Boolean(offer?.preorder));
+  const [preMin, setPreMin] = useState(offer?.preorder ? String(offer.preorder.minDays) : '');
+  const [preMax, setPreMax] = useState(offer?.preorder ? String(offer.preorder.maxDays) : '');
+  const [preOrigin, setPreOrigin] = useState(offer?.preorder?.origin ?? '');
   const [showErrors, setShowErrors] = useState(false);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
@@ -90,7 +107,13 @@ function OfferForm({
     /^\d{1,2}$/.test(handling.trim()) && Number(handling.trim()) <= 30
       ? Number(handling.trim())
       : null;
-  const valid = priceMinor !== null && priceMinor > 0 && quantity !== null && days !== null;
+  const preorder = parsePreorder(isPreorder, preMin, preMax, preOrigin);
+  const valid =
+    priceMinor !== null &&
+    priceMinor > 0 &&
+    quantity !== null &&
+    days !== null &&
+    preorder !== 'invalid';
 
   async function save() {
     setShowErrors(true);
@@ -105,6 +128,8 @@ function OfferForm({
               priceMinor,
               availableQuantity: quantity,
               handlingDays: days,
+              // Always sent, so an edit here never silently changes the pre-order terms.
+              preorder,
               expectedVersion: offer.rowVersion,
             },
           })
@@ -114,6 +139,7 @@ function OfferForm({
               priceMinor,
               availableQuantity: quantity,
               handlingDays: days,
+              preorder,
               // Delivery is charged from the seller's delivery zones, not per offer.
               deliveryFeeMinor: 0,
             },
@@ -150,6 +176,34 @@ function OfferForm({
         keyboardType="number-pad"
         error={showErrors && days === null}
       />
+      <Checkbox
+        checked={isPreorder}
+        label={t.preorder.toggle}
+        onToggle={() => setIsPreorder((value) => !value)}
+      />
+      {isPreorder ? (
+        <>
+          <Text style={text.muted}>{t.preorder.help}</Text>
+          <Field
+            label={t.preorder.minDays}
+            value={preMin}
+            onChangeText={setPreMin}
+            keyboardType="number-pad"
+            error={showErrors && preorder === 'invalid'}
+          />
+          <Field
+            label={t.preorder.maxDays}
+            value={preMax}
+            onChangeText={setPreMax}
+            keyboardType="number-pad"
+            error={showErrors && preorder === 'invalid'}
+          />
+          <Field label={t.preorder.originField} value={preOrigin} onChangeText={setPreOrigin} />
+          {showErrors && preorder === 'invalid' ? (
+            <Notice tone="error">{t.preorder.invalid}</Notice>
+          ) : null}
+        </>
+      ) : null}
       {!offer ? <Text style={text.muted}>{t.catalog.offerNote}</Text> : null}
       {showErrors && !valid ? <Notice tone="error">{t.catalog.invalid}</Notice> : null}
       {failure ? <Notice tone="error">{errorMessage(t, failure)}</Notice> : null}

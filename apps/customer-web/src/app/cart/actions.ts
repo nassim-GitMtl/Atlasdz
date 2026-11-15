@@ -14,6 +14,8 @@ import {
   setCartItem,
 } from '@/lib/cart-api';
 import { customerLocalEnabled, customerTrustedOrigin } from '@/lib/customer-security';
+import { readGuestCart, withLine, writeGuestCart } from '@/lib/guest-cart';
+import { CatalogSlugSchema } from '@atlas/contracts';
 import { localizedHref } from '@/lib/i18n';
 
 export interface CartActionState {
@@ -35,9 +37,21 @@ export async function addCartAction(
 ): Promise<CartActionState> {
   if (!(await trusted())) return { error: 'csrf' };
   const token = await customerToken();
-  if (!token) redirect(localizedHref('/login', locale(form)));
   const id = UuidSchema.safeParse(form.get('offerId'));
   if (!id.success) return { error: 'invalid' };
+  if (!token) {
+    // No account needed to shop: the cart stays in a cookie until checkout or sign-in.
+    const slug = CatalogSlugSchema.safeParse(form.get('productSlug'));
+    if (!slug.success) return { error: 'invalid' };
+    const lines = await readGuestCart();
+    const quantity = (lines.find((line) => line.offerId === id.data)?.quantity ?? 0) + 1;
+    if (quantity > 99) return { error: 'invalid' };
+    const next = withLine(lines, { offerId: id.data, slug: slug.data, quantity });
+    if (next === null) return { error: 'limit' };
+    await writeGuestCart(next);
+    revalidatePath('/cart');
+    return { added: true };
+  }
   try {
     const cart = await getCart(token);
     const quantity = (cart.items.find((item) => item.offerId === id.data)?.quantity ?? 0) + 1;
@@ -55,7 +69,6 @@ export async function updateCartAction(
 ): Promise<CartActionState> {
   if (!(await trusted())) return { error: 'csrf' };
   const token = await customerToken();
-  if (!token) return { error: 'auth' };
   const id = UuidSchema.safeParse(form.get('offerId'));
   const rawQuantity = form.get('remove') === '1' ? '0' : String(form.get('quantity') ?? '');
   const rawVersion = String(form.get('version') ?? '');
@@ -65,6 +78,20 @@ export async function updateCartAction(
     !/^(?:0|[1-9]\d{0,9})$/.test(rawVersion)
   )
     return { error: 'invalid' };
+  if (!token) {
+    const lines = await readGuestCart();
+    const current = lines.find((line) => line.offerId === id.data);
+    if (!current) return { error: 'invalid' };
+    const quantity = Number(rawQuantity);
+    await writeGuestCart(
+      withLine(
+        lines,
+        quantity === 0 ? { offerId: id.data, quantity: 0 } : { ...current, quantity },
+      ) ?? lines,
+    );
+    revalidatePath('/cart');
+    return {};
+  }
   try {
     await setCartItem(token, id.data, Number(rawQuantity), Number(rawVersion));
     revalidatePath('/cart');

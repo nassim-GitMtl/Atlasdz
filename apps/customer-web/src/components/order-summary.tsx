@@ -5,6 +5,7 @@ import { formatMoney } from '@/lib/catalog-view';
 import { localizedHref, type Locale } from '@/lib/i18n';
 import { OrderApiError } from '@/lib/orders-api';
 import { liveCheckoutEnabled, orderText } from '@/lib/orders-copy';
+import { preorderCopy, preorderDates, preorderText } from '@/lib/preorder';
 export function DeliveryContactSummary({
   contact,
   locale,
@@ -36,9 +37,12 @@ export function DeliveryContactSummary({
 export function SellerSummary({
   snapshot,
   locale,
+  placedAt,
 }: {
   readonly snapshot: SellerOrderSnapshot;
   readonly locale: Locale;
+  /** Order date: pre-order items then show estimated delivery dates. */
+  readonly placedAt?: string;
 }) {
   const t = orderText(locale, liveCheckoutEnabled());
   return (
@@ -65,9 +69,18 @@ export function SellerSummary({
                 {t.quantity}: {item.quantity} · {t.unit}:{' '}
                 <bdi>{formatMoney(item.unitPriceMinor, locale)}</bdi>
               </p>
-              <p>
-                {t.handling}: {item.handlingDays}
-              </p>
+              {item.preorder ? (
+                <p className="preorder-note">
+                  <strong className="preorder-badge">{preorderCopy[locale].badge}</strong>{' '}
+                  {placedAt
+                    ? preorderDates(placedAt, item.preorder, locale)
+                    : preorderText(item.preorder, locale)}
+                </p>
+              ) : (
+                <p>
+                  {t.handling}: {item.handlingDays}
+                </p>
+              )}
             </div>
           </li>
         ))}

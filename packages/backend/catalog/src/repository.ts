@@ -69,7 +69,8 @@ const PUBLIC_PRODUCTS = `
       'id', o.id, 'seller', jsonb_build_object('id', o.seller_id, 'slug', o.seller_slug, 'name', o.seller_name),
       'priceMinor', o.price_minor, 'currency', o.currency,
       'availableQuantity', o.available_quantity, 'handlingDays', o.handling_days,
-      'deliveryFeeMinor', o.delivery_fee_minor
+      'deliveryFeeMinor', o.delivery_fee_minor,
+      'preorder', CASE WHEN o.preorder THEN jsonb_build_object('minDays', o.preorder_min_days, 'maxDays', o.preorder_max_days, 'origin', o.preorder_origin) ELSE NULL END
     ) ORDER BY o.price_minor, o.id) AS items
     FROM (
       SELECT offer.*, s.slug AS seller_slug, s.name AS seller_name
@@ -91,7 +92,16 @@ const PUBLIC_PRODUCTS = `
 const OFFER_COLUMNS = `id, seller_id AS "sellerId", product_id AS "productId",
   price_minor AS "priceMinor", currency, available_quantity AS "availableQuantity",
   handling_days AS "handlingDays", delivery_fee_minor AS "deliveryFeeMinor", status,
-  row_version AS "rowVersion"`;
+  row_version AS "rowVersion",
+  CASE WHEN preorder THEN jsonb_build_object('minDays', preorder_min_days, 'maxDays', preorder_max_days, 'origin', preorder_origin) ELSE NULL END AS preorder`;
+
+/** Column values for an offer's pre-order terms (all null when the item is in stock). */
+const preorderColumns = (
+  preorder: { minDays: number; maxDays: number; origin: string | null } | null | undefined,
+) =>
+  preorder
+    ? [true, preorder.minDays, preorder.maxDays, preorder.origin]
+    : [false, null, null, null];
 
 const SUBMISSION_SELECT = `SELECT jsonb_build_object(
   'id', s.id, 'sellerId', s.seller_id,
@@ -632,7 +642,8 @@ export class PostgresCatalogRepository {
       if (
         prior.priceMinor === data.priceMinor &&
         prior.availableQuantity === data.availableQuantity &&
-        prior.handlingDays === data.handlingDays
+        prior.handlingDays === data.handlingDays &&
+        JSON.stringify(prior.preorder ?? null) === JSON.stringify(data.preorder ?? null)
       )
         return prior;
       // Leave room for every outstanding reservation to be released without exceeding the cap.
@@ -643,8 +654,17 @@ export class PostgresCatalogRepository {
       if (data.availableQuantity + Number(reserved.rows[0]?.quantity ?? 0) > 1_000_000)
         throw new CatalogWriteError('OFFER_STATE_CONFLICT');
       const result = await client.query(
-        `UPDATE offers.offers SET price_minor=$3,available_quantity=$4,handling_days=$5,row_version=row_version+1 WHERE id=$1 AND seller_id=$2 RETURNING ${OFFER_COLUMNS}`,
-        [offerId, sellerId, data.priceMinor, data.availableQuantity, data.handlingDays],
+        `UPDATE offers.offers SET price_minor=$3,available_quantity=$4,handling_days=$5,
+           preorder=$6,preorder_min_days=$7,preorder_max_days=$8,preorder_origin=$9,
+           row_version=row_version+1 WHERE id=$1 AND seller_id=$2 RETURNING ${OFFER_COLUMNS}`,
+        [
+          offerId,
+          sellerId,
+          data.priceMinor,
+          data.availableQuantity,
+          data.handlingDays,
+          ...preorderColumns(data.preorder),
+        ],
       );
       const offer = SellerOfferSchema.parse(result.rows[0]);
       // No publication, product identity, shipping rates or existing order snapshot is changed.
@@ -683,8 +703,9 @@ export class PostgresCatalogRepository {
       const result = await client.query(
         `
         INSERT INTO offers.offers (seller_id, product_id, variant_id, price_minor,
-          available_quantity, handling_days, delivery_fee_minor)
-        VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING ${OFFER_COLUMNS}
+          available_quantity, handling_days, delivery_fee_minor,
+          preorder, preorder_min_days, preorder_max_days, preorder_origin)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING ${OFFER_COLUMNS}
       `,
         [
           sellerId,
@@ -694,6 +715,7 @@ export class PostgresCatalogRepository {
           data.availableQuantity,
           data.handlingDays,
           data.deliveryFeeMinor,
+          ...preorderColumns(data.preorder),
         ],
       );
       const offer = SellerOfferSchema.parse(result.rows[0]);

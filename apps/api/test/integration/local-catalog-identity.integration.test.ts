@@ -628,7 +628,11 @@ describe('LOCAL/TEST synthetic identity with PostgreSQL and catalog HTTP', () =>
       shippingFeeMinor: 37550,
       codCollector: 'SELLER',
     };
-    await request(app.getHttpServer()).get('/api/v1/delivery/destinations').expect(401);
+    // Public reference data: guests choose their commune before an account exists.
+    const anonymous = await request(app.getHttpServer())
+      .get('/api/v1/delivery/destinations')
+      .expect(200);
+    assert.equal((anonymous.body as { items: unknown[] }).items.length, 2);
     const locations = await request(app.getHttpServer())
       .get('/api/v1/delivery/destinations')
       .set('Authorization', `Bearer ${customer.accessToken}`)
@@ -1196,5 +1200,115 @@ describe('LOCAL/TEST synthetic identity with PostgreSQL and catalog HTTP', () =>
       .set('Authorization', seller)
       .send({ ...input, expectedVersion: saved.rowVersion, priceMinor: prior.priceMinor })
       .expect(201);
+  });
+
+  it('sells a pre-order: seller terms, explicit buyer acceptance, terms kept on the order', async () => {
+    const http = () => request(app.getHttpServer());
+    const seller = `Bearer ${(await identity.createSession('seller')).accessToken}`;
+    const customer = `Bearer ${(await identity.createSession('customer')).accessToken}`;
+    const offerId = SYNTHETIC_CATALOG_IDS.offers[0];
+    const path = `/api/v1/seller/offers/${offerId}`;
+    const prior = SellerOfferSchema.parse(
+      (await http().get(path).set('Authorization', seller).expect(200)).body,
+    );
+    const terms = { minDays: 20, maxDays: 35, origin: 'Turquie' };
+    const base = {
+      priceMinor: prior.priceMinor,
+      availableQuantity: Math.max(prior.availableQuantity, 5),
+      handlingDays: prior.handlingDays,
+    };
+    await http()
+      .post(path)
+      .set('Authorization', seller)
+      .send({ ...base, expectedVersion: prior.rowVersion, preorder: { ...terms, maxDays: 10 } })
+      .expect(422);
+    const preordered = SellerOfferSchema.parse(
+      (
+        await http()
+          .post(path)
+          .set('Authorization', seller)
+          .send({ ...base, expectedVersion: prior.rowVersion, preorder: terms })
+          .expect(201)
+      ).body,
+    );
+    assert.deepEqual(preordered.preorder, terms);
+    const listed = (await http().get('/api/v1/catalog/products?limit=100').expect(200)).body as {
+      items: { offers: { id: string; preorder: unknown }[] }[];
+    };
+    assert.deepEqual(
+      listed.items.flatMap((p) => p.offers).find((o) => o.id === offerId)?.preorder,
+      terms,
+    );
+
+    let cart = CustomerCartSchema.parse(
+      (await http().get('/api/v1/cart').set('Authorization', customer).expect(200)).body,
+    );
+    for (const line of cart.items)
+      cart = CustomerCartSchema.parse(
+        (
+          await http()
+            .put(`/api/v1/cart/items/${line.offerId}`)
+            .set('Authorization', customer)
+            .send({ quantity: 0, expectedVersion: cart.version })
+            .expect(200)
+        ).body,
+      );
+    cart = CustomerCartSchema.parse(
+      (
+        await http()
+          .put(`/api/v1/cart/items/${offerId}`)
+          .set('Authorization', customer)
+          .send({ quantity: 1, expectedVersion: cart.version })
+          .expect(200)
+      ).body,
+    );
+    assert.deepEqual(cart.items[0]?.offer?.preorder, terms);
+    const quoteInput = {
+      expectedCartVersion: cart.version,
+      destinationId: SYNTHETIC_DELIVERY_IDS.destinations[0],
+      deliveryContact,
+    };
+    const refused = await http()
+      .post('/api/v1/checkout/quotes')
+      .set('Authorization', customer)
+      .send(quoteInput)
+      .expect(422);
+    assert.equal(refused.body.code, 'PREORDER_ACCEPTANCE_REQUIRED');
+    const quote = CheckoutQuoteSchema.parse(
+      (
+        await http()
+          .post('/api/v1/checkout/quotes')
+          .set('Authorization', customer)
+          .send({ ...quoteInput, acceptPreorder: true })
+          .expect(201)
+      ).body,
+    );
+    assert.equal(quote.preorderAccepted, true);
+    const order = CustomerOrderSchema.parse(
+      (
+        await http()
+          .post(`/api/v1/checkout/quotes/${quote.id}/place`)
+          .set('Authorization', customer)
+          .set('Idempotency-Key', quote.id)
+          .send({})
+          .expect(200)
+      ).body,
+    );
+    assert.deepEqual(order.sellerOrders[0]?.snapshot.items[0]?.preorder, terms);
+
+    // Back in stock: later orders need no acceptance, existing orders keep their terms.
+    const restocked = SellerOfferSchema.parse(
+      (await http().get(path).set('Authorization', seller).expect(200)).body,
+    );
+    const inStock = SellerOfferSchema.parse(
+      (
+        await http()
+          .post(path)
+          .set('Authorization', seller)
+          .send({ ...base, expectedVersion: restocked.rowVersion, preorder: null })
+          .expect(201)
+      ).body,
+    );
+    assert.equal(inStock.preorder ?? null, null);
   });
 });

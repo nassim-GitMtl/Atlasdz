@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { Linking, Share, StyleSheet, Text, View } from 'react-native';
 
 import {
@@ -29,6 +29,7 @@ import { errorMessage } from '@/lib/strings';
 import { colors } from '@/lib/theme';
 import type { CustomerSignal, SellerOrder } from '@/lib/types';
 import { useRequest } from '@/lib/use-request';
+import { PreorderNote } from '@/components/preorder-note';
 
 type Reason = 'OUT_OF_STOCK' | 'DELIVERY_UNAVAILABLE' | 'UNABLE_TO_FULFILL';
 type Pending = SellerAction | 'REPORT_DELIVERY_FAILED' | 'REJECT';
@@ -119,14 +120,19 @@ export default function SellerOrderScreen() {
               </Text>
             ) : null}
             {data.snapshot.items.map((item) => (
-              <View key={item.offerId} style={styles.row}>
-                <Text style={[text.body, styles.grow]}>
-                  {localized(item.title, locale)} × {item.quantity}
-                </Text>
-                <Text style={text.body}>
-                  {formatMoney(item.unitPriceMinor * item.quantity, locale)}
-                </Text>
-              </View>
+              <Fragment key={item.offerId}>
+                <View style={styles.row}>
+                  <Text style={[text.body, styles.grow]}>
+                    {localized(item.title, locale)} × {item.quantity}
+                  </Text>
+                  <Text style={text.body}>
+                    {formatMoney(item.unitPriceMinor * item.quantity, locale)}
+                  </Text>
+                </View>
+                {item.preorder ? (
+                  <PreorderNote preorder={item.preorder} placedAt={data.createdAt} />
+                ) : null}
+              </Fragment>
             ))}
             <View style={styles.row}>
               <Text style={[text.muted, styles.grow]}>{t.order.shipping}</Text>

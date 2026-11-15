@@ -1,13 +1,14 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 
 import { PlacePicker, type Place } from '@/components/place-picker';
-import { Button, Field, LoadState, Notice, Screen, text } from '@/components/ui';
+import { Button, Checkbox, Field, LoadState, Notice, Screen, text } from '@/components/ui';
 import { errorCode } from '@/lib/api';
+import { useCart } from '@/lib/cart';
 import type { SavedAddress } from '@/lib/collections';
 import { contactErrors, emptyContact } from '@/lib/contact';
-import { localized, normalizePhone } from '@/lib/format';
+import { fill, localized, normalizePhone } from '@/lib/format';
 import { useI18n } from '@/lib/i18n';
 import { useLibrary } from '@/lib/library';
 import { useSession } from '@/lib/session';
@@ -27,6 +28,17 @@ export default function CheckoutScreen() {
   const { t, locale } = useI18n();
   const session = useSession();
   const library = useLibrary();
+  const cartState = useCart();
+  const params = useLocalSearchParams<{ preorderMin?: string; preorderMax?: string }>();
+  const preorder =
+    params.preorderMin && params.preorderMax
+      ? { min: Number(params.preorderMin), max: Number(params.preorderMax) }
+      : null;
+  const [acceptPreorder, setAcceptPreorder] = useState(false);
+  // Signed out: the email comes with the delivery details and creates the account.
+  const guest = session.status !== 'signedIn';
+  const [email, setEmail] = useState('');
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
   const destinations = useRequest('destinations', () =>
     session.request<{ items: DeliveryDestination[] }>('/api/v1/delivery/destinations'),
   );
@@ -78,11 +90,25 @@ export default function CheckoutScreen() {
 
   async function submit() {
     setShowErrors(true);
-    if (errors.size > 0 || commune === null || wilaya === null) return;
+    if (errors.size > 0 || commune === null || wilaya === null || (guest && !emailValid)) return;
+    if (preorder && !acceptPreorder) {
+      setFailure('PREORDER_ACCEPTANCE_REQUIRED');
+      return;
+    }
     setSubmitting(true);
     setFailure(null);
     try {
-      const cart = await session.request<CustomerCart>('/api/v1/cart');
+      let cart: CustomerCart | null = null;
+      if (guest) {
+        try {
+          await session.signInGuest(email.trim(), locale);
+        } catch (error) {
+          setFailure(errorCode(error) === 'ACCOUNT_CONFLICT' ? 'GUEST_EXISTS' : errorCode(error));
+          return;
+        }
+        cart = await cartState.mergeGuest();
+      }
+      cart ??= await session.request<CustomerCart>('/api/v1/cart');
       const deliveryContact = {
         recipientName: contact.recipientName.trim(),
         phone: normalizePhone(contact.phone),
@@ -90,7 +116,12 @@ export default function CheckoutScreen() {
         city: contact.city.trim(),
       };
       const quote = await session.request<CheckoutQuote>('/api/v1/checkout/quotes', {
-        body: { expectedCartVersion: cart.version, destinationId: commune.id, deliveryContact },
+        body: {
+          expectedCartVersion: cart.version,
+          destinationId: commune.id,
+          deliveryContact,
+          ...(acceptPreorder ? { acceptPreorder: true } : {}),
+        },
       });
       library.rememberAddress({
         contact: deliveryContact,
@@ -159,6 +190,19 @@ export default function CheckoutScreen() {
             onChange={setCommune}
           />
           <Text style={text.heading}>{t.checkout.contact}</Text>
+          {guest ? (
+            <Field
+              label={t.checkout.email}
+              hint={t.checkout.emailHint}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+              textContentType="emailAddress"
+              error={showErrors && !emailValid}
+            />
+          ) : null}
           <Field
             label={t.checkout.name}
             value={contact.recipientName}
@@ -188,10 +232,28 @@ export default function CheckoutScreen() {
             onChangeText={set('city')}
             error={showErrors && errors.has('city')}
           />
-          {showErrors && (errors.size > 0 || commune === null) ? (
+          {preorder ? (
+            <Checkbox
+              checked={acceptPreorder}
+              label={fill(t.preorder.accept, { min: preorder.min, max: preorder.max })}
+              onToggle={() => setAcceptPreorder((value) => !value)}
+            />
+          ) : null}
+          {showErrors && (errors.size > 0 || commune === null || (guest && !emailValid)) ? (
             <Notice tone="error">{t.checkout.invalid}</Notice>
           ) : null}
-          {failure ? <Notice tone="error">{errorMessage(t, failure)}</Notice> : null}
+          {failure === 'GUEST_EXISTS' ? (
+            <>
+              <Notice tone="error">{t.checkout.guestExists}</Notice>
+              <Button
+                label={t.common.signIn}
+                variant="secondary"
+                onPress={() => router.push('/login')}
+              />
+            </>
+          ) : failure ? (
+            <Notice tone="error">{errorMessage(t, failure)}</Notice>
+          ) : null}
           <Button label={t.checkout.continue} busy={submitting} onPress={() => void submit()} />
         </>
       ) : null}

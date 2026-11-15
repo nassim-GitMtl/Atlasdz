@@ -45,7 +45,9 @@ export async function readCartSnapshot(
         'offer', CASE WHEN ${PUBLIC} THEN jsonb_build_object(
           'id', o.id, 'seller', jsonb_build_object('id', s.id, 'slug', s.slug, 'name', s.name),
           'priceMinor', o.price_minor, 'currency', o.currency, 'availableQuantity', o.available_quantity,
-          'handlingDays', o.handling_days, 'deliveryFeeMinor', o.delivery_fee_minor) ELSE NULL END,
+          'handlingDays', o.handling_days, 'deliveryFeeMinor', o.delivery_fee_minor,
+          'preorder', CASE WHEN o.preorder THEN jsonb_build_object('minDays', o.preorder_min_days,
+            'maxDays', o.preorder_max_days, 'origin', o.preorder_origin) ELSE NULL END) ELSE NULL END,
         'lineSubtotalMinor', CASE WHEN ${PUBLIC} THEN ci.quantity::bigint * o.price_minor ELSE NULL END
       ) ORDER BY ci.created_at, ci.offer_id) AS items,
       SUM(CASE WHEN (${PUBLIC}) AND ci.quantity <= o.available_quantity

@@ -31,6 +31,7 @@ export class OrderWriteError extends Error {
   constructor(
     readonly code:
       | 'CHECKOUT_DISABLED'
+      | 'PREORDER_ACCEPTANCE_REQUIRED'
       | 'QUOTE_CHANGED'
       | 'QUOTE_EXPIRED'
       | 'ORDER_NOT_FOUND'
@@ -184,6 +185,7 @@ async function lockedTerms(
       unitPriceMinor: offer.priceMinor,
       offerVersion: rowVersion,
       handlingDays: offer.handlingDays,
+      preorder: offer.preorder ?? null,
     });
     group.itemsSubtotalMinor += offer.priceMinor * line.quantity;
   }
@@ -330,6 +332,7 @@ export class PostgresOrderRepository {
     expectedVersion: number,
     destinationId: string,
     deliveryContact: DeliveryContact,
+    acceptPreorder = false,
   ): Promise<CheckoutQuote> {
     const policy = this.enabled(customerId);
     UuidSchema.parse(destinationId);
@@ -344,9 +347,13 @@ export class PostgresOrderRepository {
         destinationId,
         policy.environment === 'live',
       );
+      // Pre-order items need the buyer's explicit acceptance of the estimated delay.
+      const preorder = sellers.some((seller) => seller.items.some((item) => item.preorder));
+      if (preorder && !acceptPreorder) throw new OrderWriteError('PREORDER_ACCEPTANCE_REQUIRED');
       const now = await clock(client);
       const quote = CheckoutQuoteSchema.parse({
         id: randomUUID(),
+        ...(preorder ? { preorderAccepted: true } : {}),
         cartVersion: expectedVersion,
         createdAt: now.toISOString(),
         expiresAt: new Date(now.getTime() + policy.quoteLifetimeSeconds * 1000).toISOString(),

@@ -6,7 +6,9 @@ workspace (Seller Center stays available in the browser; staff keep the staff co
 
 **Customer:** home (search, categories, sort, recently viewed), product and offers (favorite,
 quantity, share, ratings and reviews, similar products, seller's shop page with its rating),
-favorites, cart, buy without an account (email only; a link to choose a password is emailed),
+favorites, cart without an account (kept on the phone; the email is asked at checkout, which
+creates the account and emails a link to choose a password), pre-orders (badge, estimated
+delivery window, accepted at checkout),
 checkout (saved addresses, wilaya → commune,
 delivery contact), order summary with cash-on-delivery terms, orders, order detail (timeline,
 cancel, confirm receipt, reorder, help request, rate the delivered items), help requests with
@@ -18,7 +20,7 @@ pages, sign out, delete account), seller sign-up.
 low-stock alerts, average rating), orders (search by name, phone or number; accept or reject,
 prepare, ship with carrier and tracking number, delivered or failed delivery, call the customer,
 customer reliability, share the delivery slip with the courier), catalogue (new product sent for review, photo from the camera
-or gallery, offers with price and stock), delivery zones (wilaya and commune rates), reviews
+or gallery, offers with price and stock, pre-order with estimated window and origin), delivery zones (wilaya and commune rates), reviews
 (average, public replies), customer requests, notifications, store account. Seller accounts sign in with an authenticator code, as
 in Seller Center. The app remembers the mode: restarting it reopens the seller dashboard.
 

@@ -79,7 +79,7 @@ export default async function ProductPage({
             <h1>{title}</h1>
             <p className="product-description">{text(product.description, locale)}</p>
             <div className="seller-notice">{t.footerScope}</div>
-            <OfferSelector offers={product.offers} locale={locale} />
+            <OfferSelector offers={product.offers} productSlug={product.slug} locale={locale} />
           </div>
         </section>
         <section className="product-information">

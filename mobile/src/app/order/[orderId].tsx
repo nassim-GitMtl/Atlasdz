@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Badge, Button, Card, LoadState, Notice, Screen, text } from '@/components/ui';
@@ -14,6 +14,7 @@ import { errorMessage } from '@/lib/strings';
 import { colors } from '@/lib/theme';
 import type { CustomerOrder, SellerOrder, SupportCase } from '@/lib/types';
 import { useRequest } from '@/lib/use-request';
+import { PreorderNote } from '@/components/preorder-note';
 
 type Action = { readonly sellerOrderId: string; readonly kind: 'cancel' | 'confirm-delivery' };
 
@@ -56,7 +57,8 @@ export default function OrderScreen() {
     let added = 0;
     for (const item of data.sellerOrders.flatMap((sellerOrder) => sellerOrder.snapshot.items)) {
       try {
-        await cart.add(item.offerId, item.quantity);
+        // Signed in here: the account's cart, so the product slug is not needed.
+        await cart.add(item.offerId, item.quantity, '');
         added += 1;
       } catch (error) {
         // Offers that are no longer sold are skipped; the rest still goes to the cart.
@@ -127,14 +129,19 @@ export default function OrderScreen() {
                   />
                 </View>
                 {sellerOrder.snapshot.items.map((item) => (
-                  <View key={item.offerId} style={styles.row}>
-                    <Text style={[text.body, styles.grow]}>
-                      {localized(item.title, locale)} × {item.quantity}
-                    </Text>
-                    <Text style={text.body}>
-                      {formatMoney(item.unitPriceMinor * item.quantity, locale)}
-                    </Text>
-                  </View>
+                  <Fragment key={item.offerId}>
+                    <View style={styles.row}>
+                      <Text style={[text.body, styles.grow]}>
+                        {localized(item.title, locale)} × {item.quantity}
+                      </Text>
+                      <Text style={text.body}>
+                        {formatMoney(item.unitPriceMinor * item.quantity, locale)}
+                      </Text>
+                    </View>
+                    {item.preorder ? (
+                      <PreorderNote preorder={item.preorder} placedAt={sellerOrder.createdAt} />
+                    ) : null}
+                  </Fragment>
                 ))}
                 <View style={styles.row}>
                   <Text style={[text.muted, styles.grow]}>{t.order.shipping}</Text>

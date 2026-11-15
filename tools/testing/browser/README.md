@@ -3,7 +3,8 @@
 Drives the real local apps (customer 3001, Seller Center 3002, API 3003) in headless Chromium at
 phone width: customer signup → email verification → account → legal pages → password reset →
 guest checkout (email only, then the set-password link) → rating a delivered item on the order
-page; seller signup → authenticator enrollment → staff approval → admin page.
+page → cart without an account (email asked at checkout) → pre-order bought with the accepted
+delay; seller signup → authenticator enrollment → staff approval → admin page.
 `ATLAS_E2E_SHOP_ONLY=1` stops before Seller Center (agent browser access to it needs approval). Every page is scanned
 with axe (WCAG 2 A/AA) and checked for horizontal scrolling.
 
@@ -16,7 +17,7 @@ npm i playwright@1.56.1 @axe-core/playwright@4.10.2 && npx playwright install ch
 cp /path/to/repo/tools/testing/browser/e2e.mjs . && ATLAS_API_LOG=/tmp/atlas-local-api.log node e2e.mjs
 ```
 
-Result on 2026-11-14 (shop only): 8/8 pass, 0 accessibility/layout findings. The API allows 20
+Result on 2026-11-15 (shop only): 10/10 pass, 0 accessibility/layout findings. The API allows 20
 sign-ups per hour per address: restart the local API between many runs.
 
 ## Installable app (PWA) check
@@ -64,6 +65,6 @@ cp /path/to/repo/tools/testing/browser/mobile-{app,seller}.mjs .
 node mobile-app.mjs && node mobile-seller.mjs
 ```
 
-Result on 2026-11-14: customer 18/18 (incl. guest sign-in) and seller 10/10, 0 accessibility
-findings. The
+Result on 2026-11-15: customer 20/20 (cart without account, pre-order) and seller 11/11,
+0 accessibility findings. The
 only HTTP error is a 404 on `/api/v1/account` for the demo customer, which has no email account.

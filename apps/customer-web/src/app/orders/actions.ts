@@ -8,7 +8,10 @@ import {
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { customerToken } from '@/lib/cart-api';
+import { AuthApiError, registerGuest } from '@/lib/auth-client';
+import { customerToken, getCart } from '@/lib/cart-api';
+import { clientIp, keepCustomerSession } from '@/lib/customer-session';
+import { mergeGuestCart } from '@/lib/guest-cart';
 import { customerCheckoutEnabled, customerTrustedOrigin } from '@/lib/customer-security';
 import {
   cancelOrder,
@@ -22,7 +25,7 @@ import { localizedHref } from '@/lib/i18n';
 import { ReviewApiError, writeReview, type ReviewFailure } from '@/lib/reviews-api';
 
 export interface OrderActionState {
-  readonly error?: OrderFailure | 'invalid' | 'csrf';
+  readonly error?: OrderFailure | 'invalid' | 'csrf' | 'exists' | 'limited';
   readonly cancelled?: boolean;
   readonly confirmed?: boolean;
 }
@@ -63,10 +66,11 @@ export async function quoteAction(
   form: FormData,
 ): Promise<OrderActionState> {
   if (!(await authorized())) return { error: 'csrf' };
-  const token = await customerToken();
-  if (!token) return { error: 'auth' };
+  const lang = form.get('lang') === 'ar' ? 'ar' : 'fr';
+  let token = await customerToken();
   const input = CreateCheckoutQuoteInputSchema.safeParse({
-    expectedCartVersion: Number(form.get('version')),
+    // Guests have no account cart yet: the real version is read once it exists.
+    expectedCartVersion: token ? Number(form.get('version')) : 1,
     destinationId: form.get('destinationId'),
     deliveryContact: {
       recipientName: form.get('recipientName'),
@@ -76,20 +80,38 @@ export async function quoteAction(
     },
   });
   if (!input.success) return { error: 'invalid' };
+  let expectedCartVersion = input.data.expectedCartVersion;
+  if (!token) {
+    // Checkout without an account: the email comes with the delivery details. The account is
+    // created now (a set-password link is emailed) and the cookie cart moves into it.
+    const email = String(form.get('email') ?? '').trim();
+    if (!email) return { error: 'invalid' };
+    try {
+      token = await keepCustomerSession(await registerGuest(email, lang, await clientIp()));
+      await mergeGuestCart(token);
+      expectedCartVersion = (await getCart(token)).version;
+    } catch (error) {
+      if (error instanceof AuthApiError && (error.code === 'exists' || error.code === 'limited'))
+        return { error: error.code };
+      if (error instanceof AuthApiError && error.code === 'format') return { error: 'invalid' };
+      return { error: 'unavailable' };
+    }
+  }
   let id: string;
   try {
     id = (
       await createQuote(
         token,
-        input.data.expectedCartVersion,
+        expectedCartVersion,
         input.data.destinationId,
         input.data.deliveryContact,
+        form.get('acceptPreorder') === 'yes',
       )
     ).id;
   } catch (error) {
     return failure(error);
   }
-  redirect(localizedHref(`/checkout/${id}`, form.get('lang') === 'ar' ? 'ar' : 'fr'));
+  redirect(localizedHref(`/checkout/${id}`, lang));
 }
 export async function placeAction(
   _state: OrderActionState,
