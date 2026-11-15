@@ -18,6 +18,7 @@ export default function SellerAccountScreen() {
   const languages: [Locale, string][] = [
     ['fr', 'Français'],
     ['ar', 'العربية'],
+    ['en', 'English'],
   ];
   return (
     <Screen>

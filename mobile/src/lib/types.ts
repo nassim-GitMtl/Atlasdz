@@ -42,8 +42,8 @@ export type {
 } from '../../../packages/contracts/src/reviews';
 
 export type CatalogCategory = ProductSubmission['category'];
-export type Locale = 'fr' | 'ar';
-export type Localized = { readonly fr: string; readonly ar: string };
+export type Locale = 'fr' | 'ar' | 'en';
+export type Localized = { readonly fr: string; readonly ar: string; readonly en?: string | undefined };
 
 export type LoginResult =
   | { status: 'AUTHENTICATED'; accessToken: string; expiresAt: string; actorType: string }

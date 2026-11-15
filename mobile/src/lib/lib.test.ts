@@ -123,6 +123,7 @@ describe('strings', () => {
     );
   it('French and Arabic have exactly the same texts, none empty', () => {
     assert.deepEqual(keys(strings.ar).sort(), keys(strings.fr).sort());
+    assert.deepEqual(keys(strings.en).sort(), keys(strings.fr).sort());
     for (const locale of ['fr', 'ar'] as const) {
       for (const key of keys(strings[locale])) {
         const value = key

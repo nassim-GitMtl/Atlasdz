@@ -15,7 +15,12 @@ import { useI18n } from '@/lib/i18n';
 import { useLibrary } from '@/lib/library';
 import { fontFor } from '@/lib/fonts';
 import { colors, gap } from '@/lib/theme';
-import type { CatalogCategoryList, CatalogProduct, CatalogProductList } from '@/lib/types';
+import type {
+  CatalogCategoryList,
+  CatalogProduct,
+  CatalogProductList,
+  Locale,
+} from '@/lib/types';
 import { usePaged } from '@/lib/use-paged';
 import { useRequest } from '@/lib/use-request';
 
@@ -25,6 +30,13 @@ const SERVER_SORT: Record<SortMode, string> = {
   priceDesc: 'price-desc',
 };
 type ProductPage = CatalogProductList & { readonly nextCursor: string | null };
+
+/** Language switch on the home screen: short label, full name for screen readers. */
+const LANGUAGES: readonly (readonly [Locale, string, string])[] = [
+  ['fr', 'FR', 'Français'],
+  ['ar', 'ع', 'العربية'],
+  ['en', 'EN', 'English'],
+];
 
 export default function HomeScreen() {
   const { t, locale, setLocale } = useI18n();
@@ -64,16 +76,29 @@ export default function HomeScreen() {
           <Image source={require('../../../assets/mark.png')} style={styles.mark} />
           <Text style={styles.wordmark}>atlas dz</Text>
         </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLanguage={locale === 'fr' ? 'ar' : 'fr'}
-          onPress={() => void setLocale(locale === 'fr' ? 'ar' : 'fr')}
-          style={styles.language}
-        >
-          <Text style={[styles.languageText, { fontFamily: fontFor(700, locale === 'fr') }]}>
-            {t.home.otherLanguage}
-          </Text>
-        </Pressable>
+        <View style={styles.languages} accessibilityRole="radiogroup">
+          {LANGUAGES.map(([code, short, name]) => (
+            <Pressable
+              key={code}
+              accessibilityRole="radio"
+              accessibilityLabel={name}
+              accessibilityLanguage={code}
+              accessibilityState={{ checked: locale === code }}
+              onPress={() => void setLocale(code)}
+              style={[styles.language, locale === code && styles.languageActive]}
+            >
+              <Text
+                style={[
+                  styles.languageText,
+                  locale === code && styles.languageTextActive,
+                  { fontFamily: fontFor(800, code === 'ar') },
+                ]}
+              >
+                {short}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
       </View>
       <Text style={styles.tagline}>{t.home.tagline}</Text>
       <View style={styles.search}>
@@ -240,14 +265,18 @@ const styles = StyleSheet.create({
   brand: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   mark: { width: 34, height: 30, resizeMode: 'contain' },
   wordmark: { fontSize: 24, fontWeight: '800', color: colors.ink, letterSpacing: -1 },
+  languages: { flexDirection: 'row', gap: 2, padding: 2, borderRadius: 999, backgroundColor: colors.surface },
   language: {
+    minWidth: 44,
     minHeight: 44,
-    paddingHorizontal: 16,
+    paddingHorizontal: 10,
     borderRadius: 999,
-    backgroundColor: colors.surface,
+    alignItems: 'center',
     justifyContent: 'center',
   },
-  languageText: { fontSize: 15, color: colors.ink },
+  languageActive: { backgroundColor: colors.card },
+  languageText: { fontSize: 14, color: colors.muted },
+  languageTextActive: { color: colors.primary },
   tagline: { fontSize: 15, color: colors.muted, marginTop: -4 },
   section: { fontSize: 20, fontWeight: '800', color: colors.ink, marginTop: 4 },
   sectionCount: { color: colors.muted, fontWeight: '700' },

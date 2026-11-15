@@ -22,4 +22,4 @@ export function imageUri(path: string, size: 'small' | 'large' = 'large'): strin
 }
 
 /** A page of the shop website in the chosen language (legal pages, data download). */
-export const webPage = (path: string, locale: 'fr' | 'ar') => `${SHOP_URL}${path}?lang=${locale}`;
+export const webPage = (path: string, locale: 'fr' | 'ar' | 'en') => `${SHOP_URL}${path}?lang=${locale}`;

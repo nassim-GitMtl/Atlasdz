@@ -53,6 +53,7 @@ export default function AccountScreen() {
   const languages: [Locale, string][] = [
     ['fr', 'Français'],
     ['ar', 'العربية'],
+    ['en', 'English'],
   ];
 
   return (

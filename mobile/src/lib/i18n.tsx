@@ -26,15 +26,18 @@ interface I18n {
 
 const I18nContext = createContext<I18n | null>(null);
 
-const deviceLocale = (): Locale => (getLocales()[0]?.languageCode === 'ar' ? 'ar' : 'fr');
+const deviceLocale = (): Locale => {
+  const code = getLocales()[0]?.languageCode;
+  return code === 'ar' || code === 'en' ? code : 'fr';
+};
 
-/** French or Arabic: the saved choice, else the phone's language. */
+/** French, Arabic or English: the saved choice, else the phone's language. */
 export function I18nProvider({ children }: { readonly children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(deviceLocale);
 
   useEffect(() => {
     void readValue(KEY).then((saved) => {
-      if (saved === 'fr' || saved === 'ar') setLocaleState(saved);
+      if (saved === 'fr' || saved === 'ar' || saved === 'en') setLocaleState(saved);
     });
   }, []);
 

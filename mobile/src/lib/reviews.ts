@@ -16,7 +16,7 @@ export function starIcons(value: number): StarIcon[] {
 
 /** "4,5" / "4.5": one decimal, as shoppers read ratings. */
 export function formatRating(value: number, locale: Locale): string {
-  return new Intl.NumberFormat(locale === 'ar' ? 'ar-DZ' : 'fr-DZ', {
+  return new Intl.NumberFormat(locale === 'ar' ? 'ar-DZ' : locale === 'en' ? 'en-GB' : 'fr-DZ', {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
   }).format(value);

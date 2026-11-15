@@ -1,8 +1,11 @@
 import type { Locale, Localized } from './types';
 
 /** Same rules as the shop website: dinars, no forced decimals. */
+const region = (locale: Locale) =>
+  locale === 'ar' ? 'ar-DZ' : locale === 'en' ? 'en-GB' : 'fr-DZ';
+
 export function formatMoney(amountMinor: number, locale: Locale): string {
-  return new Intl.NumberFormat(locale === 'ar' ? 'ar-DZ' : 'fr-DZ', {
+  return new Intl.NumberFormat(region(locale), {
     style: 'currency',
     currency: 'DZD',
     // Whole dinars, or both centime digits (4 500,50 DA, not 4 500,5 DA).
@@ -11,7 +14,7 @@ export function formatMoney(amountMinor: number, locale: Locale): string {
   }).format(amountMinor / 100);
 }
 
-const region = (locale: Locale) => (locale === 'ar' ? 'ar-DZ' : 'fr-DZ');
+
 
 /** Dates as in Algeria; times on the 24-hour clock (14:30), which CLDR's fr-DZ does not default to. */
 export function formatDate(iso: string, locale: Locale, withTime = false): string {
@@ -29,7 +32,7 @@ export function formatTime(iso: string, locale: Locale): string {
   }).format(new Date(iso));
 }
 
-export const localized = (text: Localized, locale: Locale) => text[locale] || text.fr;
+export const localized = (text: Localized, locale: Locale) => text[locale] ?? text.fr;
 
 /** Fills `{name}` placeholders: fill('{n} vendeurs', { n: 3 }). */
 export const fill = (template: string, values: Readonly<Record<string, string | number>>) =>
