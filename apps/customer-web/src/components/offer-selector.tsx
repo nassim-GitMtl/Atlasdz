@@ -3,6 +3,7 @@
 import { CheckCircle, Clock, Storefront, Truck } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
+import { PromoPrice } from './promo-price';
 
 import type { CatalogProduct } from '@atlas/contracts';
 
@@ -85,9 +86,17 @@ export function OfferSelector({
                   {t.shippingAtCheckout}
                 </span>
               </span>
-              <strong className="offer-price" dir="ltr">
-                {formatMoney(offer.priceMinor, locale)}
-              </strong>
+              <span className="offer-price-block">
+                <strong className="offer-price" dir="ltr">
+                  {formatMoney(offer.priceMinor, locale)}
+                </strong>
+                <PromoPrice
+                  priceMinor={offer.priceMinor}
+                  regularPriceMinor={offer.regularPriceMinor}
+                  endsAt={offer.promotionEndsAt}
+                  locale={locale}
+                />
+              </span>
               <span className="sr-only">{active ? t.selectedOffer : t.chooseOffer}</span>
             </label>
           );

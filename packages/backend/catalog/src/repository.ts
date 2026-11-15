@@ -41,7 +41,8 @@ export type CatalogWriteErrorCode =
   | 'OFFER_NOT_PENDING'
   | 'OFFER_STATE_CONFLICT'
   | 'PRODUCT_STATE_CONFLICT'
-  | 'OFFER_ALREADY_EXISTS';
+  | 'OFFER_ALREADY_EXISTS'
+  | 'OFFER_INVALID';
 
 export class CatalogWriteError extends Error {
   public constructor(public readonly code: CatalogWriteErrorCode) {
@@ -54,6 +55,12 @@ export interface CatalogWriteContext {
   readonly actorUserId: string;
   readonly correlationId: string;
 }
+
+/** A promotion counts from its start until (excluding) its end, in database time. */
+export const PROMO_ACTIVE = (alias: string) =>
+  `(${alias}.promo_price_minor IS NOT NULL AND now() >= ${alias}.promo_starts_at AND now() < ${alias}.promo_ends_at)`;
+const utcIso = (column: string) =>
+  `to_char(${column} AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`;
 
 const PRODUCT_JSON = `jsonb_build_object(
   'id', p.id, 'slug', p.slug,
@@ -70,21 +77,26 @@ const PUBLIC_PRODUCTS = `
   JOIN LATERAL (
     SELECT jsonb_agg(jsonb_build_object(
       'id', o.id, 'seller', jsonb_build_object('id', o.seller_id, 'slug', o.seller_slug, 'name', o.seller_name),
-      'priceMinor', o.price_minor, 'currency', o.currency,
+      'priceMinor', o.effective_price, 'currency', o.currency,
       'availableQuantity', o.available_quantity, 'handlingDays', o.handling_days,
       'deliveryFeeMinor', o.delivery_fee_minor,
-      'preorder', CASE WHEN o.preorder THEN jsonb_build_object('minDays', o.preorder_min_days, 'maxDays', o.preorder_max_days, 'origin', o.preorder_origin) ELSE NULL END
-    ) ORDER BY o.price_minor, o.id) AS items,
-      min(o.price_minor + o.delivery_fee_minor) AS best_total,
+      'preorder', CASE WHEN o.preorder THEN jsonb_build_object('minDays', o.preorder_min_days, 'maxDays', o.preorder_max_days, 'origin', o.preorder_origin) ELSE NULL END,
+      'regularPriceMinor', CASE WHEN o.promo_active THEN o.price_minor END,
+      'promotionEndsAt', CASE WHEN o.promo_active THEN ${utcIso('o.promo_ends_at')} END
+    ) ORDER BY o.effective_price, o.id) AS items,
+      min(o.effective_price + o.delivery_fee_minor) AS best_total,
       min(o.handling_days) AS fastest_days,
       bool_or(o.available_quantity > 0) AS in_stock
     FROM (
-      SELECT offer.*, s.slug AS seller_slug, s.name AS seller_name
+      SELECT offer.*, s.slug AS seller_slug, s.name AS seller_name,
+        ${PROMO_ACTIVE('offer')} AS promo_active,
+        CASE WHEN ${PROMO_ACTIVE('offer')} THEN offer.promo_price_minor ELSE offer.price_minor END
+          AS effective_price
       FROM offers.offers offer
       JOIN sellers.sellers s ON s.id = offer.seller_id
       WHERE offer.product_id = p.id AND offer.status = 'APPROVED' AND s.status = 'APPROVED'
         AND ($3::text IS NULL OR s.slug = $3)
-      ORDER BY offer.price_minor, offer.id LIMIT 50
+      ORDER BY effective_price, offer.id LIMIT 50
     ) o
   ) public_offers ON public_offers.items IS NOT NULL
   WHERE p.status = 'ACTIVE' AND p.moderation_status = 'APPROVED'
@@ -99,7 +111,19 @@ const OFFER_COLUMNS = `id, seller_id AS "sellerId", product_id AS "productId",
   price_minor AS "priceMinor", currency, available_quantity AS "availableQuantity",
   handling_days AS "handlingDays", delivery_fee_minor AS "deliveryFeeMinor", status,
   row_version AS "rowVersion", rejection_reason AS "rejectionReason",
+  CASE WHEN promo_price_minor IS NULL THEN NULL ELSE jsonb_build_object('priceMinor', promo_price_minor,
+    'startsAt', ${utcIso('promo_starts_at')}, 'endsAt', ${utcIso('promo_ends_at')}) END AS promotion,
   CASE WHEN preorder THEN jsonb_build_object('minDays', preorder_min_days, 'maxDays', preorder_max_days, 'origin', preorder_origin) ELSE NULL END AS preorder`;
+
+/** Column values for a promotion (all null without one); it must stay below the price. */
+const promotionColumns = (
+  priceMinor: number,
+  promotion: { priceMinor: number; startsAt: string; endsAt: string } | null | undefined,
+) => {
+  if (!promotion) return [null, null, null];
+  if (promotion.priceMinor >= priceMinor) throw new CatalogWriteError('OFFER_INVALID');
+  return [promotion.priceMinor, promotion.startsAt, promotion.endsAt];
+};
 
 /** Column values for an offer's pre-order terms (all null when the item is in stock). */
 const preorderColumns = (
@@ -693,8 +717,10 @@ export class PostgresCatalogRepository {
         throw new CatalogWriteError('OFFER_STATE_CONFLICT');
       // A refused offer is resubmitted by saving it, even unchanged.
       const resubmit = prior.status === 'REJECTED';
+      const promotion = data.promotion === undefined ? (prior.promotion ?? null) : data.promotion;
       if (
         !resubmit &&
+        JSON.stringify(prior.promotion ?? null) === JSON.stringify(promotion) &&
         prior.priceMinor === data.priceMinor &&
         prior.availableQuantity === data.availableQuantity &&
         prior.handlingDays === data.handlingDays &&
@@ -713,6 +739,7 @@ export class PostgresCatalogRepository {
            preorder=$6,preorder_min_days=$7,preorder_max_days=$8,preorder_origin=$9,
            status=CASE WHEN status='REJECTED' THEN 'PENDING_REVIEW' ELSE status END,
            rejection_reason=NULL,
+           promo_price_minor=$10,promo_starts_at=$11,promo_ends_at=$12,
            row_version=row_version+1 WHERE id=$1 AND seller_id=$2 RETURNING ${OFFER_COLUMNS}`,
         [
           offerId,
@@ -721,6 +748,7 @@ export class PostgresCatalogRepository {
           data.availableQuantity,
           data.handlingDays,
           ...preorderColumns(data.preorder),
+          ...promotionColumns(data.priceMinor, promotion),
         ],
       );
       const offer = SellerOfferSchema.parse(result.rows[0]);
@@ -761,8 +789,9 @@ export class PostgresCatalogRepository {
         `
         INSERT INTO offers.offers (seller_id, product_id, variant_id, price_minor,
           available_quantity, handling_days, delivery_fee_minor,
-          preorder, preorder_min_days, preorder_max_days, preorder_origin)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING ${OFFER_COLUMNS}
+          preorder, preorder_min_days, preorder_max_days, preorder_origin,
+          promo_price_minor, promo_starts_at, promo_ends_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING ${OFFER_COLUMNS}
       `,
         [
           sellerId,
@@ -773,6 +802,7 @@ export class PostgresCatalogRepository {
           data.handlingDays,
           data.deliveryFeeMinor,
           ...preorderColumns(data.preorder),
+          ...promotionColumns(data.priceMinor, data.promotion),
         ],
       );
       const offer = SellerOfferSchema.parse(result.rows[0]);

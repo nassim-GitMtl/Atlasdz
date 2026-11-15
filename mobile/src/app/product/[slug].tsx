@@ -14,8 +14,9 @@ import { api, errorCode } from '@/lib/api';
 import { useCart } from '@/lib/cart';
 import { summarize } from '@/lib/collections';
 import { imageUri, SHOP_URL } from '@/lib/config';
-import { fill, formatMoney, localized } from '@/lib/format';
+import { fill, formatDate, formatMoney, localized } from '@/lib/format';
 import { useI18n } from '@/lib/i18n';
+import { discountPercent } from '@/lib/promotion';
 import { useLibrary } from '@/lib/library';
 import { useSession } from '@/lib/session';
 import { errorMessage } from '@/lib/strings';
@@ -140,6 +141,16 @@ export default function ProductScreen() {
           {item.offers.map((offer) => (
             <Card key={offer.id}>
               <Text style={text.price}>{formatMoney(offer.priceMinor, locale)}</Text>
+              {offer.regularPriceMinor && offer.regularPriceMinor > offer.priceMinor ? (
+                <Text style={styles.promo}>
+                  {fill(t.promo.tag, { n: discountPercent(offer.priceMinor, offer.regularPriceMinor) })}
+                  {' · '}
+                  <Text style={styles.regular}>{formatMoney(offer.regularPriceMinor, locale)}</Text>
+                  {offer.promotionEndsAt
+                    ? ` · ${fill(t.promo.until, { date: formatDate(offer.promotionEndsAt, locale) })}`
+                    : ''}
+                </Text>
+              ) : null}
               <Pressable
                 accessibilityRole="link"
                 onPress={() => router.push(`/store/${offer.seller.slug}`)}
@@ -219,6 +230,8 @@ export default function ProductScreen() {
 }
 
 const styles = StyleSheet.create({
+  promo: { fontSize: 13, fontWeight: '700', color: colors.danger },
+  regular: { color: colors.muted, textDecorationLine: 'line-through', fontWeight: '400' },
   image: { width: '100%', aspectRatio: 1, borderRadius: radius, backgroundColor: colors.soft },
   gap: { gap: 4 },
   grow: { flex: 1 },

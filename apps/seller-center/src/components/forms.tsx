@@ -12,6 +12,27 @@ import {
 import { copy, type Locale } from '@/lib/i18n';
 import { emptyOfferValues } from '@/lib/offer-input';
 
+const promoCopy = {
+  fr: {
+    title: 'Promotion',
+    label: 'Prix promotionnel sur une période',
+    help: 'Plus bas que votre prix habituel, 90 jours au plus. Les clients voient les deux prix et la date de fin.',
+    price: 'Prix promotionnel (DZD)',
+    start: 'Premier jour',
+    end: 'Dernier jour',
+  },
+  ar: {
+    title: 'تخفيض',
+    label: 'سعر مخفض لفترة محددة',
+    help: 'أقل من سعرك المعتاد، 90 يومًا كحد أقصى. يرى الزبائن السعرين وتاريخ الانتهاء.',
+    price: 'السعر المخفض (دج)',
+    start: 'اليوم الأول',
+    end: 'اليوم الأخير',
+  },
+} as const;
+/** yyyy-mm-dd of an instant in Algiers time (UTC+1, no daylight saving). */
+const algiersDay = (iso: string) => new Date(Date.parse(iso) + 3_600_000).toISOString().slice(0, 10);
+
 export function OfferForm({
   products,
   locale,
@@ -41,9 +62,15 @@ export function OfferForm({
           preorderMin: offer.preorder ? String(offer.preorder.minDays) : '',
           preorderMax: offer.preorder ? String(offer.preorder.maxDays) : '',
           preorderOrigin: offer.preorder?.origin ?? '',
+          promo: offer.promotion ? 'yes' : '',
+          promoPrice: offer.promotion ? (offer.promotion.priceMinor / 100).toFixed(2) : '',
+          promoStart: offer.promotion ? algiersDay(offer.promotion.startsAt) : '',
+          promoEnd: offer.promotion ? algiersDay(offer.promotion.endsAt) : '',
         }
       : { ...emptyOfferValues, productId: preselectedProductId });
   const [preorder, setPreorder] = useState(values.preorder === 'yes');
+  const [promo, setPromo] = useState(values.promo === 'yes');
+  const p = promoCopy[locale];
   const preorderMin = values.preorderMin ?? '';
   const preorderMax = values.preorderMax ?? '';
   const preorderOrigin = values.preorderOrigin ?? '';
@@ -172,6 +199,38 @@ export function OfferForm({
                 defaultValue={preorderOrigin}
                 placeholder={t.preorderOriginExample}
               />
+            </>
+          )}
+        </fieldset>
+        <fieldset className="field preorder-fields">
+          <legend>{p.title}</legend>
+          <label htmlFor="promo">
+            <input
+              id="promo"
+              name="promo"
+              type="checkbox"
+              value="yes"
+              checked={promo}
+              onChange={(event) => setPromo(event.target.checked)}
+            />{' '}
+            {p.label}
+          </label>
+          <small>{p.help}</small>
+          {promo && (
+            <>
+              <label htmlFor="promoPrice">{p.price}</label>
+              <input
+                id="promoPrice"
+                name="promoPrice"
+                type="text"
+                inputMode="decimal"
+                required
+                defaultValue={values.promoPrice ?? ''}
+              />
+              <label htmlFor="promoStart">{p.start}</label>
+              <input id="promoStart" name="promoStart" type="date" required defaultValue={values.promoStart ?? ''} />
+              <label htmlFor="promoEnd">{p.end}</label>
+              <input id="promoEnd" name="promoEnd" type="date" required defaultValue={values.promoEnd ?? ''} />
             </>
           )}
         </fieldset>

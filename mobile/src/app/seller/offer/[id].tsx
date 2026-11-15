@@ -16,6 +16,7 @@ import {
 import { errorCode } from '@/lib/api';
 import { dinarsText, parseDinars } from '@/lib/collections';
 import { fill, localized } from '@/lib/format';
+import { algiersDay, parsePromotion } from '@/lib/promotion';
 import { useI18n } from '@/lib/i18n';
 import { useSession } from '@/lib/session';
 import { errorMessage } from '@/lib/strings';
@@ -101,6 +102,11 @@ function OfferForm({
   const [preMin, setPreMin] = useState(offer?.preorder ? String(offer.preorder.minDays) : '');
   const [preMax, setPreMax] = useState(offer?.preorder ? String(offer.preorder.maxDays) : '');
   const [preOrigin, setPreOrigin] = useState(offer?.preorder?.origin ?? '');
+  // Promotion: a lower price for a dated window; shoppers see both prices.
+  const [isPromo, setIsPromo] = useState(Boolean(offer?.promotion));
+  const [promoPrice, setPromoPrice] = useState(offer?.promotion ? dinarsText(offer.promotion.priceMinor) : '');
+  const [promoStart, setPromoStart] = useState(offer?.promotion ? algiersDay(offer.promotion.startsAt) : '');
+  const [promoEnd, setPromoEnd] = useState(offer?.promotion ? algiersDay(offer.promotion.endsAt) : '');
   const [showErrors, setShowErrors] = useState(false);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
@@ -113,7 +119,9 @@ function OfferForm({
       ? Number(handling.trim())
       : null;
   const preorder = parsePreorder(isPreorder, preMin, preMax, preOrigin);
+  const promotion = parsePromotion(isPromo, promoPrice, promoStart, promoEnd, priceMinor);
   const valid =
+    promotion !== 'invalid' &&
     priceMinor !== null &&
     priceMinor > 0 &&
     quantity !== null &&
@@ -135,6 +143,7 @@ function OfferForm({
               handlingDays: days,
               // Always sent, so an edit here never silently changes the pre-order terms.
               preorder,
+              promotion,
               expectedVersion: offer.rowVersion,
             },
           })
@@ -145,6 +154,7 @@ function OfferForm({
               availableQuantity: quantity,
               handlingDays: days,
               preorder,
+              promotion,
               // Delivery is charged from the seller's delivery zones, not per offer.
               deliveryFeeMinor: 0,
             },
@@ -207,6 +217,34 @@ function OfferForm({
           {showErrors && preorder === 'invalid' ? (
             <Notice tone="error">{t.preorder.invalid}</Notice>
           ) : null}
+        </>
+      ) : null}
+      <Checkbox checked={isPromo} label={t.promo.toggle} onToggle={() => setIsPromo((value) => !value)} />
+      {isPromo ? (
+        <>
+          <Text style={text.muted}>{t.promo.help}</Text>
+          <Field
+            label={t.promo.price}
+            value={promoPrice}
+            onChangeText={setPromoPrice}
+            keyboardType="decimal-pad"
+            error={showErrors && promotion === 'invalid'}
+          />
+          <Field
+            label={t.promo.start}
+            value={promoStart}
+            onChangeText={setPromoStart}
+            placeholder="2026-12-01"
+            error={showErrors && promotion === 'invalid'}
+          />
+          <Field
+            label={t.promo.end}
+            value={promoEnd}
+            onChangeText={setPromoEnd}
+            placeholder="2026-12-15"
+            error={showErrors && promotion === 'invalid'}
+          />
+          {showErrors && promotion === 'invalid' ? <Notice tone="error">{t.promo.invalid}</Notice> : null}
         </>
       ) : null}
       {!offer ? <Text style={text.muted}>{t.catalog.offerNote}</Text> : null}

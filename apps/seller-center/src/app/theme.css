@@ -134,3 +134,4 @@ body { background: var(--surface); }
 .refuse-form label { font-size: 13px; font-weight: 700; }
 .refuse-form textarea { font: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid var(--border, #8792a6); border-radius: 8px; }
 .reject-reason { display: block; color: var(--danger); font-size: 13px; }
+.promo-note { display: block; color: var(--danger); font-size: 13px; font-weight: 700; }

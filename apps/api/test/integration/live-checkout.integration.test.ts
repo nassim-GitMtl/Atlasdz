@@ -321,6 +321,38 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
         (mail) => mail.to === 'boutique@example.dz' && /Votre offre est en ligne/.test(mail.subject),
       ),
     );
+    // Seller promotion: shoppers see the promotional price and the real regular price.
+    const productSlug = (await http().get('/api/v1/catalog/products').expect(200)).body.items[0]
+      .slug as string;
+    const current = await http().get(`/api/v1/seller/offers/${offer.body.id}`).set(bearer(seller)).expect(200);
+    const startsAt = new Date(Date.now() - 60_000).toISOString();
+    const endsAt = new Date(Date.now() + 7 * 86_400_000).toISOString();
+    const base = { priceMinor: 450000, availableQuantity: 3, handlingDays: 2 };
+    await http()
+      .post(`/api/v1/seller/offers/${offer.body.id}`)
+      .set(bearer(seller))
+      .send({ ...base, expectedVersion: current.body.rowVersion, promotion: { priceMinor: 460000, startsAt, endsAt } })
+      .expect(422);
+    const promoted = await http()
+      .post(`/api/v1/seller/offers/${offer.body.id}`)
+      .set(bearer(seller))
+      .send({ ...base, expectedVersion: current.body.rowVersion, promotion: { priceMinor: 400000, startsAt, endsAt } })
+      .expect((response) => assert.ok([200, 201].includes(response.status)));
+    assert.equal(promoted.body.status, 'APPROVED');
+    assert.equal(promoted.body.promotion.priceMinor, 400000);
+    const onSale = await http().get(`/api/v1/catalog/products/${productSlug}`).expect(200);
+    assert.equal(onSale.body.offers[0].priceMinor, 400000);
+    assert.equal(onSale.body.offers[0].regularPriceMinor, 450000);
+    assert.equal(Date.parse(onSale.body.offers[0].promotionEndsAt), Date.parse(endsAt));
+    const ended = await http()
+      .post(`/api/v1/seller/offers/${offer.body.id}`)
+      .set(bearer(seller))
+      .send({ ...base, expectedVersion: promoted.body.rowVersion, promotion: null })
+      .expect((response) => assert.ok([200, 201].includes(response.status)));
+    assert.equal(ended.body.promotion, null);
+    const regular = await http().get(`/api/v1/catalog/products/${productSlug}`).expect(200);
+    assert.equal(regular.body.offers[0].priceMinor, 450000);
+    assert.equal(regular.body.offers[0].regularPriceMinor ?? null, null);
     const destinations = await http()
       .get('/api/v1/delivery/destinations')
       .set(bearer(seller))

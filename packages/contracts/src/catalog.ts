@@ -39,6 +39,22 @@ export const PreorderSchema = z
   .refine((value) => value.maxDays >= value.minDays, 'maxDays must not be below minDays');
 export type Preorder = z.infer<typeof PreorderSchema>;
 
+/** A seller's promotional price for a dated window (at most 90 days). */
+export const OfferPromotionSchema = z
+  .object({
+    priceMinor: MoneyMinorSchema.refine((value) => value > 0),
+    startsAt: IsoTimestampSchema,
+    endsAt: IsoTimestampSchema,
+  })
+  .strict()
+  .refine(
+    (p) =>
+      Date.parse(p.endsAt) > Date.parse(p.startsAt) &&
+      Date.parse(p.endsAt) - Date.parse(p.startsAt) <= 90 * 86_400_000,
+    { message: 'A promotion ends after it starts and lasts at most 90 days' },
+  );
+export type OfferPromotion = z.infer<typeof OfferPromotionSchema>;
+
 export const CatalogOfferSchema = z
   .object({
     id: UuidSchema,
@@ -49,6 +65,9 @@ export const CatalogOfferSchema = z
     handlingDays: z.number().int().min(0).max(30),
     deliveryFeeMinor: MoneyMinorSchema,
     preorder: PreorderSchema.nullish(),
+    /** Set only while a promotion runs: the seller's regular price and when the offer ends. */
+    regularPriceMinor: MoneyMinorSchema.nullish(),
+    promotionEndsAt: IsoTimestampSchema.nullish(),
   })
   .strict();
 
@@ -125,6 +144,8 @@ export const CreateOfferInputSchema = z
     deliveryFeeMinor: MoneyMinorSchema,
     /** Null or absent: in stock. */
     preorder: PreorderSchema.nullish(),
+    /** Absent on update: unchanged. Null: no promotion. */
+    promotion: OfferPromotionSchema.nullish(),
   })
   .strict();
 

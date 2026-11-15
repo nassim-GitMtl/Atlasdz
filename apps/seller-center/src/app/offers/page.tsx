@@ -99,6 +99,13 @@ export default async function Offers({
                         <span className={`badge ${offer.status === 'APPROVED' ? 'approved' : offer.status === 'REJECTED' ? 'badge--bad' : ''}`}>
                           {t[offer.status]}
                         </span>
+                        {offer.promotion && (
+                          <small className="promo-note">
+                            {locale === 'ar' ? 'تخفيض: ' : 'Promotion : '}
+                            {money(offer.promotion.priceMinor, locale)} ·{' '}
+                            {new Date(offer.promotion.endsAt).toLocaleDateString(locale === 'ar' ? 'ar-DZ' : 'fr-DZ', { timeZone: 'Africa/Algiers' })}
+                          </small>
+                        )}
                         {offer.status === 'REJECTED' && offer.rejectionReason && (
                           <small className="reject-reason">{offer.rejectionReason}</small>
                         )}

@@ -18,6 +18,7 @@ test('offer edits validate version and mutable fields without product or shippin
       priceMinor: 1250025,
       availableQuantity: 12,
       handlingDays: 2,
+      promotion: null,
     });
   for (const version of ['0', '-1', '1e2', '2147483647', 'bad'])
     assert.equal(parseOfferUpdate(values, version).success, false);
@@ -36,7 +37,22 @@ test('DZD conversion preserves fractional centimes exactly and accepts French de
       availableQuantity: 12,
       handlingDays: 2,
       deliveryFeeMinor: 50000,
+      promotion: null,
     });
+});
+
+test('a ticked promotion covers whole days in Algiers time and must be complete', () => {
+  const promo = { ...values, promo: 'yes', promoPrice: '9900', promoStart: '2026-12-01', promoEnd: '2026-12-15' };
+  const parsed = parseOfferUpdate(promo, '3');
+  assert.equal(parsed.success, true);
+  if (parsed.success)
+    assert.deepEqual(parsed.data.promotion, {
+      priceMinor: 990000,
+      startsAt: '2026-12-01T00:00:00+01:00',
+      endsAt: '2026-12-15T23:59:59+01:00',
+    });
+  assert.equal(parseOfferUpdate({ ...promo, promoEnd: '' }, '3').success, false);
+  assert.equal(parseOfferUpdate({ ...promo, promoEnd: '2027-06-01' }, '3').success, false);
 });
 
 test('ambiguous, negative, exponent and overprecision amounts are rejected instead of silently rounded', () => {

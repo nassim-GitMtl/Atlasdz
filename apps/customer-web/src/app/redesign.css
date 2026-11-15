@@ -261,3 +261,9 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 .delivery-estimate__fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .delivery-estimate__fields label { display: grid; gap: 4px; font-size: 13px; font-weight: 700; }
 .delivery-estimate__fields select { width: 100%; min-width: 0; }
+/* Seller promotions: real regular price struck through, discount and end date. */
+.promo-price { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 13px; color: var(--muted); }
+.promo-price s { color: var(--muted); }
+.promo-price small { font-size: 12px; }
+.promo-tag { padding: 2px 8px; border-radius: 999px; background: #fdecec; color: var(--danger); font-size: 12px; font-weight: 850; }
+.offer-price-block { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }

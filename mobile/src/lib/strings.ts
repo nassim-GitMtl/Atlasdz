@@ -242,6 +242,16 @@ const fr = {
     test: 'commande de test, rien à encaisser',
     tracking: 'Suivi',
   },
+  promo: {
+    toggle: 'Prix promotionnel sur une période',
+    help: 'Plus bas que votre prix habituel, 90 jours au plus. Les clients voient les deux prix et la date de fin.',
+    price: 'Prix promotionnel (DA)',
+    start: 'Premier jour (AAAA-MM-JJ)',
+    end: 'Dernier jour (AAAA-MM-JJ)',
+    invalid: 'Promotion incomplète : prix plus bas que le prix habituel et dates valides (90 jours au plus).',
+    tag: 'Promo −{n} %',
+    until: 'jusqu’au {date}',
+  },
   preorder: {
     badge: 'Précommande',
     window: 'Livraison estimée sous {min} à {max} jours',
@@ -753,6 +763,16 @@ const ar: Strings = {
     collect: 'المبلغ المستحق عند التسليم',
     test: 'طلب تجريبي، لا شيء للتحصيل',
     tracking: 'التتبع',
+  },
+  promo: {
+    toggle: 'سعر مخفض لفترة محددة',
+    help: 'أقل من سعرك المعتاد، 90 يومًا كحد أقصى. يرى الزبائن السعرين وتاريخ الانتهاء.',
+    price: 'السعر المخفض (دج)',
+    start: 'اليوم الأول (AAAA-MM-JJ)',
+    end: 'اليوم الأخير (AAAA-MM-JJ)',
+    invalid: 'التخفيض غير مكتمل: سعر أقل من المعتاد وتواريخ صحيحة (90 يومًا كحد أقصى).',
+    tag: 'تخفيض −{n}٪',
+    until: 'حتى {date}',
   },
   preorder: {
     badge: 'طلب مسبق',

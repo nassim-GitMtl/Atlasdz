@@ -1,3 +1,4 @@
+import { PromoPrice } from '@/components/promo-price';
 import { CheckoutSteps } from '@/components/checkout-steps';
 import { ProductPhoto } from '@/components/product-photo';
 import Link from 'next/link';
@@ -112,7 +113,13 @@ export default async function CartPage({
                         {line.offer && (
                           <>
                             <p>
-                              {t.price}: <bdi>{formatMoney(line.offer.priceMinor, locale)}</bdi>
+                              {t.price}: <bdi>{formatMoney(line.offer.priceMinor, locale)}</bdi>{' '}
+                              <PromoPrice
+                                priceMinor={line.offer.priceMinor}
+                                regularPriceMinor={line.offer.regularPriceMinor}
+                                endsAt={line.offer.promotionEndsAt}
+                                locale={locale}
+                              />
                             </p>
                           </>
                         )}

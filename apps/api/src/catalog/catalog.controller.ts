@@ -47,6 +47,8 @@ export const translateWriteError = (error: unknown): never => {
     case 'OFFER_STATE_CONFLICT':
     case 'OFFER_ALREADY_EXISTS':
       throw new SafeApplicationError('OFFER_STATE_CONFLICT');
+    case 'OFFER_INVALID':
+      throw new SafeApplicationError('VALIDATION_FAILED');
   }
 };
 

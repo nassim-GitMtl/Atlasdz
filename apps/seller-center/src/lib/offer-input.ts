@@ -2,7 +2,19 @@ import { CreateOfferInputSchema, UpdateOfferInputSchema } from '@atlas/contracts
 
 export type OfferValues = Readonly<
   Record<'productId' | 'price' | 'quantity' | 'handlingDays' | 'deliveryFee', string> &
-    Partial<Record<'preorder' | 'preorderMin' | 'preorderMax' | 'preorderOrigin', string>>
+    Partial<
+      Record<
+        | 'preorder'
+        | 'preorderMin'
+        | 'preorderMax'
+        | 'preorderOrigin'
+        | 'promo'
+        | 'promoPrice'
+        | 'promoStart'
+        | 'promoEnd',
+        string
+      >
+    >
 >;
 export const emptyOfferValues: OfferValues = {
   productId: '',
@@ -14,6 +26,10 @@ export const emptyOfferValues: OfferValues = {
   preorderMin: '',
   preorderMax: '',
   preorderOrigin: '',
+  promo: '',
+  promoPrice: '',
+  promoStart: '',
+  promoEnd: '',
 };
 
 export function moneyToMinor(value: string): number | undefined {
@@ -41,6 +57,21 @@ function preorderOf(values: OfferValues) {
   };
 }
 
+const day = (value: string | undefined) => (/^\d{4}-\d{2}-\d{2}$/.test(value ?? '') ? value : undefined);
+/** Promotion when the box is ticked: whole days in Algiers time (start 00:00, end 23:59). */
+function promotionOf(values: OfferValues) {
+  if (values.promo !== 'yes') return { promotion: null };
+  const start = day(values.promoStart);
+  const end = day(values.promoEnd);
+  return {
+    promotion: {
+      priceMinor: moneyToMinor(values.promoPrice ?? ''),
+      startsAt: start ? `${start}T00:00:00+01:00` : undefined,
+      endsAt: end ? `${end}T23:59:59+01:00` : undefined,
+    },
+  };
+}
+
 export function parseOfferValues(values: OfferValues) {
   return CreateOfferInputSchema.safeParse({
     productId: values.productId,
@@ -49,6 +80,7 @@ export function parseOfferValues(values: OfferValues) {
     handlingDays: integer(values.handlingDays),
     deliveryFeeMinor: moneyToMinor(values.deliveryFee),
     ...preorderOf(values),
+    ...promotionOf(values),
   });
 }
 export function parseOfferUpdate(values: OfferValues, version: string) {
@@ -58,5 +90,6 @@ export function parseOfferUpdate(values: OfferValues, version: string) {
     availableQuantity: integer(values.quantity),
     handlingDays: integer(values.handlingDays),
     ...preorderOf(values),
+    ...promotionOf(values),
   });
 }
