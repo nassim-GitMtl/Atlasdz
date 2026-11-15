@@ -89,3 +89,31 @@ export function deliverySlip(order: SellerOrder, t: Strings['slip'], locale: Loc
   }
   return lines.join('\n');
 }
+
+/** Orders confirmed delivered in the last `days` days, and what customers paid for them. */
+export function deliveredSince(
+  orders: readonly SellerOrder[],
+  now: Date,
+  days = 30,
+): { readonly count: number; readonly totalMinor: number } {
+  const since = now.getTime() - days * 86_400_000;
+  let count = 0;
+  let totalMinor = 0;
+  for (const order of orders) {
+    if (order.status !== 'DELIVERED') continue;
+    const delivered = order.history.find((entry) => entry.status === 'DELIVERED');
+    if (delivered === undefined || new Date(delivered.occurredAt).getTime() < since) continue;
+    count += 1;
+    totalMinor += order.snapshot.totalMinor;
+  }
+  return { count, totalMinor };
+}
+
+/** The soonest acceptance deadline among orders still waiting for the seller. */
+export function earliestDeadline(orders: readonly SellerOrder[]): string | null {
+  const waiting = orders
+    .filter((order) => order.status === 'AWAITING_SELLER')
+    .map((order) => order.acceptanceDeadline)
+    .sort();
+  return waiting[0] ?? null;
+}

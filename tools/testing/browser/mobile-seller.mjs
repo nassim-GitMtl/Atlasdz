@@ -161,7 +161,7 @@ await check('seller mode opens on the dashboard', async () => {
   }, sellerToken);
   await page.goto(APP);
   await page.getByText('À accepter').first().waitFor({ timeout: 20000 });
-  await page.getByText('Ventes livrées', { exact: true }).waitFor();
+  await page.getByText('Livré et confirmé · 30 derniers jours', { exact: true }).waitFor();
   await scan('dashboard');
 });
 await check('process an order: accept, prepare, ship with tracking, delivered', async () => {

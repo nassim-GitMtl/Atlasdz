@@ -1,5 +1,6 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
@@ -7,17 +8,18 @@ import { RatingLine } from '@/components/reviews';
 import { SalesChart } from '@/components/sales-chart';
 import { Badge, Card, ListRow, Notice, Screen, text } from '@/components/ui';
 import { sellerSummary } from '@/lib/collections';
-import { fill, formatMoney, localized } from '@/lib/format';
+import { fill, formatMoney, formatTime, localized } from '@/lib/format';
 import { useI18n } from '@/lib/i18n';
-import { dailySales, lowStock } from '@/lib/seller-tools';
+import { dailySales, deliveredSince, earliestDeadline, lowStock } from '@/lib/seller-tools';
 import { useSession } from '@/lib/session';
-import { colors, radius } from '@/lib/theme';
+import { colors } from '@/lib/theme';
 import type {
   CatalogEntry,
   ProductSubmission,
   SellerOffer,
   SellerOrder,
   SellerReviewPage,
+  SupportCase,
 } from '@/lib/types';
 import { useRequest } from '@/lib/use-request';
 
@@ -39,18 +41,23 @@ export default function DashboardScreen() {
   const reviews = useRequest('seller-reviews', () =>
     session.request<SellerReviewPage>('/api/v1/seller/reviews'),
   );
+  const support = useRequest('seller-support', () =>
+    session.request<{ items: SupportCase[]; nextCursor?: string | null }>('/api/v1/support'),
+  );
   const { refreshAccount } = session;
   const reloadOrders = orders.reload;
   const reloadProducts = products.reload;
   const reloadOffers = offers.reload;
   const reloadReviews = reviews.reload;
+  const reloadSupport = support.reload;
   const reload = useCallback(() => {
+    void reloadSupport();
     void refreshAccount();
     void reloadOrders();
     void reloadProducts();
     void reloadOffers();
     void reloadReviews();
-  }, [refreshAccount, reloadOrders, reloadProducts, reloadOffers, reloadReviews]);
+  }, [refreshAccount, reloadOrders, reloadProducts, reloadOffers, reloadReviews, reloadSupport]);
   useFocusEffect(reload);
 
   const summary = sellerSummary(orders.data?.items ?? []);
@@ -60,86 +67,152 @@ export default function DashboardScreen() {
     return entry ? localized(entry.title, locale) : '—';
   };
   const status = session.seller?.status;
-  const tiles: [string, number][] = [
-    [t.seller.toAccept, summary.toAccept],
-    [t.seller.toPrepare, summary.toPrepare],
-    [t.seller.toShip, summary.toShip],
-    [t.seller.inDelivery, summary.inDelivery],
+  const items = orders.data?.items ?? [];
+  const deadline = earliestDeadline(items);
+  const recent = deliveredSince(items, new Date());
+  const storeName = items[0]?.snapshot.sellerName;
+  // Counts come from the first page; "+" says more may exist beyond it.
+  const more = (count: number, next: string | null | undefined) => `${count}${next ? '+' : ''}`;
+  const openCases = (support.data?.items ?? []).filter((item) => item.status === 'OPEN').length;
+  const unanswered = (reviews.data?.items ?? []).filter((item) => item.reply === null).length;
+  const todo: {
+    key: string;
+    icon: keyof typeof Ionicons.glyphMap;
+    label: string;
+    detail: string;
+    count: string;
+    warn?: boolean;
+    go: () => void;
+  }[] = [
+    {
+      key: 'prepare',
+      icon: 'cube-outline',
+      label: t.seller.prepareShip,
+      detail: t.seller.prepareShipSub,
+      count: String(summary.toPrepare + summary.toShip),
+      go: () => router.navigate('/seller-orders'),
+    },
+    {
+      key: 'requests',
+      icon: 'chatbubble-ellipses-outline',
+      label: t.seller.requests,
+      detail: t.seller.requestsSub,
+      count: support.data ? more(openCases, support.data.nextCursor) : '—',
+      go: () => router.push('/support'),
+    },
+    {
+      key: 'reviews',
+      icon: 'star-outline',
+      label: t.seller.unanswered,
+      detail:
+        reviews.data && reviews.data.summary.count > 0
+          ? `${t.reviews.average} ${reviews.data.summary.average?.toFixed(1).replace('.', locale === 'fr' ? ',' : '.') ?? '—'} · ${reviews.data.summary.count}`
+          : t.reviews.sellerNone,
+      count: reviews.data ? more(unanswered, reviews.data.nextCursor) : '—',
+      go: () => router.push('/seller/reviews'),
+    },
   ];
+  if (running.length > 0) {
+    const first = running[0];
+    todo.push({
+      key: 'stock',
+      icon: 'alert-circle-outline',
+      label: t.seller.lowStock,
+      detail: first ? fill(t.seller.lowStockItem, { title: titleOf(first.productId), n: first.availableQuantity }) : '',
+      count: String(running.length),
+      warn: true,
+      go: () => (first ? router.push(`/seller/offer/${first.id}`) : router.navigate('/catalog')),
+    });
+  }
 
   return (
     <Screen refreshing={orders.loading && !!orders.data} onRefresh={reload}>
-      {status ? (
-        <Card>
+      <View style={styles.head}>
+        <Text style={styles.eyebrow}>{t.seller.mode}</Text>
+        {storeName ? <Text style={styles.store}>{storeName}</Text> : null}
+        {status ? (
           <Badge
             label={t.seller[status]}
             tone={status === 'APPROVED' ? 'good' : status === 'PENDING_REVIEW' ? 'wait' : 'bad'}
           />
-          {status === 'PENDING_REVIEW' ? (
-            <Text style={text.muted}>{t.seller.pendingNote}</Text>
+        ) : null}
+        {status === 'PENDING_REVIEW' ? <Text style={text.muted}>{t.seller.pendingNote}</Text> : null}
+        {status === 'SUSPENDED' || status === 'REJECTED' ? (
+          <Notice tone="error">{t.seller.suspendedNote}</Notice>
+        ) : null}
+      </View>
+      {summary.toAccept > 0 ? (
+        <View style={styles.priority}>
+          <Text style={styles.priorityEyebrow}>{t.seller.acceptNow}</Text>
+          <Text style={styles.priorityValue}>{fill(t.seller.ordersCount, { n: summary.toAccept })}</Text>
+          {deadline ? (
+            <Text style={styles.priorityText}>
+              {fill(t.seller.acceptBefore, { time: formatTime(deadline, locale) })}
+            </Text>
           ) : null}
-          {status === 'SUSPENDED' || status === 'REJECTED' ? (
-            <Notice tone="error">{t.seller.suspendedNote}</Notice>
-          ) : null}
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.navigate('/seller-orders')}
+            style={({ pressed }) => [styles.priorityButton, pressed && { opacity: 0.85 }]}
+          >
+            <Text style={styles.priorityButtonText}>{t.seller.seeOrders}</Text>
+          </Pressable>
+        </View>
+      ) : orders.data ? (
+        <Card>
+          <Text style={text.heading}>{t.seller.acceptNow}</Text>
+          <Text style={text.muted}>{t.seller.nothingToAccept}</Text>
         </Card>
       ) : null}
-      <View style={styles.grid}>
-        {tiles.map(([label, value]) => (
+      <Text style={text.heading} accessibilityRole="header">
+        {t.seller.alsoTodo}
+      </Text>
+      <View style={styles.list}>
+        {todo.map((item, index) => (
           <Pressable
-            key={label}
+            key={item.key}
             accessibilityRole="button"
-            accessibilityLabel={`${label}: ${value}`}
-            onPress={() => router.navigate('/seller-orders')}
-            style={({ pressed }) => [styles.tile, pressed && { opacity: 0.85 }]}
+            accessibilityLabel={`${item.label}: ${item.count}. ${item.detail}`}
+            onPress={item.go}
+            style={({ pressed }) => [styles.todo, index > 0 && styles.todoBorder, pressed && { opacity: 0.85 }]}
           >
-            <Text style={styles.value}>{value}</Text>
-            <Text style={styles.label}>{label}</Text>
+            <View style={[styles.todoIcon, item.warn && styles.todoIconWarn]}>
+              <Ionicons name={item.icon} size={20} color={item.warn ? colors.warning : colors.primaryDark} />
+            </View>
+            <View style={styles.todoBody}>
+              <Text style={styles.todoLabel}>{item.label}</Text>
+              <Text style={styles.todoDetail} numberOfLines={1}>
+                {item.detail}
+              </Text>
+            </View>
+            <Text style={styles.todoCount}>{item.count}</Text>
+            <Ionicons name="chevron-forward" size={16} color={colors.muted} />
           </Pressable>
         ))}
       </View>
       <Card>
-        <Text style={text.muted}>{t.seller.revenue}</Text>
-        <Text style={text.title}>{formatMoney(summary.deliveredMinor, locale)}</Text>
-        <Text style={text.muted}>
-          {t.catalog.products} : {products.data?.items.length ?? '—'} · {t.catalog.offers} :{' '}
-          {offers.data?.items.length ?? '—'}
+        <Text style={text.muted}>{t.seller.delivered30}</Text>
+        <Text style={text.title}>
+          {formatMoney(recent.totalMinor, locale)}{' '}
+          <Text style={styles.sub}>· {fill(t.seller.ordersCount, { n: recent.count })}</Text>
         </Text>
+        <Text style={text.muted}>{t.seller.notProfit}</Text>
       </Card>
       {orders.data ? (
         <Card>
           <SalesChart days={dailySales(orders.data.items, new Date())} />
         </Card>
       ) : null}
-      {running.length > 0 ? (
+      {reviews.data && reviews.data.summary.count > 0 ? (
         <Card>
-          <Badge label={t.seller.lowStock} tone="wait" />
-          {running.map((offer) => (
-            <ListRow
-              key={offer.id}
-              icon="alert-circle-outline"
-              label={fill(t.seller.lowStockItem, {
-                title: titleOf(offer.productId),
-                n: offer.availableQuantity,
-              })}
-              onPress={() => router.push(`/seller/offer/${offer.id}`)}
-            />
-          ))}
+          <RatingLine summary={reviews.data.summary} />
         </Card>
       ) : null}
       <Card>
-        <Text style={text.muted}>{t.reviews.average}</Text>
-        {reviews.data && reviews.data.summary.count > 0 ? (
-          <RatingLine summary={reviews.data.summary} />
-        ) : (
-          <Text style={text.muted}>{t.reviews.sellerNone}</Text>
-        )}
-        <ListRow
-          icon="star-outline"
-          label={t.reviews.title}
-          onPress={() => router.push('/seller/reviews')}
-        />
-      </Card>
-      <Card>
+        <Text style={text.muted}>
+          {t.catalog.products} : {products.data?.items.length ?? '—'} · {t.catalog.offers} :{' '}
+          {offers.data?.items.length ?? '—'}
+        </Text>
         <ListRow
           icon="add-circle-outline"
           label={t.seller.addProduct}
@@ -155,28 +228,42 @@ export default function DashboardScreen() {
           label={t.account.notifications}
           onPress={() => router.push('/notifications')}
         />
-        <ListRow
-          icon="chatbubbles-outline"
-          label={t.account.help}
-          onPress={() => router.push('/support')}
-        />
       </Card>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  tile: {
-    flexBasis: '47%',
-    flexGrow: 1,
+  head: { gap: 6 },
+  eyebrow: { fontSize: 12, fontWeight: '800', color: colors.muted, letterSpacing: 1, textTransform: 'uppercase' },
+  store: { fontSize: 24, fontWeight: '800', color: colors.ink },
+  sub: { fontSize: 14, color: colors.muted },
+  priority: { backgroundColor: colors.primary, borderRadius: 18, padding: 18, gap: 10 },
+  priorityEyebrow: { fontSize: 13, fontWeight: '800', color: colors.card },
+  priorityValue: { fontSize: 32, fontWeight: '800', color: colors.card },
+  priorityText: { fontSize: 14, lineHeight: 20, color: colors.card },
+  priorityButton: {
+    alignSelf: 'flex-start',
+    minHeight: 44,
+    paddingHorizontal: 18,
+    borderRadius: 10,
     backgroundColor: colors.card,
-    borderRadius: radius,
+    justifyContent: 'center',
+  },
+  priorityButtonText: { fontSize: 15, fontWeight: '800', color: colors.primaryDark },
+  list: {
+    backgroundColor: colors.card,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: colors.line,
-    padding: 16,
-    gap: 4,
+    overflow: 'hidden',
   },
-  value: { fontSize: 30, fontWeight: '800', color: colors.olive },
-  label: { fontSize: 14, color: colors.muted, fontWeight: '600' },
+  todo: { minHeight: 64, paddingHorizontal: 14, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  todoBorder: { borderTopWidth: 1, borderTopColor: colors.line },
+  todoIcon: { width: 38, height: 38, borderRadius: 10, backgroundColor: colors.soft, alignItems: 'center', justifyContent: 'center' },
+  todoIconWarn: { backgroundColor: colors.warningSoft },
+  todoBody: { flex: 1, gap: 1 },
+  todoLabel: { fontSize: 15, fontWeight: '800', color: colors.ink },
+  todoDetail: { fontSize: 12, fontWeight: '600', color: colors.muted },
+  todoCount: { fontSize: 18, fontWeight: '800', color: colors.ink },
 });

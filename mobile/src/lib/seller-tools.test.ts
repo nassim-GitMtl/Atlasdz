@@ -1,7 +1,14 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { dailySales, deliverySlip, lowStock, matchesOrder } from './seller-tools';
+import {
+  dailySales,
+  deliveredSince,
+  deliverySlip,
+  earliestDeadline,
+  lowStock,
+  matchesOrder,
+} from './seller-tools';
 import { strings } from './strings';
 import type { SellerOffer, SellerOrder } from './types';
 
@@ -27,6 +34,26 @@ const order = (overrides: Partial<SellerOrder> = {}): SellerOrder =>
   }) as unknown as SellerOrder;
 
 describe('seller tools', () => {
+  it('counts orders confirmed delivered in the last 30 days only', () => {
+    const now = new Date('2026-11-15T12:00:00.000Z');
+    const old = order({
+      history: [{ status: 'DELIVERED', occurredAt: '2026-10-01T10:00:00.000Z' }],
+    } as Partial<SellerOrder>);
+    const reported = order({ status: 'DELIVERY_REPORTED' } as Partial<SellerOrder>);
+    assert.deepEqual(deliveredSince([order(), old, reported], now), {
+      count: 1,
+      totalMinor: 1300000,
+    });
+  });
+  it('gives the soonest acceptance deadline of waiting orders', () => {
+    const waiting = (acceptanceDeadline: string) =>
+      order({ status: 'AWAITING_SELLER', acceptanceDeadline } as Partial<SellerOrder>);
+    assert.equal(
+      earliestDeadline([waiting('2026-11-15T11:56:00.000Z'), waiting('2026-11-15T11:13:00.000Z'), order()]),
+      '2026-11-15T11:13:00.000Z',
+    );
+    assert.equal(earliestDeadline([order()]), null);
+  });
   it('flags approved offers running out, emptiest first', () => {
     const offer = (id: string, availableQuantity: number, status = 'APPROVED') =>
       ({ id, availableQuantity, status }) as unknown as SellerOffer;
