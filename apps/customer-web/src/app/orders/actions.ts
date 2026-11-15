@@ -21,7 +21,7 @@ import {
   placeOrder,
   type OrderFailure,
 } from '@/lib/orders-api';
-import { localizedHref } from '@/lib/i18n';
+import { localizedHref, resolveLocale } from '@/lib/i18n';
 import { ReviewApiError, writeReview, type ReviewFailure } from '@/lib/reviews-api';
 
 export interface OrderActionState {
@@ -66,7 +66,7 @@ export async function quoteAction(
   form: FormData,
 ): Promise<OrderActionState> {
   if (!(await authorized())) return { error: 'csrf' };
-  const lang = form.get('lang') === 'ar' ? 'ar' : 'fr';
+  const lang = resolveLocale(form.get('lang'));
   let token = await customerToken();
   const input = CreateCheckoutQuoteInputSchema.safeParse({
     // Guests have no account cart yet: the real version is read once it exists.
@@ -133,7 +133,7 @@ export async function placeAction(
   revalidatePath('/cart');
   revalidatePath('/orders');
   redirect(
-    `${localizedHref(`/orders/${orderId}`, form.get('lang') === 'ar' ? 'ar' : 'fr')}&placed=1`,
+    `${localizedHref(`/orders/${orderId}`, resolveLocale(form.get('lang')))}&placed=1`,
   );
 }
 export async function cancelAction(

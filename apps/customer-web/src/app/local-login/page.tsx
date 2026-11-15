@@ -4,6 +4,7 @@ import { CustomerSessionForm } from '@/components/cart-forms';
 import { cartCopy } from '@/lib/cart-copy';
 import { customerLocalEnabled } from '@/lib/customer-security';
 import type { SearchParams } from '@/lib/i18n';
+import { resolveLocale } from '@/lib/i18n';
 
 export default async function LocalLogin({
   searchParams,
@@ -11,7 +12,7 @@ export default async function LocalLogin({
   readonly searchParams: Promise<SearchParams>;
 }) {
   const params = await searchParams;
-  const locale = params.lang === 'ar' ? 'ar' : 'fr';
+  const locale = resolveLocale(params.lang);
   const t = cartCopy[locale];
   const enabled = customerLocalEnabled(process.env, (await headers()).get('host'));
   return (

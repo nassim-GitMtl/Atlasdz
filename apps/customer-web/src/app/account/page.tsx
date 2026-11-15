@@ -7,7 +7,7 @@ import { SiteChrome } from '@/components/site-chrome';
 import { getAccount, getPhone } from '@/lib/account-api';
 import { accountCopy } from '@/lib/account-copy';
 import { customerToken } from '@/lib/cart-api';
-import { localizedHref, type SearchParams } from '@/lib/i18n';
+import { localizedHref, type SearchParams, resolveLocale } from '@/lib/i18n';
 
 export const metadata: Metadata = { robots: { index: false } };
 
@@ -17,7 +17,7 @@ export default async function Account({
   readonly searchParams: Promise<SearchParams>;
 }) {
   const params = await searchParams;
-  const locale = params.lang === 'ar' ? 'ar' : 'fr';
+  const locale = resolveLocale(params.lang);
   const t = accountCopy[locale];
   const token = await customerToken();
   if (!token) redirect(localizedHref('/login', locale));

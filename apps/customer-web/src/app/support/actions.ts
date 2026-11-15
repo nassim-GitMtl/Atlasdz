@@ -10,7 +10,7 @@ import { revalidatePath } from 'next/cache';
 import { customerToken } from '@/lib/cart-api';
 import { customerTrustedOrigin } from '@/lib/customer-security';
 import { actSupport, createSupport } from '@/lib/orders-api';
-import { localizedHref } from '@/lib/i18n';
+import { localizedHref, resolveLocale } from '@/lib/i18n';
 export async function supportAction(
   _state: { error?: boolean },
   form: FormData,
@@ -43,6 +43,6 @@ export async function supportAction(
   }
   revalidatePath('/support');
   redirect(
-    `${localizedHref('/support', form.get('lang') === 'ar' ? 'ar' : 'fr')}&caseId=${savedId}`,
+    `${localizedHref('/support', resolveLocale(form.get('lang')))}&caseId=${savedId}`,
   );
 }

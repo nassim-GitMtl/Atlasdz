@@ -11,7 +11,7 @@ import { getOrderReviews } from '@/lib/reviews-api';
 import { liveCheckoutEnabled, orderText, orderDate } from '@/lib/orders-copy';
 import { orderProgress } from '@/lib/order-progress';
 import { formatMoney } from '@/lib/catalog-view';
-import { localizedHref, type SearchParams } from '@/lib/i18n';
+import { localizedHref, type SearchParams, lang, resolveLocale } from '@/lib/i18n';
 export default async function OrderDetail({
   params,
   searchParams,
@@ -21,7 +21,7 @@ export default async function OrderDetail({
 }) {
   const { orderId } = await params;
   const query = await searchParams;
-  const locale = query.lang === 'ar' ? 'ar' : 'fr';
+  const locale = resolveLocale(query.lang);
   const t = orderText(locale, liveCheckoutEnabled());
   const path = `/orders/${orderId}`;
   const token = await customerToken();
@@ -81,9 +81,12 @@ export default async function OrderDetail({
                     placedAt={seller.createdAt}
                   />
                   <Link href={`${localizedHref('/support', locale)}&sellerOrderId=${seller.id}`}>
-                    {locale === 'ar'
-                      ? 'التواصل مع البائع / طلب إرجاع'
-                      : 'Contacter le vendeur / demander un retour'}
+                    {lang(
+                      locale,
+                      'Contacter le vendeur / demander un retour',
+                      'التواصل مع البائع / طلب إرجاع',
+                      'Contact the seller / request a return',
+                    )}
                   </Link>
                   <p>
                     {t.seller}: <bdi className="order-id">{seller.id}</bdi>

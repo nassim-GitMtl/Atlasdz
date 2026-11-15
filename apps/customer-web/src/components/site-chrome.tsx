@@ -21,6 +21,9 @@ import {
   text,
   type Locale,
   type SearchParams,
+  lang,
+  languageNames,
+  locales,
 } from '@/lib/i18n';
 
 import { DocumentLocale } from './document-locale';
@@ -46,6 +49,22 @@ const navCopy = {
       ['Paiement à la livraison.', 'Vous payez le vendeur ou son livreur, pas Atlas DZ.'],
     ],
     legal: 'Informations légales',
+  },
+  en: {
+    account: 'My account',
+    cart: 'Cart',
+    orders: 'Orders',
+    notifications: 'Notifications',
+    help: 'Help and returns',
+    all: 'All products',
+    actions: 'Account and cart',
+    services: 'Tracking and help',
+    facts: [
+      ['Each seller prepares and delivers its order.', 'Several sellers in one cart: one order and one delivery per seller.'],
+      ['Delivery fees set by the seller.', 'Based on your commune, shown at review before you confirm.'],
+      ['Cash on delivery.', 'You pay the seller or its courier, not Atlas DZ.'],
+    ],
+    legal: 'Legal information',
   },
   ar: {
     account: 'حسابي',
@@ -84,7 +103,7 @@ async function CartBadge({ locale }: { readonly locale: Locale }) {
     <span className="cart-count">
       <span aria-hidden="true">{items > 99 ? '99+' : items}</span>
       <span className="sr-only">
-        {locale === 'ar' ? `(${items} منتجات)` : `(${items} articles)`}
+        {lang(locale, `(${items} articles)`, `(${items} منتجات)`, `(${items} items)`)}
       </span>
     </span>
   );
@@ -123,7 +142,6 @@ export function SiteChrome({
   searchValue = '',
 }: SiteChromeProps) {
   const t = copy[locale];
-  const oppositeLocale: Locale = locale === 'fr' ? 'ar' : 'fr';
   // The synthetic-catalogue ribbon is for local/test runs only, never a deployed shop.
   const preview =
     process.env.SYNTHETIC_CATALOG_PREVIEW === 'true' ||
@@ -167,15 +185,26 @@ export function SiteChrome({
             <button type="submit">{t.searchAction}</button>
           </form>
           <nav className="header-actions" aria-label={nav.actions}>
-            <Link
-              className="language-link"
-              href={languageSwitchHref(pathname, oppositeLocale, searchParams)}
-              hrefLang={oppositeLocale}
-              lang={oppositeLocale}
-            >
-              <GlobeHemisphereWest aria-hidden="true" size={20} />
-              <span>{t.language}</span>
-            </Link>
+            <details className="language-menu">
+              <summary aria-label={lang(locale, 'Langue', 'اللغة', 'Language')}>
+                <GlobeHemisphereWest aria-hidden="true" size={20} />
+                <span lang={locale}>{languageNames[locale]}</span>
+              </summary>
+              <ul>
+                {locales.map((option) => (
+                  <li key={option}>
+                    <Link
+                      href={languageSwitchHref(pathname, option, searchParams)}
+                      hrefLang={option}
+                      lang={option}
+                      aria-current={option === locale ? 'true' : undefined}
+                    >
+                      {languageNames[option]}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </details>
             <Link href={localizedHref('/account', locale)} aria-current={current('/account')}>
               <UserCircle aria-hidden="true" size={22} />
               <span className="action-label">{nav.account}</span>

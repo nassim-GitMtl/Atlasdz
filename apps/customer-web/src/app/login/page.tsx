@@ -6,6 +6,7 @@ import { SiteChrome } from '@/components/site-chrome';
 import { authCopy } from '@/lib/auth-copy';
 import { customerLocalEnabled } from '@/lib/customer-security';
 import type { SearchParams } from '@/lib/i18n';
+import { resolveLocale } from '@/lib/i18n';
 
 export const metadata: Metadata = { robots: { index: false } };
 
@@ -15,7 +16,7 @@ export default async function Login({
   readonly searchParams: Promise<SearchParams>;
 }) {
   const params = await searchParams;
-  const locale = params.lang === 'ar' ? 'ar' : 'fr';
+  const locale = resolveLocale(params.lang);
   const t = authCopy[locale];
   const next = typeof params.next === 'string' ? params.next : '/cart';
   const local = customerLocalEnabled(process.env, (await headers()).get('host'));

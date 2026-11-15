@@ -21,11 +21,11 @@ export interface LegalFacts {
   readonly reviewed: boolean;
 }
 
-const missing = { fr: '[à compléter]', ar: '[يُستكمل]' } as const;
+const missing = { fr: '[à compléter]', ar: '[يُستكمل]', en: '[to be completed]' } as const;
 
 export function legalFacts(
   env: Readonly<Record<string, string | undefined>>,
-  locale: 'fr' | 'ar',
+  locale: 'fr' | 'ar' | 'en',
 ): LegalFacts {
   const get = (key: string) => env[key]?.trim() || missing[locale];
   return {
@@ -43,7 +43,8 @@ export function legalFacts(
 type Section = { readonly heading: string; readonly paragraphs: readonly string[] };
 type Content = { readonly title: string; readonly sections: readonly Section[] };
 
-export function legalContent(page: LegalPage, locale: 'fr' | 'ar', f: LegalFacts): Content {
+/** English readers get the French text, which is the binding version (see the page note). */
+export function legalContent(page: LegalPage, locale: 'fr' | 'ar' | 'en', f: LegalFacts): Content {
   const fr: Record<LegalPage, Content> = {
     'mentions-legales': {
       title: 'Mentions légales',
@@ -281,6 +282,11 @@ export const legalTitles = {
     'mentions-legales': 'Mentions légales',
     conditions: 'Conditions générales',
     confidentialite: 'Confidentialité',
+  },
+  en: {
+    'mentions-legales': 'Legal notice',
+    conditions: 'Terms and conditions',
+    confidentialite: 'Privacy',
   },
   ar: {
     'mentions-legales': 'الإشعارات القانونية',

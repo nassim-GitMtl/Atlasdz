@@ -38,6 +38,13 @@ function text(raw: Record<string, unknown>, key: string, max: number): string {
     invalid(key);
   return value.trim();
 }
+/** An optional text field: absent or blank means none. */
+function optionalText(raw: Record<string, unknown>, key: string, max: number): string | null {
+  const value = raw[key];
+  if (value === undefined || value === null || (typeof value === 'string' && value.trim() === ''))
+    return null;
+  return text(raw, key, max);
+}
 function uuid(value: string): string {
   if (!UuidSchema.safeParse(value).success) throw new SafeApplicationError('RESOURCE_NOT_FOUND');
   return value;
@@ -69,12 +76,13 @@ export class AdminController {
   @RateLimited('authenticated', 'admin.categories.write')
   public async createCategory(@Req() request: StaffRequest, @Body() input: unknown) {
     const actor = staff(request);
-    const raw = body(input, ['slug', 'titleFr', 'titleAr']);
+    const raw = body(input, ['slug', 'titleFr', 'titleAr', 'titleEn']);
     const outcome = await this.admin.createCategory(
       {
         slug: text(raw, 'slug', 100),
         titleFr: text(raw, 'titleFr', 160),
         titleAr: text(raw, 'titleAr', 160),
+        titleEn: optionalText(raw, 'titleEn', 160),
       },
       actor,
       request.correlationId,
@@ -94,7 +102,7 @@ export class AdminController {
     @Body() input: unknown,
   ) {
     const actor = staff(request);
-    const raw = body(input, ['titleFr', 'titleAr', 'status', 'restrictionClass']);
+    const raw = body(input, ['titleFr', 'titleAr', 'titleEn', 'status', 'restrictionClass']);
     const status = raw['status'];
     const restriction = raw['restrictionClass'];
     if (status !== 'ACTIVE' && status !== 'INACTIVE') invalid('status');
@@ -109,6 +117,7 @@ export class AdminController {
       {
         titleFr: text(raw, 'titleFr', 160),
         titleAr: text(raw, 'titleAr', 160),
+        titleEn: optionalText(raw, 'titleEn', 160),
         status,
         restrictionClass: restriction,
       },

@@ -15,7 +15,7 @@ import { CartQuantityForm, CustomerSessionForm } from '@/components/cart-forms';
 import { CartApiError, customerToken, getCart } from '@/lib/cart-api';
 import { cartCopy } from '@/lib/cart-copy';
 import { formatMoney } from '@/lib/catalog-view';
-import { localizedHref, type SearchParams } from '@/lib/i18n';
+import { localizedHref, type SearchParams, resolveLocale, contentLocale } from '@/lib/i18n';
 
 type CartLine = NonNullable<Awaited<ReturnType<typeof getCart>>>['items'][number];
 
@@ -42,7 +42,7 @@ export default async function CartPage({
   readonly searchParams: Promise<SearchParams>;
 }) {
   const params = await searchParams;
-  const locale = params.lang === 'ar' ? 'ar' : 'fr';
+  const locale = resolveLocale(params.lang);
   const t = cartCopy[locale];
   const token = await customerToken();
   const checkout = customerCheckoutEnabled(process.env, (await headers()).get('host'));
@@ -104,7 +104,7 @@ export default async function CartPage({
                         <h3>
                           {line.product ? (
                             <Link href={localizedHref(`/product/${line.product.slug}`, locale)}>
-                              {line.product.title[locale]}
+                              {line.product.title[contentLocale(locale)]}
                             </Link>
                           ) : (
                             t.unavailableLine

@@ -16,14 +16,14 @@ import {
 import { customerLocalEnabled, customerTrustedOrigin } from '@/lib/customer-security';
 import { readGuestCart, withLine, writeGuestCart } from '@/lib/guest-cart';
 import { CatalogSlugSchema } from '@atlas/contracts';
-import { localizedHref } from '@/lib/i18n';
+import { localizedHref, resolveLocale } from '@/lib/i18n';
 
 export interface CartActionState {
   readonly error?:
     'auth' | 'conflict' | 'stock' | 'limit' | 'unavailable' | 'invalid' | 'csrf' | 'logoutFailure';
   readonly added?: boolean;
 }
-const locale = (form: FormData) => (form.get('lang') === 'ar' ? 'ar' : 'fr');
+const locale = (form: FormData) => resolveLocale(form.get('lang'));
 async function trusted() {
   const h = await headers();
   return customerTrustedOrigin(process.env, h.get('origin'), h.get('host'));

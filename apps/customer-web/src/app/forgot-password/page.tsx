@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { ForgotPasswordForm } from '@/components/auth-forms';
 import { SiteChrome } from '@/components/site-chrome';
 import { authCopy } from '@/lib/auth-copy';
-import { localizedHref, type SearchParams } from '@/lib/i18n';
+import { localizedHref, type SearchParams, resolveLocale } from '@/lib/i18n';
 
 export const metadata: Metadata = { robots: { index: false } };
 
@@ -13,7 +13,7 @@ export default async function ForgotPassword({
   readonly searchParams: Promise<SearchParams>;
 }) {
   const params = await searchParams;
-  const locale = params.lang === 'ar' ? 'ar' : 'fr';
+  const locale = resolveLocale(params.lang);
   const t = authCopy[locale];
   return (
     <SiteChrome locale={locale} pathname="/forgot-password" searchParams={params}>

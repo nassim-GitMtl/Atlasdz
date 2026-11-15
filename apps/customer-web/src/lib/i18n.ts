@@ -1,14 +1,28 @@
 import type { CatalogProduct } from '@atlas/contracts';
 
-export type Locale = 'fr' | 'ar';
+export type Locale = 'fr' | 'ar' | 'en';
 export type SearchParams = Record<string, string | string[] | undefined>;
 type LocalizedText = CatalogProduct['title'];
 
-export const locales: readonly Locale[] = ['fr', 'ar'];
+export const locales: readonly Locale[] = ['fr', 'ar', 'en'];
+/** Each language's own name, for the language menu. */
+export const languageNames: Readonly<Record<Locale, string>> = {
+  fr: 'Français',
+  ar: 'العربية',
+  en: 'English',
+};
+/** Catalogue content (titles, descriptions) exists in French and Arabic; English reads French. */
+export const contentLocale = (locale: Locale): 'fr' | 'ar' => (locale === 'ar' ? 'ar' : 'fr');
+/** One short text per language, for strings used in a single place. */
+export const lang = (locale: Locale, fr: string, ar: string, en: string): string =>
+  locale === 'ar' ? ar : locale === 'en' ? en : fr;
+/** Intl locale for numbers and dates. */
+export const intlLocale = (locale: Locale): string =>
+  locale === 'ar' ? 'ar-DZ' : locale === 'en' ? 'en-GB' : 'fr-DZ';
 
-export function resolveLocale(value: string | string[] | undefined): Locale {
-  const candidate = Array.isArray(value) ? value[0] : value;
-  return candidate === 'ar' ? 'ar' : 'fr';
+export function resolveLocale(value: unknown): Locale {
+  const candidate: unknown = Array.isArray(value) ? value[0] : value;
+  return candidate === 'ar' || candidate === 'en' ? candidate : 'fr';
 }
 
 export function firstParam(value: string | string[] | undefined): string | undefined {
@@ -16,7 +30,7 @@ export function firstParam(value: string | string[] | undefined): string | undef
 }
 
 export function text(value: LocalizedText, locale: Locale): string {
-  return value[locale];
+  return locale === 'en' ? (value.en ?? value.fr) : value[contentLocale(locale)];
 }
 
 export function localizedHref(
@@ -124,6 +138,84 @@ export const copy = {
     notFoundBody: 'Le produit ou la boutique a peut-être été retiré.',
     loading: 'Chargement du catalogue',
     footerScope: 'Marketplace multi-vendeur · les vendeurs assurent leurs propres livraisons.',
+  },
+  en: {
+    skip: 'Skip to content',
+    brandLabel: 'atlas dz — home',
+    searchLabel: 'Search the catalogue',
+    searchPlaceholder: 'What are you looking for today?',
+    searchAction: 'Search',
+    catalog: 'Catalogue',
+    language: 'English',
+    preview: 'Local preview · synthetic catalogue',
+    previewDetail: 'Demo data · purchases unavailable.',
+    heroKicker: 'The Algerian marketplace',
+    heroTitle: ['Search.', 'Compare.', 'Choose.'],
+    heroBody:
+      'Offers from Algerian sellers, with stock and preparation time shown. Delivery is priced for your destination before you confirm.',
+    heroAction: 'Explore the offers',
+    categoryTitle: 'Shop by category',
+    categoryBody: 'Find the right aisle quickly.',
+    offersTitle: 'Current offers',
+    offersBody: 'Price and availability provided by each seller.',
+    allOffers: 'See the whole catalogue',
+    deliveryTitle: 'Clear delivery',
+    deliveryBody: 'One price per seller and destination, shown before you confirm the order.',
+    sellerTitle: 'Identifiable sellers',
+    sellerBody: 'Each offer clearly shows the seller responsible for preparing it.',
+    compareTitle: 'Compare without surprises',
+    compareBody: 'Price, stock and delivery stay visible in one place.',
+    browseKicker: 'Discover and compare',
+    results: 'results',
+    result: 'result',
+    resultsFor: 'Results for',
+    allProducts: 'All products',
+    filterTitle: 'Refine',
+    allCategories: 'All categories',
+    availableOnly: 'In stock only',
+    sort: 'Sort by',
+    recommended: 'Recommended',
+    priceLow: 'Price: low to high',
+    priceHigh: 'Price: high to low',
+    fastest: 'Fastest preparation',
+    newest: 'Newest',
+    previousPage: 'Previous page',
+    nextPage: 'Next page',
+    pageOf: (page: number, pages: number) => `Page ${page} of ${pages}`,
+    apply: 'Apply',
+    clear: 'Clear filters',
+    from: 'From',
+    soldBy: 'Sold by',
+    stock: 'in stock',
+    unavailable: 'Unavailable',
+    preparation: 'Preparation',
+    day: 'day',
+    days: 'days',
+    deliveryFee: 'Delivery fee',
+    shippingAtCheckout: 'Depends on destination, quoted',
+    free: 'Free',
+    viewProduct: 'View product',
+    compareOffers: 'Compare offers',
+    offer: 'offer',
+    offers: 'offers',
+    chooseOffer: 'Select this offer',
+    selectedOffer: 'Selected offer',
+    offerTotal: 'Price before delivery',
+    viewStore: 'View the shop',
+    productDetails: 'Product details',
+    sellerStore: 'Seller shop',
+    sellerOffers: 'Offers published by this seller',
+    sellerInfo: 'About the seller',
+    backHome: 'Back to home',
+    emptyTitle: 'No offers available',
+    emptyBody: 'Try another search or come back soon.',
+    errorTitle: 'The catalogue is not responding',
+    errorBody: 'The connection is briefly interrupted. Please try again.',
+    retry: 'Try again',
+    notFoundTitle: 'This catalogue page cannot be found',
+    notFoundBody: 'The product or the shop may have been removed.',
+    loading: 'Loading the catalogue',
+    footerScope: 'Multi-seller marketplace · sellers handle their own deliveries.',
   },
   ar: {
     skip: 'الانتقال إلى المحتوى',

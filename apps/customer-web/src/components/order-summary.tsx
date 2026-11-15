@@ -2,7 +2,7 @@ import { ProductPhoto } from './product-photo';
 import Link from 'next/link';
 import type { DeliveryContact, SellerOrderSnapshot } from '@atlas/contracts';
 import { formatMoney } from '@/lib/catalog-view';
-import { localizedHref, type Locale } from '@/lib/i18n';
+import { localizedHref, type Locale, contentLocale } from '@/lib/i18n';
 import { OrderApiError } from '@/lib/orders-api';
 import { liveCheckoutEnabled, orderText } from '@/lib/orders-copy';
 import { preorderCopy, preorderDates, preorderText } from '@/lib/preorder';
@@ -51,7 +51,7 @@ export function SellerSummary({
       {snapshot.deliveryRate && (
         <>
           <p>
-            {t.destination}: {snapshot.deliveryRate.destination.name[locale]}
+            {t.destination}: {snapshot.deliveryRate.destination.name[contentLocale(locale)]}
           </p>
           <p>
             {t.codCollector}:{' '}
@@ -64,7 +64,7 @@ export function SellerSummary({
           <li key={item.offerId}>
             <ProductPhoto src={item.imageUrl} width={72} height={72} alt="" />
             <div>
-              <h3>{item.title[locale]}</h3>
+              <h3>{item.title[contentLocale(locale)]}</h3>
               <p>
                 {t.quantity}: {item.quantity} · {t.unit}:{' '}
                 <bdi>{formatMoney(item.unitPriceMinor, locale)}</bdi>

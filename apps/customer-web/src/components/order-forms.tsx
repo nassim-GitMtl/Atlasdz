@@ -8,7 +8,7 @@ import {
   confirmDeliveryAction,
 } from '@/app/orders/actions';
 import { orderText } from '@/lib/orders-copy';
-import { localizedHref, type Locale } from '@/lib/i18n';
+import { localizedHref, type Locale, contentLocale } from '@/lib/i18n';
 import { preorderCopy } from '@/lib/preorder';
 import { formatMoney } from '@/lib/catalog-view';
 
@@ -20,6 +20,14 @@ const feeCopy = {
     unavailable: 'Ne livre pas cette commune',
     blocked:
       'Un vendeur ne livre pas cette commune : retirez ses articles du panier ou choisissez une autre commune.',
+  },
+  en: {
+    title: 'Delivery to this commune',
+    loading: 'Calculating fees…',
+    error: 'Fees briefly unavailable: they will be calculated at review.',
+    unavailable: 'Does not deliver to this commune',
+    blocked:
+      'A seller does not deliver to this commune: remove its items from the cart or choose another commune.',
   },
   ar: {
     title: 'التوصيل إلى هذه البلدية',
@@ -119,7 +127,7 @@ export function OrderForm({
                 </option>
                 {wilayas.map((w) => (
                   <option key={w.id} value={w.id}>
-                    {w.code} — {w.name[locale]}
+                    {w.code} — {w.name[contentLocale(locale)]}
                   </option>
                 ))}
                 {destinations.some((d) => !d.wilaya) && (
@@ -146,7 +154,7 @@ export function OrderForm({
             </option>
             {visibleDestinations.map((d) => (
               <option key={d.id} value={d.id}>
-                {d.name[locale]}
+                {d.name[contentLocale(locale)]}
               </option>
             ))}
           </select>

@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { formatMoney } from '@/lib/catalog-view';
-import type { Locale } from '@/lib/i18n';
+import { contentLocale, type Locale } from '@/lib/i18n';
 
 type Place = {
   id: string;
@@ -21,6 +21,17 @@ const copy = {
     error: 'Indisponible pour le moment. Les frais restent affichés au récapitulatif.',
     none: 'Ne livre pas cette commune',
     note: 'Une livraison par vendeur, payée à la réception avec la commande.',
+  },
+  en: {
+    open: 'See delivery to my commune',
+    wilaya: 'Wilaya',
+    commune: 'Commune',
+    choose: 'Choose',
+    test: 'Test destinations',
+    loading: 'Loading…',
+    error: 'Not available right now. Fees still show at review.',
+    none: 'Does not deliver to this commune',
+    note: 'One delivery per seller, paid on receipt with the order.',
   },
   ar: {
     open: 'عرض التوصيل إلى بلديتي',
@@ -98,7 +109,7 @@ export function DeliveryEstimate({
   );
   const visible = places
     .filter((p) => (wilaya === 'test' ? !p.wilaya : p.wilaya?.id === wilaya))
-    .sort((a, b) => a.name[locale].localeCompare(b.name[locale]));
+    .sort((a, b) => a.name[contentLocale(locale)].localeCompare(b.name[contentLocale(locale)]));
   return (
     <div className="delivery-estimate fee-preview">
       <div className="delivery-estimate__fields">
@@ -115,7 +126,7 @@ export function DeliveryEstimate({
             <option value="">{t.choose}</option>
             {wilayas.map((w) => (
               <option key={w.id} value={w.id}>
-                {w.code} — {w.name[locale]}
+                {w.code} — {w.name[contentLocale(locale)]}
               </option>
             ))}
             {places.some((p) => !p.wilaya) && <option value="test">{t.test}</option>}
@@ -127,7 +138,7 @@ export function DeliveryEstimate({
             <option value="">{t.choose}</option>
             {visible.map((p) => (
               <option key={p.id} value={p.id}>
-                {p.name[locale]}
+                {p.name[contentLocale(locale)]}
               </option>
             ))}
           </select>

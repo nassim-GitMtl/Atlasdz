@@ -4,7 +4,7 @@ import { ProductPhoto } from './product-photo';
 import { FavoriteToggle } from './favorite-toggle';
 import { PromoPrice } from './promo-price';
 import { bestOffer, formatMoney } from '@/lib/catalog-view';
-import { copy, localizedHref, text, type Locale } from '@/lib/i18n';
+import { copy, localizedHref, text, type Locale, lang } from '@/lib/i18n';
 
 export function ProductCard({ product, locale }: { readonly product: CatalogProduct; readonly locale: Locale }) {
   const t = copy[locale];
@@ -22,11 +22,11 @@ export function ProductCard({ product, locale }: { readonly product: CatalogProd
       </div>
       <div className="product-card__body">
         <h3><Link href={localizedHref(`/product/${product.slug}`, locale)}>{title}</Link></h3>
-        <p className="product-card__seller">{sellers > 1 ? `${sellers} ${locale === 'ar' ? 'بائعين' : 'vendeurs'}` : <Link href={localizedHref(`/store/${offer.seller.slug}`, locale)}>{offer.seller.name}</Link>}</p>
+        <p className="product-card__seller">{sellers > 1 ? `${sellers} ${lang(locale, 'vendeurs', 'بائعين', 'sellers')}` : <Link href={localizedHref(`/store/${offer.seller.slug}`, locale)}>{offer.seller.name}</Link>}</p>
         <div className="product-card__bottom">
           <p className="price-line">{sellers > 1 && <small>{t.from}</small>}<strong><bdi>{formatMoney(offer.priceMinor, locale)}</bdi></strong></p>
           <PromoPrice priceMinor={offer.priceMinor} regularPriceMinor={offer.regularPriceMinor} endsAt={offer.promotionEndsAt} locale={locale} compact />
-          <span className="product-card__handling">{offer.preorder ? (locale === 'ar' ? 'طلب مسبق' : 'Précommande') : `${t.preparation} ${offer.handlingDays} ${offer.handlingDays === 1 ? t.day : t.days}`}</span>
+          <span className="product-card__handling">{offer.preorder ? lang(locale, 'Précommande', 'طلب مسبق', 'Pre-order') : `${t.preparation} ${offer.handlingDays} ${offer.handlingDays === 1 ? t.day : t.days}`}</span>
         </div>
       </div>
     </article>

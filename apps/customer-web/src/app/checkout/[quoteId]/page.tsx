@@ -10,7 +10,7 @@ import { getQuote, OrderApiError } from '@/lib/orders-api';
 import { customerCheckoutEnabled } from '@/lib/customer-security';
 import { liveCheckoutEnabled, orderText, orderDate } from '@/lib/orders-copy';
 import { formatMoney } from '@/lib/catalog-view';
-import { localizedHref, type SearchParams } from '@/lib/i18n';
+import { localizedHref, type SearchParams, resolveLocale } from '@/lib/i18n';
 export default async function Checkout({
   params,
   searchParams,
@@ -20,7 +20,7 @@ export default async function Checkout({
 }) {
   const { quoteId } = await params;
   const query = await searchParams;
-  const locale = query.lang === 'ar' ? 'ar' : 'fr';
+  const locale = resolveLocale(query.lang);
   const t = orderText(locale, liveCheckoutEnabled());
   const path = `/checkout/${quoteId}`;
   const token = await customerToken();

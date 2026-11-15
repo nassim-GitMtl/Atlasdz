@@ -11,6 +11,10 @@ const text = {
     install: 'Installer l’application',
     ios: 'Sur iPhone ou iPad : touchez le bouton Partager, puis « Sur l’écran d’accueil ».',
   },
+  en: {
+    install: 'Install the app',
+    ios: 'On iPhone or iPad: tap the Share button, then “Add to Home Screen”.',
+  },
   ar: {
     install: 'تثبيت التطبيق',
     ios: 'على iPhone أو iPad: اضغط على زر المشاركة ثم «إضافة إلى الشاشة الرئيسية».',

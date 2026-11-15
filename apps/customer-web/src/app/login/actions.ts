@@ -15,7 +15,7 @@ import type { AuthError } from '@/lib/auth-copy';
 import { clientIp, keepCustomerSession } from '@/lib/customer-session';
 import { mergeGuestCart } from '@/lib/guest-cart';
 import { customerTrustedOrigin } from '@/lib/customer-security';
-import { localizedHref } from '@/lib/i18n';
+import { localizedHref, resolveLocale } from '@/lib/i18n';
 
 export interface AuthActionState {
   readonly error?: AuthError;
@@ -27,7 +27,7 @@ const SAFE_NEXT = /^\/(?:cart|checkout|orders|support|notifications)(?:\/[A-Za-z
 function fields(form: FormData) {
   const email = String(form.get('email') ?? '').trim();
   const password = String(form.get('password') ?? '');
-  const locale = form.get('lang') === 'ar' ? 'ar' : 'fr';
+  const locale = resolveLocale(form.get('lang'));
   const rawNext = String(form.get('next') ?? '');
   const next = SAFE_NEXT.test(rawNext) ? rawNext : '/cart';
   return { email, password, locale, next } as const;

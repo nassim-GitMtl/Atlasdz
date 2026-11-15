@@ -10,11 +10,13 @@ import { copy, localizedHref, resolveLocale, text, type SearchParams } from '@/l
 
 const editorial = {
   fr: { title: 'Trouvez votre prochain coup de cœur.', body: 'Les offres de vendeurs algériens, payées à la livraison.', phones: 'Smartphones et écouteurs.', beauty: 'Le rituel beauté.', kitchen: 'Le coin cuisine.', all: 'Tout le catalogue' },
+  en: { title: 'Find your next favourite.', body: 'Offers from Algerian sellers, paid on delivery.', phones: 'Smartphones and earbuds.', beauty: 'The beauty routine.', kitchen: 'The kitchen corner.', all: 'All products' },
   ar: { title: 'اعثر على قطعتك المفضلة التالية.', body: 'عروض لبائعين جزائريين، والدفع عند الاستلام.', phones: 'هواتف ذكية وسماعات.', beauty: 'روتين الجمال.', kitchen: 'ركن المطبخ.', all: 'كل الكتالوج' },
 } as const;
 
-function productCount(count: number, locale: 'fr' | 'ar'): string {
+function productCount(count: number, locale: 'fr' | 'ar' | 'en'): string {
   if (locale === 'fr') return `${count} produit${count > 1 ? 's' : ''}`;
+  if (locale === 'en') return `${count} product${count > 1 ? 's' : ''}`;
   if (count === 1) return 'منتج واحد';
   if (count === 2) return 'منتجان';
   return count <= 10 ? `${count} منتجات` : `${count} منتجًا`;

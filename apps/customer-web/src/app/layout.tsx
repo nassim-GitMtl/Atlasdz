@@ -1,3 +1,4 @@
+import { resolveLocale } from '@/lib/i18n';
 import '@fontsource-variable/manrope/index.css';
 import '@fontsource-variable/noto-sans-arabic/index.css';
 import './globals.css';
@@ -44,7 +45,7 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: { readonly children: ReactNode }) {
-  const locale = (await headers()).get('x-atlas-locale') === 'ar' ? 'ar' : 'fr';
+  const locale = resolveLocale((await headers()).get('x-atlas-locale'));
   return (
     <html lang={locale} dir={locale === 'ar' ? 'rtl' : 'ltr'} suppressHydrationWarning>
       <body>

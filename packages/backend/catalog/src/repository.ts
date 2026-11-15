@@ -66,7 +66,7 @@ const PRODUCT_JSON = `jsonb_build_object(
   'id', p.id, 'slug', p.slug,
   'title', jsonb_build_object('fr', p.title_fr, 'ar', p.title_ar),
   'description', jsonb_build_object('fr', p.description_fr, 'ar', p.description_ar),
-  'category', jsonb_build_object('slug', c.slug, 'title', jsonb_build_object('fr', c.title_fr, 'ar', c.title_ar)),
+  'category', jsonb_build_object('slug', c.slug, 'title', jsonb_strip_nulls(jsonb_build_object('fr', c.title_fr, 'ar', c.title_ar, 'en', c.title_en))),
   'imageUrl', p.image_url, 'offers', public_offers.items
 ) AS product`;
 
@@ -103,7 +103,7 @@ const PUBLIC_PRODUCTS = `
     AND c.status = 'ACTIVE' AND c.moderation_status = 'APPROVED' AND c.restriction_class = 'STANDARD'
     AND ($1::text IS NULL OR p.title_fr ILIKE $1 OR p.title_ar ILIKE $1 OR p.slug ILIKE $1
       OR p.description_fr ILIKE $1 OR p.description_ar ILIKE $1
-      OR c.title_fr ILIKE $1 OR c.title_ar ILIKE $1)
+      OR c.title_fr ILIKE $1 OR c.title_ar ILIKE $1 OR c.title_en ILIKE $1)
     AND ($2::text IS NULL OR c.slug = $2)
 `;
 
@@ -135,7 +135,7 @@ const preorderColumns = (
 
 const SUBMISSION_SELECT = `SELECT jsonb_build_object(
   'id', s.id, 'sellerId', s.seller_id,
-  'category', jsonb_build_object('id', c.id, 'slug', c.slug, 'title', jsonb_build_object('fr', c.title_fr, 'ar', c.title_ar)),
+  'category', jsonb_build_object('id', c.id, 'slug', c.slug, 'title', jsonb_strip_nulls(jsonb_build_object('fr', c.title_fr, 'ar', c.title_ar, 'en', c.title_en))),
   'title', jsonb_build_object('fr', s.title_fr, 'ar', s.title_ar),
   'description', jsonb_build_object('fr', s.description_fr, 'ar', s.description_ar),
   'status', s.status, 'rowVersion', s.row_version, 'productId', s.product_id,
@@ -388,7 +388,7 @@ export class PostgresCatalogRepository {
 
   public async listProductCategories() {
     const result = await this.pool
-      .query(`SELECT id, slug, jsonb_build_object('fr',title_fr,'ar',title_ar) AS title
+      .query(`SELECT id, slug, jsonb_strip_nulls(jsonb_build_object('fr',title_fr,'ar',title_ar,'en',title_en)) AS title
       FROM catalog.categories WHERE status='ACTIVE' AND moderation_status='APPROVED' AND restriction_class='STANDARD' ORDER BY slug LIMIT 100`);
     return CatalogCategorySchema.array().parse(result.rows);
   }
@@ -633,10 +633,10 @@ export class PostgresCatalogRepository {
   public async listCategories(): Promise<CatalogCategoryList> {
     const result = await this.pool.query<{ category: unknown }>(
       `SELECT jsonb_build_object('slug', c.slug,
-         'title', jsonb_build_object('fr', c.title_fr, 'ar', c.title_ar),
+         'title', jsonb_strip_nulls(jsonb_build_object('fr', c.title_fr, 'ar', c.title_ar, 'en', c.title_en)),
          'productCount', count(*)) AS category
        ${PUBLIC_PRODUCTS}
-       GROUP BY c.id, c.slug, c.title_fr, c.title_ar ORDER BY c.slug`,
+       GROUP BY c.id, c.slug, c.title_fr, c.title_ar, c.title_en ORDER BY c.slug`,
       [null, null, null],
     );
     return CatalogCategoryListSchema.parse({ items: result.rows.map((row) => row.category) });

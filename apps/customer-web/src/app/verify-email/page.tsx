@@ -4,7 +4,7 @@ import { ResendVerificationForm } from '@/components/auth-forms';
 import { SiteChrome } from '@/components/site-chrome';
 import { verifyEmail } from '@/lib/auth-client';
 import { authCopy } from '@/lib/auth-copy';
-import { localizedHref, type SearchParams } from '@/lib/i18n';
+import { localizedHref, type SearchParams, resolveLocale } from '@/lib/i18n';
 
 export const metadata: Metadata = { robots: { index: false }, referrer: 'no-referrer' };
 
@@ -14,7 +14,7 @@ export default async function VerifyEmail({
   readonly searchParams: Promise<SearchParams>;
 }) {
   const params = await searchParams;
-  const locale = params.lang === 'ar' ? 'ar' : 'fr';
+  const locale = resolveLocale(params.lang);
   const t = authCopy[locale];
   const token = typeof params.token === 'string' ? params.token : '';
   // Tokens are single-use; verification happens server-side on first render of the link.

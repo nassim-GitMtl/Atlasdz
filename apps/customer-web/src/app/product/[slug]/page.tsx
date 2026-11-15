@@ -10,7 +10,7 @@ import { ReviewsSection } from '@/components/reviews-section';
 import { Money, Truck } from '@phosphor-icons/react/dist/ssr';
 import { ProductGrid } from '@/components/product-card';
 import { CatalogNotFoundError, getProduct, getProductPage, getReviews } from '@/lib/catalog-api';
-import { copy, localizedHref, resolveLocale, text, type SearchParams } from '@/lib/i18n';
+import { copy, localizedHref, resolveLocale, text, type SearchParams, lang } from '@/lib/i18n';
 
 export async function generateMetadata({
   params,
@@ -47,6 +47,13 @@ const factCopy = {
     shippingTitle: 'التوصيل من البائع.',
     shipping: 'توصيل واحد لكل بائع حسب تعريفة بلديتك، يظهر قبل التأكيد.',
     related: 'من نفس الفئة',
+  },
+  en: {
+    codTitle: 'Cash on delivery.',
+    cod: 'You pay the seller or its courier on receipt, not Atlas DZ.',
+    shippingTitle: 'Delivered by the seller.',
+    shipping: 'One delivery per seller, at your commune’s rate, shown before you confirm.',
+    related: 'In the same category',
   },
 } as const;
 
@@ -133,9 +140,12 @@ export default async function ProductPage({
           <h2>{t.productDetails}</h2>
           <p>{text(product.description, locale)}</p>
           <p>
-            {locale === 'ar'
-              ? 'مدة التحضير ليست موعد الوصول. يحدد البائع خيارات التوصيل حسب العنوان.'
-              : 'Le délai de préparation ne correspond pas au délai de livraison. Les options de livraison dépendent du vendeur et de votre adresse.'}
+            {lang(
+              locale,
+              'Le délai de préparation ne correspond pas au délai de livraison. Les options de livraison dépendent du vendeur et de votre adresse.',
+              'مدة التحضير ليست موعد الوصول. يحدد البائع خيارات التوصيل حسب العنوان.',
+              'Preparation time is not delivery time. Delivery options depend on the seller and your address.',
+            )}
           </p>
         </section>
         {reviews && <ReviewsSection page={reviews} locale={locale} />}

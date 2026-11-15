@@ -67,7 +67,7 @@ export const getPhone = (token: string) =>
     z.object({ required: z.boolean(), phone: z.string().nullable(), verified: z.boolean() }),
     token,
   );
-export const startPhone = (token: string, phone: string, locale: 'fr' | 'ar') =>
+export const startPhone = (token: string, phone: string, locale: 'fr' | 'ar' | 'en') =>
   call('/api/v1/account/phone/start', z.object({ status: z.string() }), token, { phone, locale });
 export const confirmPhone = (token: string, phone: string, code: string) =>
   call('/api/v1/account/phone/confirm', z.object({ status: z.string() }), token, { phone, code });

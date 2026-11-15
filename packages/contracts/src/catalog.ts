@@ -11,6 +11,8 @@ export const CatalogLocalizedTextSchema = z
   .object({
     fr: z.string().trim().min(1).max(8000),
     ar: z.string().trim().min(1).max(8000),
+    /** Optional English text (categories); English pages fall back to French. */
+    en: z.string().trim().min(1).max(8000).optional(),
   })
   .strict();
 const MoneyMinorSchema = z.number().int().min(0).max(2_000_000_000);

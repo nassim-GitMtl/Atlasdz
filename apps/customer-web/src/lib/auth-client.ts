@@ -90,7 +90,7 @@ export async function loginCustomer(email: string, password: string, clientIp?: 
 export async function registerCustomer(
   email: string,
   password: string,
-  locale: 'fr' | 'ar',
+  locale: 'fr' | 'ar' | 'en',
   clientIp?: string,
 ) {
   await post(
@@ -101,7 +101,7 @@ export async function registerCustomer(
 }
 
 /** Guest checkout: the API creates the account, signs it in and emails a set-password link. */
-export async function registerGuest(email: string, locale: 'fr' | 'ar', clientIp?: string) {
+export async function registerGuest(email: string, locale: 'fr' | 'ar' | 'en', clientIp?: string) {
   const result = LoginResponse.safeParse(
     await post(
       '/api/v1/auth/register/guest',
@@ -123,7 +123,7 @@ export function forwardedClientIp(value: string | null): string | undefined {
 
 export async function requestPasswordReset(
   email: string,
-  locale: 'fr' | 'ar',
+  locale: 'fr' | 'ar' | 'en',
   origin: string,
   clientIp?: string,
 ) {

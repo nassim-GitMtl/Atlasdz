@@ -8,7 +8,7 @@ export const ACCOUNT_ADMIN = Symbol('atlas.admin.accounts');
 export interface CategoryRow {
   readonly id: string;
   readonly slug: string;
-  readonly title: { fr: string; ar: string };
+  readonly title: { fr: string; ar: string; en?: string };
   readonly status: 'ACTIVE' | 'INACTIVE';
   readonly restrictionClass: 'STANDARD' | 'REVIEW_REQUIRED' | 'PROHIBITED';
   readonly products: number;
@@ -47,18 +47,19 @@ export class AdminService {
       slug: string;
       title_fr: string;
       title_ar: string;
+      title_en: string | null;
       status: 'ACTIVE' | 'INACTIVE';
       restriction_class: CategoryRow['restrictionClass'];
       products: string;
     }>(
-      `SELECT c.id, c.slug, c.title_fr, c.title_ar, c.status, c.restriction_class,
+      `SELECT c.id, c.slug, c.title_fr, c.title_ar, c.title_en, c.status, c.restriction_class,
          (SELECT count(*) FROM catalog.products p WHERE p.category_id = c.id) AS products
        FROM catalog.categories c WHERE NOT c.is_synthetic ORDER BY c.slug LIMIT 200`,
     );
     return result.rows.map((row) => ({
       id: row.id,
       slug: row.slug,
-      title: { fr: row.title_fr, ar: row.title_ar },
+      title: { fr: row.title_fr, ar: row.title_ar, ...(row.title_en ? { en: row.title_en } : {}) },
       status: row.status,
       restrictionClass: row.restriction_class,
       products: Number(row.products),
@@ -66,16 +67,16 @@ export class AdminService {
   }
 
   public async createCategory(
-    input: { slug: string; titleFr: string; titleAr: string },
+    input: { slug: string; titleFr: string; titleAr: string; titleEn: string | null },
     actorId: string,
     correlationId: string,
   ): Promise<'CREATED' | 'CONFLICT' | 'INVALID'> {
     if (!SLUG.test(input.slug) || input.slug.length > 100) return 'INVALID';
     const created = await this.pool.query<{ id: string }>(
-      `INSERT INTO catalog.categories (slug, title_fr, title_ar, status, moderation_status, restriction_class)
-       VALUES ($1, $2, $3, 'ACTIVE', 'APPROVED', 'STANDARD')
+      `INSERT INTO catalog.categories (slug, title_fr, title_ar, title_en, status, moderation_status, restriction_class)
+       VALUES ($1, $2, $3, $4, 'ACTIVE', 'APPROVED', 'STANDARD')
        ON CONFLICT (slug) DO NOTHING RETURNING id`,
-      [input.slug, input.titleFr, input.titleAr],
+      [input.slug, input.titleFr, input.titleAr, input.titleEn],
     );
     const id = created.rows[0]?.id;
     if (id === undefined) return 'CONFLICT';
@@ -88,6 +89,7 @@ export class AdminService {
     input: {
       titleFr: string;
       titleAr: string;
+      titleEn: string | null;
       status: 'ACTIVE' | 'INACTIVE';
       restrictionClass: CategoryRow['restrictionClass'];
     },
@@ -95,9 +97,9 @@ export class AdminService {
     correlationId: string,
   ): Promise<boolean> {
     const updated = await this.pool.query(
-      `UPDATE catalog.categories SET title_fr = $2, title_ar = $3, status = $4, restriction_class = $5
+      `UPDATE catalog.categories SET title_fr = $2, title_ar = $3, title_en = $6, status = $4, restriction_class = $5
        WHERE id = $1 AND NOT is_synthetic`,
-      [id, input.titleFr, input.titleAr, input.status, input.restrictionClass],
+      [id, input.titleFr, input.titleAr, input.status, input.restrictionClass, input.titleEn],
     );
     if (updated.rowCount !== 1) return false;
     await this.audit(actorId, 'catalog.category_updated', 'category', id, correlationId, input);

@@ -267,3 +267,14 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 .promo-price small { font-size: 12px; }
 .promo-tag { padding: 2px 8px; border-radius: 999px; background: #fdecec; color: var(--danger); font-size: 12px; font-weight: 850; }
 .offer-price-block { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+
+/* Language menu: French, Arabic, English. */
+.language-menu { position: relative; }
+.language-menu summary { list-style: none; display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border-radius: 10px; font-size: 14px; font-weight: 750; cursor: pointer; }
+.language-menu summary::-webkit-details-marker { display: none; }
+.language-menu summary:hover, .language-menu[open] summary { background: var(--surface); }
+.language-menu ul { position: absolute; inset-inline-end: 0; top: calc(100% + 4px); z-index: 20; min-width: 160px; margin: 0; padding: 6px; list-style: none; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 8px 24px rgba(23, 28, 36, 0.12); }
+.language-menu li a { display: flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 8px; font-size: 15px; font-weight: 700; }
+.language-menu li a:hover { background: var(--surface); }
+.language-menu li a[aria-current='true'] { color: var(--blue); }
+@media (max-width: 760px) { .language-menu summary { padding: 0 8px; } .language-menu summary svg { display: none; } }

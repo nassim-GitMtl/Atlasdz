@@ -1,4 +1,5 @@
 'use client';
+import { lang } from '@/lib/i18n';
 import { Heart } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import type { Locale } from '@/lib/i18n';
@@ -21,7 +22,7 @@ export function FavoriteToggle({ slug, title, locale }: { readonly slug: string;
     window.addEventListener('atlas-favorites', sync);
     return () => { window.removeEventListener('storage', sync); window.removeEventListener('atlas-favorites', sync); };
   }, [slug]);
-  const label = locale === 'ar' ? `حفظ على هذا الجهاز: ${title}` : `Enregistrer sur cet appareil : ${title}`;
+  const label = lang(locale, `Enregistrer sur cet appareil : ${title}`, `حفظ على هذا الجهاز: ${title}`, `Save on this device: ${title}`);
   return <>
     <button type="button" className="favorite-toggle" aria-label={label} aria-pressed={active} title={label} onClick={() => {
       const current = saved();
@@ -29,6 +30,6 @@ export function FavoriteToggle({ slug, title, locale }: { readonly slug: string;
       try { localStorage.setItem(KEY, JSON.stringify(next)); setError(false); window.dispatchEvent(new Event('atlas-favorites')); }
       catch { setError(true); }
     }}><Heart size={19} weight={active ? 'fill' : 'regular'} aria-hidden="true" /></button>
-    {error && <span className="favorite-error" role="status">{locale === 'ar' ? 'تعذر الحفظ على هذا الجهاز.' : 'Enregistrement indisponible sur cet appareil.'}</span>}
+    {error && <span className="favorite-error" role="status">{lang(locale, 'Enregistrement indisponible sur cet appareil.', 'تعذر الحفظ على هذا الجهاز.', 'Saving is not available on this device.')}</span>}
   </>;
 }

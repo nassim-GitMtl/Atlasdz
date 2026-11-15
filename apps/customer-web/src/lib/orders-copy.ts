@@ -116,6 +116,121 @@ export const orderCopy = {
     CANCELLED: 'Annulée par le client',
     EXPIRED: 'Délai de réponse expiré',
   },
+  en: {
+    deliveryContact: 'Delivery details',
+    recipientName: 'Recipient name',
+    phone: 'Phone',
+    addressLine: 'Street, number and apartment',
+    city: 'Town / commune',
+    preorder: 'Tick the pre-order acceptance box to continue.',
+    guestEmail: 'Email address (to follow the order)',
+    guestEmailHint:
+      'No account needed: we create it with this email and send you a link to choose a password. Already a customer?',
+    guestSignIn: 'Sign in',
+    exists:
+      'An account already exists with this email: sign in to finish the order (your cart is kept).',
+    limited: 'Too many attempts. Try again in a few minutes.',
+    contactHint:
+      'Use fictitious details only. They are saved with the order and visible to its sellers, with no real delivery or call.',
+    phoneHint:
+      '7 to 15 digits, optional leading +, no spaces. Fictitious example: +00000000000.',
+    contactReview:
+      'Check these details before confirming. To correct them, go back to the cart and create a new quote. The town you type does not confirm delivery coverage.',
+    contactMissing: 'No details saved for this old test order.',
+    wilaya: 'Wilaya',
+    chooseWilaya: 'Choose a wilaya',
+    testLocations: 'Fictitious destinations (tests)',
+    destination: 'Delivery commune',
+    chooseDestination: 'Choose a commune',
+    destinationHint:
+      'Choose the wilaya and the commune. Each seller must have enabled coverage. Orders stay local simulations with no real shipping.',
+    destinationPolicy:
+      'One fee set per seller and destination, for all its items. Cash on delivery collected by the seller or its courier, never by Atlas DZ. Simulation with no real collection.',
+    coverage:
+      'At least one seller does not deliver to this destination. Choose another destination or remove its items.',
+    noDestinations: 'No destination available. Try again once the service is back.',
+    codCollector: 'Who collects cash on delivery (simulation)',
+    codSeller: 'The seller',
+    codCourier: 'The seller’s courier',
+    title: 'My orders',
+    checkout: 'Review the test order',
+    confirm: 'Confirm the test order',
+    notice:
+      'LOCAL TEST — No payment, no real shipping. Amounts and times only test routing to sellers.',
+    policy:
+      'Test rule: per seller, the highest delivery fee among the offers is charged once. This is not an approved commercial policy.',
+    received: 'Test order recorded',
+    detail: 'Order details',
+    empty: 'No orders yet.',
+    shipping: 'Test delivery',
+    subtotal: 'Items',
+    total: 'Test total',
+    quantity: 'Quantity',
+    unit: 'Unit price',
+    expires: 'Quote valid until',
+    deadline: 'Answer expected before',
+    handling: 'Stated preparation (days)',
+    recorded: 'Recorded on',
+    seller: 'Seller order',
+    browse: 'Continue shopping',
+    cart: 'Back to cart',
+    cancel: 'Cancel this seller order',
+    cancelHint: 'Cancels only this seller’s items and releases their reserved stock.',
+    cancelled: 'Seller order cancelled. Reserved stock was released.',
+    busy: 'Working…',
+    retry: 'Refresh',
+    login: 'Test sign-in',
+    auth: 'Sign in with the test customer account to see your orders.',
+    changed:
+      'The cart, price, stock or delivery changed. Go back to the cart to check a new quote.',
+    expired: 'This quote has expired. Go back to the cart to create a new one.',
+    missing: 'This order or quote cannot be found for your account.',
+    conflict: 'This order changed. Refresh the page before trying again.',
+    disabled: 'The test checkout is not enabled on this server.',
+    unavailable:
+      'The service is unavailable. Try again: confirming the same quote twice never creates a duplicate.',
+    invalid: 'Check the form details.',
+    csrf: 'This action could not be verified. Refresh the page.',
+    unverified: 'Confirm your email address first: open the link we emailed you, then try again.',
+    resendVerification: 'Resend the confirmation email',
+    phoneRequired: 'Confirm your mobile number by SMS from “My account”, then try again.',
+    codLimit:
+      'You already have the maximum number of open orders. Wait for them to be delivered before ordering again.',
+    codBlocked:
+      'Cash on delivery is no longer available for this account after several failed deliveries. Contact support.',
+    accountLink: 'My account',
+    acceptTerms: 'I have read and accept the',
+    termsLink: 'terms and conditions',
+    terms: 'Accept the terms and conditions to confirm the order.',
+    AWAITING_SELLER: 'Waiting for the seller',
+    ACCEPTED: 'Accepted by the seller',
+    PREPARING: 'Being prepared',
+    SHIPPED: 'Shipped (seller statement)',
+    DELIVERY_REPORTED: 'Delivery reported by the seller — to confirm',
+    DELIVERED: 'Receipt confirmed by the customer',
+    DELIVERY_FAILED: 'Failed delivery reported by the seller',
+    history: 'History',
+    SELLER: 'Seller statement',
+    CUSTOMER: 'Customer action',
+    SYSTEM: 'System',
+    carrier: 'Test carrier',
+    tracking: 'Test tracking reference',
+    receipt: 'Confirm test receipt',
+    receiptConfirm:
+      'I confirm receipt in this simulation. This is separate from the seller’s statement.',
+    reason: 'Refusal reason',
+    OUT_OF_STOCK: 'Out of stock',
+    DELIVERY_UNAVAILABLE: 'Delivery not possible',
+    UNABLE_TO_FULFILL: 'Unable to fulfil the order',
+    LEGACY_TEST_REJECTION: 'Earlier test refusal (no detailed reason)',
+    originalTotal: 'Original test amount (before closures)',
+    IN_PROGRESS: 'In progress',
+    PARTIALLY_CLOSED: 'Mixed state — see each seller',
+    CLOSED: 'All seller orders are closed',
+    REJECTED: 'Refused by the seller',
+    CANCELLED: 'Cancelled by the customer',
+    EXPIRED: 'Answer deadline passed',
+  },
   ar: {
     deliveryContact: 'بيانات التوصيل',
     recipientName: 'اسم المستلم',
@@ -226,7 +341,7 @@ export const orderCopy = {
     EXPIRED: 'انتهت مهلة الرد',
   },
 } as const;
-export function orderDate(value: string, locale: 'fr' | 'ar') {
+export function orderDate(value: string, locale: 'fr' | 'ar' | 'en') {
   return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-DZ' : 'fr-DZ', {
     dateStyle: 'medium',
     timeStyle: 'short',
@@ -263,6 +378,32 @@ const liveOverrides = {
     receiptConfirm: 'Je confirme avoir reçu cette commande.',
     originalTotal: 'Montant initial (avant annulations)',
   },
+  en: {
+    contactHint: 'These details are shared only with this order’s sellers, for delivery.',
+    phoneHint: 'A number reachable for delivery, for example +213555123456 or 0555123456.',
+    contactMissing: 'No details saved for this order.',
+    destinationHint:
+      'Choose the delivery wilaya and commune. Each seller states whether it delivers there.',
+    destinationPolicy:
+      'Each seller charges one delivery fee for this destination. You pay cash on delivery, to the seller or its courier — never to Atlas DZ.',
+    codCollector: 'Cash on delivery paid to',
+    checkout: 'Review my order',
+    confirm: 'Confirm the order (cash on delivery)',
+    notice:
+      'Cash on delivery. Each seller confirms, prepares and delivers its part of the order. You pay on receipt.',
+    policy: 'Delivery fees are set by each seller for your commune.',
+    received: 'Order recorded — the sellers have been notified',
+    shipping: 'Delivery',
+    total: 'Total to pay on delivery',
+    login: 'Sign in',
+    auth: 'Sign in to see your orders.',
+    disabled: 'Online ordering is not open yet.',
+    carrier: 'Carrier',
+    tracking: 'Tracking reference',
+    receipt: 'Confirm receipt',
+    receiptConfirm: 'I confirm I received this order.',
+    originalTotal: 'Original amount (before cancellations)',
+  },
   ar: {
     contactHint: 'تُرسل هذه البيانات فقط إلى بائعي هذا الطلب من أجل التوصيل.',
     phoneHint: 'رقم يمكن الاتصال به للتوصيل، مثل +213555123456 أو 0555123456.',
@@ -290,7 +431,7 @@ const liveOverrides = {
 } as const;
 
 export type OrderText = { readonly [K in keyof (typeof orderCopy)['fr']]: string };
-export function orderText(locale: 'fr' | 'ar', live: boolean): OrderText {
+export function orderText(locale: 'fr' | 'ar' | 'en', live: boolean): OrderText {
   return live ? { ...orderCopy[locale], ...liveOverrides[locale] } : orderCopy[locale];
 }
 /** Server-only: whether this deployment runs real cash-on-delivery checkout. */

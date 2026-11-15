@@ -6,7 +6,7 @@ import { listOrders, OrderApiError } from '@/lib/orders-api';
 import { liveCheckoutEnabled, orderText, orderDate } from '@/lib/orders-copy';
 import { orderProgress } from '@/lib/order-progress';
 import { formatMoney } from '@/lib/catalog-view';
-import { localizedHref, type SearchParams } from '@/lib/i18n';
+import { localizedHref, type SearchParams, resolveLocale } from '@/lib/i18n';
 /** Colour family for a status: done, stopped, or still in progress. */
 function statusTone(status: string): 'good' | 'bad' | 'wait' {
   if (status === 'DELIVERED') return 'good';
@@ -20,7 +20,7 @@ export default async function Orders({
   readonly searchParams: Promise<SearchParams>;
 }) {
   const query = await searchParams;
-  const locale = query.lang === 'ar' ? 'ar' : 'fr';
+  const locale = resolveLocale(query.lang);
   const t = orderText(locale, liveCheckoutEnabled());
   const token = await customerToken();
   const result = token

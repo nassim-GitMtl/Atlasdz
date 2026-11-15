@@ -1,5 +1,6 @@
 'use server';
 
+import { resolveLocale } from '@/lib/i18n';
 import { cookies, headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { AccountApiError, confirmPhone, deleteAccount, startPhone } from '@/lib/account-api';
@@ -41,7 +42,7 @@ export async function phoneAction(state: AccountState, form: FormData): Promise<
       revalidatePath('/account');
       return { step: 'done' };
     }
-    await startPhone(token, phone, form.get('lang') === 'ar' ? 'ar' : 'fr');
+    await startPhone(token, phone, resolveLocale(form.get('lang')));
     return { step: 'code', phone };
   } catch (error) {
     return { ...state, ...failure(error) };

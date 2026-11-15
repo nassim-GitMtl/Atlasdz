@@ -9,7 +9,7 @@ import { customerToken } from '@/lib/cart-api';
 import { getSupport, getOrderSupport, listSupport } from '@/lib/orders-api';
 import { supportCopy } from '@/lib/support-copy';
 import { orderDate } from '@/lib/orders-copy';
-import { localizedHref, type SearchParams } from '@/lib/i18n';
+import { localizedHref, type SearchParams, resolveLocale } from '@/lib/i18n';
 
 export default async function Support({
   searchParams,
@@ -17,7 +17,7 @@ export default async function Support({
   readonly searchParams: Promise<SearchParams>;
 }) {
   const query = await searchParams;
-  const locale = query.lang === 'ar' ? 'ar' : 'fr';
+  const locale = resolveLocale(query.lang);
   const t = supportCopy[locale];
   const token = await customerToken();
   if (!token) redirect(localizedHref('/login', locale));

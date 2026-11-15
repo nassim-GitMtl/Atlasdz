@@ -11,6 +11,15 @@ const copy = {
     sellerReply: 'Réponse du vendeur',
     note: 'Seuls les clients qui ont reçu l’article peuvent le noter, depuis leur commande.',
   },
+  en: {
+    title: 'Customer reviews',
+    none: 'No reviews yet. Buyers can rate an item once it is delivered.',
+    count: (n: number) => `${n} review${n === 1 ? '' : 's'}`,
+    outOf: (value: string) => `${value} out of 5`,
+    verified: 'Verified purchase',
+    sellerReply: 'Seller’s reply',
+    note: 'Only customers who received the item can rate it, from their order.',
+  },
   ar: {
     title: 'آراء الزبائن',
     none: 'لا توجد آراء بعد. يمكن للمشترين تقييم المنتج بعد استلامه.',

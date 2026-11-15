@@ -11,6 +11,15 @@ export const preorderCopy = {
       `J’accepte la précommande : article pas encore en stock, livraison estimée sous ${min} à ${max} jours. Je peux l’annuler tant que le vendeur ne l’a pas acceptée.`,
     between: (from: string, to: string) => `Livraison estimée entre le ${from} et le ${to}`,
   },
+  en: {
+    badge: 'Pre-order',
+    window: (p: Preorder) => `Estimated delivery in ${p.minDays} to ${p.maxDays} days`,
+    origin: (origin: string) => `Ships from: ${origin}`,
+    add: 'Pre-order',
+    accept: (min: number, max: number) =>
+      `I accept the pre-order: item not in stock yet, estimated delivery in ${min} to ${max} days. I can cancel it until the seller accepts it.`,
+    between: (from: string, to: string) => `Estimated delivery between ${from} and ${to}`,
+  },
   ar: {
     badge: 'طلب مسبق',
     window: (p: Preorder) => `التوصيل المتوقع خلال ${p.minDays} إلى ${p.maxDays} يومًا`,
