@@ -7,6 +7,7 @@ import {
   PlusSquare,
   Receipt,
   ShieldCheck,
+  Star,
   SquaresFour,
   Storefront,
   Tag,
@@ -31,8 +32,8 @@ import { adminCopy } from '@/lib/admin-copy';
 import { accountKind } from '@/lib/session';
 
 const groups = {
-  fr: { shop: 'Ma boutique', staff: 'Équipe Atlas DZ', dashboard: 'Tableau de bord', notifications: 'Notifications', offers: 'Offres à valider', account: 'Mon compte', escalations: 'Demandes escaladées', vendors: 'Comptes vendeurs', customers: 'Comptes clients' },
-  ar: { shop: 'متجري', staff: 'فريق Atlas DZ', dashboard: 'لوحة التحكم', notifications: 'الإشعارات', offers: 'عروض للمراجعة', account: 'حسابي', escalations: 'طلبات مُصعَّدة', vendors: 'حسابات البائعين', customers: 'حسابات الزبائن' },
+  fr: { shop: 'Ma boutique', staff: 'Équipe Atlas DZ', dashboard: 'Tableau de bord', notifications: 'Notifications', offers: 'Offres à valider', account: 'Mon compte', escalations: 'Demandes escaladées', vendors: 'Comptes vendeurs', customers: 'Comptes clients', reviews: 'Avis clients' },
+  ar: { shop: 'متجري', staff: 'فريق Atlas DZ', dashboard: 'لوحة التحكم', notifications: 'الإشعارات', offers: 'عروض للمراجعة', account: 'حسابي', escalations: 'طلبات مُصعَّدة', vendors: 'حسابات البائعين', customers: 'حسابات الزبائن', reviews: 'تقييمات الزبائن' },
 } as const;
 
 interface NavItem {
@@ -97,6 +98,7 @@ export async function Shell({
     { path: '/offers', label: t.offers, Icon: Tag, prefix: true },
     { path: '/products', label: productsCopy[locale].newProduct, Icon: PlusSquare, prefix: true },
     { path: '/delivery', label: deliveryCopy[locale].title, Icon: Truck },
+    { path: '/reviews', label: g.reviews, Icon: Star },
     { path: '/support', label: supportCopy[locale].title, Icon: Lifebuoy },
   ];
   const staff: NavItem[] = [

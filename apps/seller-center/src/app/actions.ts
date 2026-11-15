@@ -7,6 +7,7 @@ import { revalidatePath } from 'next/cache';
 import {
   approveOffer,
   rejectOffer,
+  replyToReview,
   createLocalSession,
   createOffer,
   updateOffer,
@@ -161,4 +162,23 @@ export async function updateOfferAction(_state: ActionState, form: FormData): Pr
   revalidatePath('/offers');
   revalidatePath(`/offers/${id.data}`);
   redirect(`${href('/offers', localeFrom(String(form.get('lang'))))}&updated=1`);
+}
+
+/** The seller answers a customer review publicly (once; a later reply replaces it). */
+export async function replyReviewAction(_state: ActionState, form: FormData): Promise<ActionState> {
+  if (!(await validOrigin())) return { error: 'csrf' };
+  const token = await accessToken();
+  if (!token) return { error: 'unauthorized' };
+  const id = UuidSchema.safeParse(form.get('reviewId'));
+  const body = String(form.get('body') ?? '').trim();
+  const version = Number(form.get('version'));
+  if (!id.success || body.length < 2 || body.length > 1000 || !Number.isInteger(version))
+    return { error: 'invalid' };
+  try {
+    await replyToReview(token, id.data, body, version);
+  } catch (error) {
+    return { error: error instanceof SellerApiError ? error.code : 'unavailable' };
+  }
+  revalidatePath('/reviews');
+  return {};
 }

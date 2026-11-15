@@ -1,4 +1,6 @@
 import {
+  SellerReviewPageSchema,
+  SellerReviewSchema,
   CatalogProductListSchema,
   CatalogCategorySchema,
   CatalogEntrySchema,
@@ -214,3 +216,15 @@ export const processSellerOrder = (token: string, id: string, command: ProcessSe
     token,
     command,
   );
+
+export const listSellerReviews = (token: string, cursor?: string) =>
+  request(
+    `/api/v1/seller/reviews${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`,
+    SellerReviewPageSchema,
+    token,
+  );
+export const replyToReview = (token: string, id: string, body: string, expectedVersion: number) =>
+  request(`/api/v1/seller/reviews/${encodeURIComponent(id)}/reply`, SellerReviewSchema, token, {
+    body,
+    expectedVersion,
+  });

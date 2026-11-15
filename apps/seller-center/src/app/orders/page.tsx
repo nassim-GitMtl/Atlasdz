@@ -38,6 +38,9 @@ export default async function Orders({
           <h1>{t.inbox}</h1>
           <p>{t.body}</p>
         </div>
+        <a className="button secondary" href="/orders/export" download>
+          {locale === 'ar' ? 'تصدير CSV' : 'Exporter (CSV)'}
+        </a>
       </div>
       <p className="notice">{t.notice}</p>
       {result.items ? (

@@ -5,6 +5,7 @@ import type { CatalogEntry, SellerOffer } from '@atlas/contracts';
 import {
   approveOfferAction,
   rejectOfferAction,
+  replyReviewAction,
   createOfferAction,
   updateOfferAction,
   loginAction,
@@ -350,6 +351,44 @@ export function ApproveForm({
       <button className="button small" type="submit" disabled={pending}>
         {pending ? t.approving : t.approve}
         <span aria-hidden="true">✓</span>
+      </button>
+    </form>
+  );
+}
+
+const replyCopy = {
+  fr: { label: 'Votre réponse publique', send: 'Publier la réponse', update: 'Modifier la réponse', saved: 'Réponse publiée.', invalid: 'Écrivez entre 2 et 1 000 caractères.' },
+  ar: { label: 'ردك العلني', send: 'نشر الرد', update: 'تعديل الرد', saved: 'تم نشر الرد.', invalid: 'اكتب بين 2 و1000 حرف.' },
+} as const;
+
+/** Public reply to one customer review. */
+export function ReviewReplyForm({
+  locale,
+  reviewId,
+  version,
+  reply,
+}: {
+  readonly locale: Locale;
+  readonly reviewId: string;
+  readonly version: number;
+  readonly reply: string | null;
+}) {
+  const [state, action, pending] = useActionState(replyReviewAction, {});
+  const t = replyCopy[locale];
+  const id = `reply-${reviewId}`;
+  return (
+    <form action={action} className="refuse-form">
+      <input type="hidden" name="reviewId" value={reviewId} />
+      <input type="hidden" name="version" value={version} />
+      <label htmlFor={id}>{t.label}</label>
+      <textarea id={id} name="body" rows={3} minLength={2} maxLength={1000} required defaultValue={reply ?? ''} />
+      {state.error && (
+        <p className="notice error" role="alert">
+          {state.error === 'invalid' ? t.invalid : copy[locale][state.error]}
+        </p>
+      )}
+      <button className="button small" type="submit" disabled={pending}>
+        {pending ? '…' : reply ? t.update : t.send}
       </button>
     </form>
   );
