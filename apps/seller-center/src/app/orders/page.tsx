@@ -8,6 +8,14 @@ import { href, localeFrom, money, type SearchParams } from '@/lib/i18n';
 import { liveCheckoutEnabled, orderText, orderDate } from '@/lib/orders-copy';
 import { localAccountsEnabled } from '@/lib/security';
 import { accessToken } from '@/lib/session';
+/** Colour family for a status: needs you, done, stopped, or under way. */
+function statusTone(status: string): 'action' | 'good' | 'bad' | 'wait' {
+  if (status === 'AWAITING_SELLER') return 'action';
+  if (status === 'DELIVERED') return 'good';
+  if (['DELIVERY_FAILED', 'REJECTED', 'CANCELLED', 'EXPIRED'].includes(status)) return 'bad';
+  return 'wait';
+}
+
 export default async function Orders({
   searchParams,
 }: {
@@ -41,26 +49,32 @@ export default async function Orders({
           )}
           {result.items.map((order) => (
             <article className="seller-order-card" key={order.id}>
-              <span className="badge">{t[order.status]}</span>
-              <h2>
-                <Link href={href(`/orders/${order.id}`, locale)}>{t.detail}</Link>
-              </h2>
-              <p className="mono">{order.id}</p>
-              <p>{order.snapshot.sellerName}</p>
-              <ul>
-                {order.snapshot.items.map((item) => (
-                  <li key={item.offerId}>
-                    {item.title[locale]} × {item.quantity}
-                  </li>
-                ))}
-              </ul>
-              <p>
-                {t.total}: <bdi>{money(order.snapshot.totalMinor, locale)}</bdi>
+              <div className="order-row__head">
+                <h2>
+                  <Link href={href(`/orders/${order.id}`, locale)}>
+                    {order.snapshot.items
+                      .map((item) => `${item.title[locale]} × ${item.quantity}`)
+                      .join(', ')}
+                  </Link>
+                </h2>
+                <span className={`badge badge--${statusTone(order.status)}`}>{t[order.status]}</span>
+              </div>
+              <p className="order-row__meta">
+                {t.recorded}: {orderDate(order.createdAt, locale)} · {t.total}:{' '}
+                <bdi>{money(order.snapshot.totalMinor, locale)}</bdi>
               </p>
-              <p>
-                {t.recorded}: {orderDate(order.createdAt, locale)}
+              <p className="order-row__meta">
+                <span className="mono" title={order.id}>
+                  {order.id.slice(0, 8)}
+                </span>
+                {order.status === 'AWAITING_SELLER' && (
+                  <> · {t.deadline}: {orderDate(order.acceptanceDeadline, locale)}</>
+                )}
               </p>
-              <Link className="button secondary" href={href(`/orders/${order.id}`, locale)}>
+              <Link
+                className={order.status === 'AWAITING_SELLER' ? 'button small' : 'button secondary small'}
+                href={href(`/orders/${order.id}`, locale)}
+              >
                 {t.detail}
               </Link>
             </article>

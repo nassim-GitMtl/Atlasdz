@@ -10,8 +10,13 @@ export function money(value: number, locale: Locale): string {
   return new Intl.NumberFormat(locale === 'ar' ? 'ar-DZ' : 'fr-DZ', {
     style: 'currency',
     currency: 'DZD',
+    // Whole dinars, or both centime digits (4 750,50 DA), as in the shop and the app.
+    minimumFractionDigits: value % 100 === 0 ? 0 : 2,
     maximumFractionDigits: 2,
-  }).format(value / 100);
+  })
+    .format(value / 100)
+    // The narrow space Intl uses between thousands is nearly invisible in Manrope.
+    .replace(/\u202f/g, '\u00a0');
 }
 export const copy = {
   fr: {

@@ -35,7 +35,7 @@ body { background: var(--surface); }
 @media (max-width: 760px) {
   .sidebar { position: static; height: auto; overflow: visible; flex-direction: column; align-items: stretch; flex-wrap: nowrap; gap: 10px; padding: 12px 16px 0; }
   .wordmark small { flex-basis: auto; font-size: 12px; }
-  .sidebar nav { flex-direction: row; gap: 4px; margin: 0 -16px; padding: 0 16px; overflow-x: auto; scrollbar-width: none; }
+  .sidebar nav { flex-direction: row; flex-wrap: nowrap; gap: 4px; margin: 0 -16px; padding: 0 16px; overflow-x: auto; scrollbar-width: none; }
   .sidebar nav::-webkit-scrollbar { display: none; }
   .nav-group { display: contents; }
   .nav-group__title { display: none; }
@@ -50,3 +50,72 @@ body { background: var(--surface); }
   .sidebar nav { width: auto; }
   .nav-link { flex: none; }
 }
+
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.button.small { min-height: 38px; padding: 0 14px; font-size: 13px; }
+
+/* Seller dashboard: today's work first, then stock, requests and confirmed sales. */
+.dashboard { display: flex; flex-direction: column; gap: 24px; }
+.dashboard-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.dashboard-head h1 { margin: 4px 0 0; font-size: 32px; letter-spacing: -1px; }
+.dashboard-date { font-size: 14px; font-weight: 700; color: var(--muted); }
+.priority-grid { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 16px; }
+.priority-card { display: flex; flex-direction: column; gap: 6px; padding: 20px; border-radius: 16px; background: #fff; border: 1px solid var(--line); color: var(--ink); }
+.priority-card span { font-size: 14px; font-weight: 800; color: var(--muted); }
+.priority-card strong { font-size: 40px; line-height: 1; letter-spacing: -1px; }
+.priority-card small { font-size: 14px; line-height: 1.5; color: var(--muted); }
+.priority-card:hover { border-color: var(--blue); }
+.priority-card--main { background: var(--blue); border-color: var(--blue); color: #fff; }
+.priority-card--main span, .priority-card--main small { color: #fff; }
+.priority-card--main:hover { background: var(--blue-hover); }
+.dashboard-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; align-items: start; }
+.side-panels { display: flex; flex-direction: column; gap: 16px; }
+.panel { background: #fff; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+.panel--pad { padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+.panel--pad a { font-size: 14px; font-weight: 800; color: var(--blue); }
+.panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--line); }
+.panel-head h2, .panel-title { margin: 0; font-size: 17px; letter-spacing: 0; display: flex; align-items: center; gap: 8px; }
+.panel-head span, .panel-note, .panel-empty { font-size: 13px; color: var(--muted); }
+.panel-note, .panel-empty { margin: 0; padding: 14px 18px; line-height: 1.5; }
+.table-scroll { position: relative; overflow-x: auto; }
+.data-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.data-table th { text-align: start; padding: 10px 14px; font-size: 12px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.data-table td { padding: 12px 14px; border-bottom: 1px solid #eef1f5; vertical-align: middle; }
+.data-table .num { text-align: end; white-space: nowrap; }
+.data-table .end { text-align: end; }
+.data-table .strong { font-weight: 800; }
+.data-table .muted, .kv.muted { color: var(--muted); }
+.deadline { display: inline-block; padding: 3px 10px; border-radius: 999px; background: var(--soft); color: var(--blue-hover); font-size: 13px; font-weight: 800; white-space: nowrap; }
+.deadline--soon { background: #fdecec; color: var(--danger); }
+.plain-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.plain-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px; font-weight: 700; }
+.plain-list small { display: block; font-size: 13px; }
+.warn { color: var(--warning); }
+.kv { margin: 0; display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
+.panel--dark { background: var(--ink); border-color: var(--ink); color: #fff; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px; }
+.panel--dark h2 { margin: 0; font-size: 13px; color: #c3cbd8; letter-spacing: 0; }
+.panel--dark strong { font-size: 26px; letter-spacing: -0.5px; }
+.panel--dark p { margin: 0; font-size: 13px; line-height: 1.5; color: #c3cbd8; }
+@media (max-width: 1100px) { .dashboard-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 760px) {
+  .priority-grid { grid-template-columns: 1fr; gap: 10px; }
+  .priority-card strong { font-size: 32px; }
+  .dashboard-head h1 { font-size: 26px; }
+}
+
+/* Order lists: what was ordered, its status, then when and how much. */
+.seller-order-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 12px; }
+.seller-order-card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px; }
+.order-row__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.order-row__head h2 { margin: 0; font-size: 16px; line-height: 1.4; letter-spacing: 0; }
+.order-row__head h2 a:hover { color: var(--blue); }
+.order-row__meta { margin: 0; font-size: 13px; color: var(--muted); }
+.seller-order-card .button { align-self: flex-start; margin-top: 6px; }
+.badge { padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 800; white-space: nowrap; }
+.badge--action { background: var(--soft); color: var(--blue-hover); }
+.badge--good { background: #e6f4ea; color: var(--success); }
+.badge--bad { background: #fdecec; color: var(--danger); }
+.badge--wait { background: #fff4e5; color: var(--warning); }
+.notice { border-radius: 12px; border-color: var(--line); background: var(--soft); font-size: 14px; }
+.eyebrow { color: var(--blue); }
+.badge { width: fit-content; }

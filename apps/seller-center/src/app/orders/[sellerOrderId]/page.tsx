@@ -124,14 +124,6 @@ export default async function OrderDetail({
               {orderDate(result.order.acceptanceDeadline, locale)}
             </time>
           </p>
-          {result.order.status === 'AWAITING_SELLER' && (
-            <RejectOrderForm
-              id={sellerOrderId}
-              version={result.order.version}
-              locale={locale}
-              live={result.order.dataClass === 'live'}
-            />
-          )}
           {result.order.rejectionReason && (
             <p>
               {t.reason}: {t[result.order.rejectionReason]}
@@ -148,6 +140,15 @@ export default async function OrderDetail({
             </>
           )}
           <ProcessOrderForm key={result.order.version} order={result.order} locale={locale} />
+          {result.order.status === 'AWAITING_SELLER' && (
+            // Refusing needs a reason sent to the customer; it comes after the main action.
+            <RejectOrderForm
+              id={sellerOrderId}
+              version={result.order.version}
+              locale={locale}
+              live={result.order.dataClass === 'live'}
+            />
+          )}
           <h2>{t.history}</h2>
           <ol className="order-history">
             {result.order.history.map((entry) => (

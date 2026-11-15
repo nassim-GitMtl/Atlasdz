@@ -4,7 +4,9 @@ import { Shell } from '@/components/shell';
 import { authCopy } from '@/lib/auth-copy';
 import { copy, href, localeFrom, type SearchParams } from '@/lib/i18n';
 import { localAccountsEnabled } from '@/lib/security';
-import { accessToken } from '@/lib/session';
+import { redirect } from 'next/navigation';
+import { SellerDashboard } from '@/components/seller-dashboard';
+import { accessToken, accountKind } from '@/lib/session';
 
 export default async function Home({
   searchParams,
@@ -14,7 +16,17 @@ export default async function Home({
   const locale = localeFrom((await searchParams).lang);
   const t = copy[locale];
   const local = localAccountsEnabled(process.env, (await headers()).get('host'));
-  const signedIn = Boolean(await accessToken());
+  const token = await accessToken();
+  const signedIn = Boolean(token);
+  if (token) {
+    // Staff land on their review queue; sellers (and older sessions) on their dashboard.
+    if ((await accountKind()) === 'staff') redirect(href('/moderation', locale));
+    return (
+      <Shell locale={locale} currentPath="/" signedIn local={local}>
+        <SellerDashboard token={token} locale={locale} />
+      </Shell>
+    );
+  }
   return (
     <Shell locale={locale} currentPath="/" signedIn={signedIn} local={local}>
       <section className="welcome">

@@ -121,6 +121,7 @@ export const orderDate = (value: string, locale: 'fr' | 'ar') =>
   new Intl.DateTimeFormat(locale === 'ar' ? 'ar-DZ' : 'fr-DZ', {
     dateStyle: 'medium',
     timeStyle: 'short',
+    hourCycle: 'h23',
     timeZone: 'Africa/Algiers',
   }).format(new Date(value));
 
