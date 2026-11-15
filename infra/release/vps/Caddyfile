@@ -45,7 +45,7 @@
 	# API for the mobile app (bearer tokens, no cookies): buyer paths and seller paths (seller
 	# sessions require the authenticator code). Staff and local endpoints are not listed, so
 	# they stay reachable only from the web apps inside Docker.
-	@appApi path /api/v1/catalog/* /api/v1/auth/* /api/v1/account /api/v1/account/* /api/v1/cart /api/v1/cart/* /api/v1/checkout/* /api/v1/orders /api/v1/orders/* /api/v1/delivery/destinations /api/v1/notifications /api/v1/notifications/* /api/v1/support /api/v1/support/* /api/v1/reviews/* /api/v1/seller/*
+	@appApi path /api/v1/catalog/* /api/v1/auth/* /api/v1/account /api/v1/account/* /api/v1/cart /api/v1/cart/* /api/v1/checkout/* /api/v1/orders /api/v1/orders/* /api/v1/delivery/destinations /api/v1/delivery/fees /api/v1/notifications /api/v1/notifications/* /api/v1/support /api/v1/support/* /api/v1/reviews/* /api/v1/seller/*
 	handle @appApi {
 		# Caddy replaces any client-supplied X-Forwarded-For with the real peer address.
 		reverse_proxy api:3000

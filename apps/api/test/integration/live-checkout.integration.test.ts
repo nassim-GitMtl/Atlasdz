@@ -341,6 +341,21 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
         codCollector: 'SELLER_COURIER',
       })
       .expect((response) => assert.ok([200, 201].includes(response.status)));
+    // Shoppers see the fee (or that the seller does not deliver) before checkout, unsigned.
+    const sellerId = account.body.sellerId as string;
+    const fees = await http()
+      .get(`/api/v1/delivery/fees?destinationId=${destination.id}&sellerIds=${sellerId}`)
+      .expect(200);
+    assert.deepEqual(fees.body.items, [{ sellerId, available: true, shippingFeeMinor: 60000 }]);
+    const elsewhere = destinations.body.items.find(
+      (item: { id: string; wilaya?: { id: string } }) =>
+        item.id !== destination.id && item.wilaya?.id !== destination.id,
+    );
+    const none = await http()
+      .get(`/api/v1/delivery/fees?destinationId=${elsewhere.id}&sellerIds=${sellerId}`)
+      .expect(200);
+    assert.deepEqual(none.body.items, [{ sellerId, available: false, shippingFeeMinor: null }]);
+    await http().get(`/api/v1/delivery/fees?destinationId=${destination.id}`).expect(422);
 
     // Customer registers, fills the cart and places a cash-on-delivery order.
     await http()

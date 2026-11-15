@@ -1,12 +1,14 @@
 import { DeliveryWriteError } from '@atlas/commerce';
 import {
   DeliveryDestinationSchema,
+  DeliveryFeesQuerySchema,
+  DeliveryFeesSchema,
   SafeApplicationError,
   SellerDeliveryRateSchema,
   SetSellerDeliveryRateInputSchema,
   UuidSchema,
 } from '@atlas/contracts';
-import { Body, Controller, Get, HttpCode, Inject, Param, Post, Req } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Inject, Param, Post, Query, Req } from '@nestjs/common';
 import {
   Public,
   getRequestPrincipal,
@@ -41,6 +43,18 @@ export class DeliveryDestinationsController {
     return mapped(async () => ({
       items: DeliveryDestinationSchema.array().parse(await this.orders.listDestinations()),
     }));
+  }
+  /** Public: each seller's fee to one commune, or that it does not deliver there. */
+  @Get('fees')
+  @Public()
+  async fees(@Query() query: unknown) {
+    const input = DeliveryFeesQuerySchema.safeParse(query);
+    if (!input.success) throw new SafeApplicationError('VALIDATION_FAILED');
+    return mapped(async () =>
+      DeliveryFeesSchema.parse({
+        items: await this.orders.sellerFees(input.data.destinationId, input.data.sellerIds),
+      }),
+    );
   }
 }
 @Controller('api/v1/seller/delivery')

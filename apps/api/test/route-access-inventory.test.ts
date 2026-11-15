@@ -126,6 +126,7 @@ describe('route access inventory', () => {
       'CustomerReviewsController.forOrder:permission-protected',
       'CustomerReviewsController.remove:permission-protected',
       'CustomerReviewsController.write:permission-protected',
+      'DeliveryDestinationsController.fees:public',
       'DeliveryDestinationsController.list:public',
       'HealthController.live:public',
       'HealthController.ready:public',

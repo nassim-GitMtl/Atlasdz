@@ -23,6 +23,7 @@ export type OrderRepositoryPort = Pick<
   | 'processSellerOrder'
   | 'confirmDelivery'
   | 'listDestinations'
+  | 'sellerFees'
   | 'listSellerRates'
   | 'setSellerRate'
 >;

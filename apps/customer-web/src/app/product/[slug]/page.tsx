@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import type { CatalogProduct } from '@atlas/contracts';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { OfferSelector } from '@/components/offer-selector';
+import { DeliveryEstimate } from '@/components/delivery-estimate';
 import { SiteChrome } from '@/components/site-chrome';
 import type { Metadata } from 'next';
 import { ReviewsSection } from '@/components/reviews-section';
@@ -105,6 +106,12 @@ export default async function ProductPage({
             <h1>{title}</h1>
             <p className="product-description">{text(product.description, locale)}</p>
             <OfferSelector offers={product.offers} productSlug={product.slug} locale={locale} />
+            <DeliveryEstimate
+              locale={locale}
+              sellers={[
+                ...new Map(product.offers.map((o) => [o.seller.id, { id: o.seller.id, name: o.seller.name }])).values(),
+              ]}
+            />
             <div className="fulfilment-facts">
               <p>
                 <Money aria-hidden="true" size={20} />

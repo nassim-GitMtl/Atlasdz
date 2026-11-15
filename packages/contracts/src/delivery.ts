@@ -55,3 +55,31 @@ export const DeliveryRateChangedV1PayloadSchema = z
 export type DeliveryDestination = z.infer<typeof DeliveryDestinationSchema>;
 export type SellerDeliveryRate = z.infer<typeof SellerDeliveryRateSchema>;
 export type SetSellerDeliveryRateInput = z.infer<typeof SetSellerDeliveryRateInputSchema>;
+
+/** Shoppers ask what each seller charges (or whether it delivers) to one commune. */
+export const DeliveryFeesQuerySchema = z
+  .object({
+    destinationId: UuidSchema,
+    sellerIds: z
+      .string()
+      .max(20 * 37)
+      .transform((value) => [...new Set(value.split(',').filter(Boolean))])
+      .pipe(z.array(UuidSchema).min(1).max(20)),
+  })
+  .strict();
+export const DeliveryFeesSchema = z
+  .object({
+    items: z
+      .array(
+        z
+          .object({
+            sellerId: UuidSchema,
+            available: z.boolean(),
+            shippingFeeMinor: z.number().int().min(0).max(2_000_000_000).nullable(),
+          })
+          .strict(),
+      )
+      .max(20),
+  })
+  .strict();
+export type DeliveryFees = z.infer<typeof DeliveryFeesSchema>;

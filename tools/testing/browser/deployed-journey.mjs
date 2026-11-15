@@ -216,6 +216,12 @@ let orderUrl;
 await step('guest finds the product and adds it to the cart', bp, async () => {
   await bp.goto(`${SHOP}/search?query=${encodeURIComponent(product.fr)}`);
   await bp.getByRole('link', { name: product.fr }).first().click();
+  // Delivery estimate to the shopper's commune, from the product page.
+  await bp.locator('.delivery-estimate__open').click();
+  const wilayaValue = await bp.locator('.delivery-estimate select').first().locator('option', { hasText: /^\s*16\b/ }).first().getAttribute('value');
+  await bp.locator('.delivery-estimate select').first().selectOption(wilayaValue);
+  await bp.locator('.delivery-estimate select').nth(1).selectOption({ index: 1 });
+  await bp.locator('.delivery-estimate li', { hasText: store }).getByText(/600/).waitFor({ timeout: 15000 });
   await bp.locator('.cart-add-form button:not([type=button])').click();
   await bp.getByText('Ajouté au panier').waitFor({ timeout: 15000 });
   await bp.goto(`${SHOP}/cart`);
@@ -225,6 +231,8 @@ await step('guest checks out with delivery to Alger', bp, async () => {
   const wilaya = await bp.locator('#checkout-wilaya option', { hasText: /^\s*16\b/ }).first().getAttribute('value');
   await bp.selectOption('#checkout-wilaya', wilaya);
   await bp.selectOption('#checkout-destination', { index: 1 });
+  // The seller's fee for this commune shows before the review step.
+  await bp.locator('.fee-preview li', { hasText: store }).getByText(/600/).waitFor({ timeout: 15000 });
   await bp.fill('#checkout-email', buyerEmail);
   await bp.fill('#checkout-recipientName', 'Samira B.');
   await bp.fill('#checkout-phone', '0555123456');

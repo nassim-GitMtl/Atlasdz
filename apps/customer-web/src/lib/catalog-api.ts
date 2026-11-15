@@ -1,4 +1,5 @@
 import {
+  DeliveryFeesSchema,
   CatalogProductListSchema,
   CatalogProductSchema,
   CatalogCategoryListSchema,
@@ -173,5 +174,12 @@ export async function getProductPage(
 /** Categories that have products on sale (the browsing filters). */
 export async function getCategories() {
   return (await requestJson('/api/v1/catalog/categories', CatalogCategoryListSchema, 'categories'))
+    .items;
+}
+
+/** Each seller's delivery fee to one commune, or that it does not deliver there. */
+export async function getDeliveryFees(destinationId: string, sellerIds: readonly string[]) {
+  const params = new URLSearchParams({ destinationId, sellerIds: sellerIds.join(',') });
+  return (await requestJson(`/api/v1/delivery/fees?${params.toString()}`, DeliveryFeesSchema, 'delivery fees'))
     .items;
 }

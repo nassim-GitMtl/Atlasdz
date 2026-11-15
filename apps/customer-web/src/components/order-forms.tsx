@@ -10,6 +10,26 @@ import {
 import { orderText } from '@/lib/orders-copy';
 import { localizedHref, type Locale } from '@/lib/i18n';
 import { preorderCopy } from '@/lib/preorder';
+import { formatMoney } from '@/lib/catalog-view';
+
+const feeCopy = {
+  fr: {
+    title: 'Livraison vers cette commune',
+    loading: 'Calcul des frais…',
+    error: 'Frais momentanément indisponibles : ils seront calculés au récapitulatif.',
+    unavailable: 'Ne livre pas cette commune',
+    blocked:
+      'Un vendeur ne livre pas cette commune : retirez ses articles du panier ou choisissez une autre commune.',
+  },
+  ar: {
+    title: 'التوصيل إلى هذه البلدية',
+    loading: 'جارٍ حساب الرسوم…',
+    error: 'الرسوم غير متاحة حاليًا، وستُحسب في الملخص.',
+    unavailable: 'لا يوصل إلى هذه البلدية',
+    blocked: 'أحد البائعين لا يوصل إلى هذه البلدية: احذف منتجاته من السلة أو اختر بلدية أخرى.',
+  },
+} as const;
+type Fee = { sellerId: string; available: boolean; shippingFeeMinor: number | null };
 
 export function OrderForm({
   kind,
@@ -20,6 +40,7 @@ export function OrderForm({
   live = false,
   guest = false,
   preorder = null,
+  sellers = [],
 }: {
   readonly kind: 'quote' | 'place' | 'cancel' | 'receipt';
   readonly id?: string;
@@ -31,6 +52,8 @@ export function OrderForm({
   readonly guest?: boolean;
   /** Pre-order items in the cart: the buyer must accept this delivery window. */
   readonly preorder?: { readonly min: number; readonly max: number } | null;
+  /** Sellers in the cart: their delivery fee to the chosen commune is shown before review. */
+  readonly sellers?: readonly { readonly id: string; readonly name: string }[];
 }) {
   const [contact, setContact] = useState<DeliveryContact>({
     recipientName: '',
@@ -51,6 +74,18 @@ export function OrderForm({
   const t = orderText(locale, live);
   const [wilayaId, setWilayaId] = useState('');
   const [destinationId, setDestinationId] = useState('');
+  const [fees, setFees] = useState<readonly Fee[] | 'loading' | 'error' | null>(null);
+  const c = feeCopy[locale];
+  const loadFees = (id: string) => {
+    if (!id || sellers.length === 0) return setFees(null);
+    setFees('loading');
+    const query = new URLSearchParams({ destinationId: id, sellerIds: sellers.map((s) => s.id).join(',') });
+    fetch(`/delivery-fees?${query.toString()}`)
+      .then((response) => (response.ok ? response.json() : Promise.reject(new Error('fees'))))
+      .then((data: { items: Fee[] }) => setFees(data.items))
+      .catch(() => setFees('error'));
+  };
+  const blocked = Array.isArray(fees) && fees.some((fee) => !fee.available);
   const wilayas = [
     ...new Map(
       destinations.flatMap((d) => (d.wilaya ? [[d.wilaya.id, d.wilaya] as const] : [])),
@@ -76,6 +111,7 @@ export function OrderForm({
                 onChange={(e) => {
                   setWilayaId(e.target.value);
                   setDestinationId('');
+                  setFees(null);
                 }}
               >
                 <option value="" disabled>
@@ -98,7 +134,10 @@ export function OrderForm({
             name="destinationId"
             required
             value={destinationId}
-            onChange={(e) => setDestinationId(e.target.value)}
+            onChange={(e) => {
+              setDestinationId(e.target.value);
+              loadFees(e.target.value);
+            }}
             disabled={wilayas.length > 0 && !wilayaId}
             aria-describedby="destination-hint"
           >
@@ -112,6 +151,37 @@ export function OrderForm({
             ))}
           </select>
           <p id="destination-hint">{t.destinationHint}</p>
+          {fees && (
+            <div className="fee-preview" aria-live="polite">
+              <strong>{c.title}</strong>
+              {fees === 'loading' || fees === 'error' ? (
+                <p>{fees === 'loading' ? c.loading : c.error}</p>
+              ) : (
+                <ul>
+                  {sellers.map((seller) => {
+                    const fee = fees.find((item) => item.sellerId === seller.id);
+                    return (
+                      <li key={seller.id} className={fee?.available ? undefined : 'is-unavailable'}>
+                        <span>{seller.name}</span>
+                        <strong>
+                          {fee?.available && fee.shippingFeeMinor !== null ? (
+                            <bdi>{formatMoney(fee.shippingFeeMinor, locale)}</bdi>
+                          ) : (
+                            c.unavailable
+                          )}
+                        </strong>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              {blocked && (
+                <p role="alert" className="cart-feedback">
+                  {c.blocked}
+                </p>
+              )}
+            </div>
+          )}
           <fieldset
             className="delivery-contact-fields"
             aria-describedby="contact-hint"
@@ -196,7 +266,7 @@ export function OrderForm({
           pending ||
           state.cancelled ||
           state.confirmed ||
-          (kind === 'quote' && destinations.length === 0)
+          (kind === 'quote' && (destinations.length === 0 || blocked))
         }
         type="submit"
       >

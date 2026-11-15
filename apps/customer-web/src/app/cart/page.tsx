@@ -169,6 +169,9 @@ export default async function CartPage({
                         locale={locale}
                         destinations={destinations.items}
                         guest={!token}
+                        sellers={sellerGroups(result.cart.items).flatMap((group) =>
+                          group.seller ? [{ id: group.seller.id, name: group.seller.name }] : [],
+                        )}
                         preorder={preorderSpan(
                           result.cart.items.map((line) => ({ preorder: line.offer?.preorder })),
                         )}

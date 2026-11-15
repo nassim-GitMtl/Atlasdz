@@ -237,6 +237,21 @@ export class PostgresDeliveryRepository {
     enabled(this.environment);
     return readDeliveryDestinations(this.pool);
   }
+  /** Same resolution as checkout (commune rate, else the wilaya rate) for each seller. */
+  async sellerFees(destinationId: string, sellerIds: readonly string[]) {
+    enabled(this.environment);
+    const id = UuidSchema.parse(destinationId);
+    const destination = (await readDeliveryDestinations(this.pool)).find((d) => d.id === id);
+    if (!destination) throw new DeliveryWriteError('DELIVERY_UNAVAILABLE');
+    return Promise.all(
+      sellerIds.map(async (sellerId) => {
+        const rate = await resolveSellerDeliveryRate(this.pool, UuidSchema.parse(sellerId), id);
+        return rate?.enabled
+          ? { sellerId, available: true, shippingFeeMinor: rate.shippingFeeMinor }
+          : { sellerId, available: false, shippingFeeMinor: null };
+      }),
+    );
+  }
   async listSellerRates(sellerId: string) {
     enabled(this.environment);
     UuidSchema.parse(sellerId);

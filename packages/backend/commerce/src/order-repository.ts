@@ -303,6 +303,9 @@ export class PostgresOrderRepository {
     if (this.policy.environment === 'live') return paymentState === 'CASH_ON_DELIVERY';
     return paymentState === 'NOT_APPLICABLE_TEST' && customerId === this.policy.customerId;
   }
+  sellerFees(destinationId: string, sellerIds: readonly string[]) {
+    return this.delivery.sellerFees(destinationId, sellerIds);
+  }
   listDestinations() {
     return this.delivery.listDestinations();
   }
