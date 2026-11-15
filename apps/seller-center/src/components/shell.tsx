@@ -1,3 +1,19 @@
+import {
+  Bell,
+  Gauge,
+  Lifebuoy,
+  Package,
+  PlusSquare,
+  Receipt,
+  ShieldCheck,
+  SquaresFour,
+  Storefront,
+  Tag,
+  Truck,
+  UserCircle,
+} from '@phosphor-icons/react/dist/ssr';
+import type { Icon } from '@phosphor-icons/react';
+import Image from 'next/image';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { copy, href, type Locale } from '@/lib/i18n';
@@ -5,12 +21,58 @@ import { DocumentLocale } from './document-locale';
 import { orderCopy } from '@/lib/orders-copy';
 import { deliveryCopy } from '@/lib/delivery-copy';
 import { productsCopy } from '@/lib/products-copy';
+import { supportCopy } from '@/lib/support-copy';
 import { LogoutForm } from './logout-form';
 import { InstallApp } from './pwa';
 import { authCopy } from '@/lib/auth-copy';
 import { adminCopy } from '@/lib/admin-copy';
+import { accountKind } from '@/lib/session';
 
-export function Shell({
+const groups = {
+  fr: { shop: 'Ma boutique', staff: 'Équipe Atlas DZ', dashboard: 'Tableau de bord', notifications: 'Notifications', offers: 'Offres à valider' },
+  ar: { shop: 'متجري', staff: 'فريق Atlas DZ', dashboard: 'لوحة التحكم', notifications: 'الإشعارات', offers: 'عروض للمراجعة' },
+} as const;
+
+interface NavItem {
+  readonly path: string;
+  readonly label: string;
+  readonly Icon: Icon;
+  readonly prefix?: boolean;
+}
+
+function NavGroup({
+  title,
+  items,
+  currentPath,
+  locale,
+}: {
+  readonly title: string;
+  readonly items: readonly NavItem[];
+  readonly currentPath: string;
+  readonly locale: Locale;
+}) {
+  return (
+    <div className="nav-group">
+      <span className="nav-group__title">{title}</span>
+      {items.map(({ path, label, Icon, prefix }) => {
+        const active = prefix ? currentPath.startsWith(path) : currentPath === path;
+        return (
+          <Link
+            key={path}
+            className={active ? 'nav-link active' : 'nav-link'}
+            href={href(path, locale)}
+            aria-current={active ? 'page' : undefined}
+          >
+            <Icon aria-hidden="true" size={20} weight={active ? 'fill' : 'regular'} />
+            {label}
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
+export async function Shell({
   locale,
   currentPath,
   signedIn = false,
@@ -24,121 +86,62 @@ export function Shell({
   readonly children: ReactNode;
 }) {
   const t = copy[locale];
+  const g = groups[locale];
+  // Older sessions have no hint: show both menus; the API still decides what each can do.
+  const kind = signedIn ? await accountKind() : undefined;
+  const shop: NavItem[] = [
+    { path: '/', label: g.dashboard, Icon: SquaresFour },
+    { path: '/orders', label: orderCopy[locale].title, Icon: Receipt, prefix: true },
+    { path: '/offers', label: t.offers, Icon: Tag, prefix: true },
+    { path: '/products', label: productsCopy[locale].newProduct, Icon: PlusSquare, prefix: true },
+    { path: '/delivery', label: deliveryCopy[locale].title, Icon: Truck },
+    { path: '/support', label: supportCopy[locale].title, Icon: Lifebuoy },
+  ];
+  const staff: NavItem[] = [
+    { path: '/moderation', label: g.offers, Icon: ShieldCheck },
+    { path: '/moderation/products', label: productsCopy[locale].review, Icon: Package },
+    { path: '/moderation/sellers', label: authCopy[locale].sellerRequests, Icon: Storefront },
+    { path: '/admin', label: adminCopy[locale].nav, Icon: Gauge },
+  ];
+  const common: NavItem[] = [
+    { path: '/notifications', label: g.notifications, Icon: Bell },
+    { path: '/account', label: authCopy[locale].accountTitle, Icon: UserCircle },
+  ];
+  const isStaff = kind === 'staff';
   return (
-    <div className="workspace">
+    <div className={isStaff ? 'workspace workspace--staff' : 'workspace'}>
       <DocumentLocale locale={locale} />
       <a className="skip-link" href="#content">
         {t.skip}
       </a>
       <aside className="sidebar">
         <Link className="wordmark" href={href('/', locale)} aria-label="atlas dz">
-          <span>
-            atlas<span className="brand-dot">.</span>dz
-          </span>
-          <small>{t.workspace}</small>
+          <Image src="/icons/atlas-mark.png" alt="" width={32} height={28} />
+          <span dir="ltr">atlas dz</span>
+          <small>{isStaff ? g.staff : t.workspace}</small>
         </Link>
         {signedIn && (
           <nav aria-label={t.workspace}>
-            <Link
-              className={currentPath === '/products' ? 'nav-link active' : 'nav-link'}
-              href={href('/products', locale)}
-              aria-current={currentPath === '/products' ? 'page' : undefined}
-            >
-              {productsCopy[locale].newProduct}
-            </Link>
-            <Link
-              className={currentPath === '/moderation/products' ? 'nav-link active' : 'nav-link'}
-              href={href('/moderation/products', locale)}
-              aria-current={currentPath === '/moderation/products' ? 'page' : undefined}
-            >
-              {productsCopy[locale].review}
-            </Link>
-            <Link
-              className={currentPath === '/moderation/sellers' ? 'nav-link active' : 'nav-link'}
-              href={href('/moderation/sellers', locale)}
-              aria-current={currentPath === '/moderation/sellers' ? 'page' : undefined}
-            >
-              {authCopy[locale].sellerRequests}
-            </Link>
-            <Link
-              className={currentPath === '/admin' ? 'nav-link active' : 'nav-link'}
-              href={href('/admin', locale)}
-              aria-current={currentPath === '/admin' ? 'page' : undefined}
-            >
-              {adminCopy[locale].nav}
-            </Link>
-            <Link
-              className={currentPath === '/account' ? 'nav-link active' : 'nav-link'}
-              href={href('/account', locale)}
-              aria-current={currentPath === '/account' ? 'page' : undefined}
-            >
-              {authCopy[locale].accountTitle}
-            </Link>
-            <Link
-              className={currentPath === '/support' ? 'nav-link active' : 'nav-link'}
-              href={href('/support', locale)}
-            >
-              {locale === 'ar' ? 'المساعدة والإرجاع' : 'Aide et retours'}
-            </Link>
-            <Link
-              className={currentPath === '/notifications' ? 'nav-link active' : 'nav-link'}
-              href={href('/notifications', locale)}
-              aria-current={currentPath === '/notifications' ? 'page' : undefined}
-            >
-              <span aria-hidden="true">◉</span>
-              {locale === 'ar' ? 'الإشعارات' : 'Notifications'}
-            </Link>
-            <Link
-              className={currentPath.startsWith('/orders') ? 'nav-link active' : 'nav-link'}
-              href={href('/orders', locale)}
-              aria-current={currentPath.startsWith('/orders') ? 'page' : undefined}
-            >
-              <span aria-hidden="true">↗</span>
-              {orderCopy[locale].title}
-            </Link>
-            <Link
-              className={currentPath.startsWith('/offers') ? 'nav-link active' : 'nav-link'}
-              href={href('/offers', locale)}
-              aria-current={currentPath.startsWith('/offers') ? 'page' : undefined}
-            >
-              <span aria-hidden="true">▦</span>
-              {t.offers}
-            </Link>
-            <Link
-              className={currentPath === '/moderation' ? 'nav-link active' : 'nav-link'}
-              href={href('/moderation', locale)}
-              aria-current={currentPath === '/moderation' ? 'page' : undefined}
-            >
-              <span aria-hidden="true">✓</span>
-              {t.moderation}
-            </Link>
-            <Link
-              className={currentPath === '/delivery' ? 'nav-link active' : 'nav-link'}
-              href={href('/delivery', locale)}
-              aria-current={currentPath === '/delivery' ? 'page' : undefined}
-            >
-              <span aria-hidden="true">↗</span>
-              {deliveryCopy[locale].title}
-            </Link>
+            {kind !== 'staff' && (
+              <NavGroup title={g.shop} items={shop} currentPath={currentPath} locale={locale} />
+            )}
+            {kind !== 'seller' && (
+              <NavGroup title={g.staff} items={staff} currentPath={currentPath} locale={locale} />
+            )}
+            <NavGroup title="" items={common} currentPath={currentPath} locale={locale} />
           </nav>
         )}
-        <div className="seller-note">
-          <span className="note-emblem" aria-hidden="true">
-            ↗
-          </span>
-          <strong>{t.responsibility}</strong>
-          <p>{t.responsibilityBody}</p>
-        </div>
+        {!isStaff && (
+          <div className="seller-note">
+            <strong>{t.responsibility}</strong>
+            <p>{t.responsibilityBody}</p>
+          </div>
+        )}
         <InstallApp locale={locale} />
-        <div className="sidebar-footer">
-          Atlas DZ <span>© {new Date().getFullYear()}</span>
-        </div>
       </aside>
       <div className="main-column">
         <header className="topbar">
-          <span className="section-label">
-            {currentPath === '/moderation' ? t.moderation : t.workspace}
-          </span>
+          <span className="section-label">{isStaff ? g.staff : t.workspace}</span>
           <div className="top-actions">
             <Link
               lang={locale === 'fr' ? 'ar' : 'fr'}

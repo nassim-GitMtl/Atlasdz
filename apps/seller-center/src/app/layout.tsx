@@ -1,6 +1,7 @@
 import '@fontsource-variable/manrope/index.css';
 import '@fontsource-variable/noto-sans-arabic/index.css';
 import './globals.css';
+import './theme.css';
 
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
@@ -26,7 +27,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   colorScheme: 'light',
-  themeColor: '#faf8f0',
+  themeColor: '#ffffff',
   width: 'device-width',
   initialScale: 1,
 };

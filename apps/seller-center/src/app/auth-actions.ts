@@ -18,7 +18,7 @@ import {
 import type { AuthError } from '@/lib/auth-copy';
 import { href, localeFrom } from '@/lib/i18n';
 import { trustedMutationOrigin } from '@/lib/security';
-import { accessToken, SESSION_COOKIE } from '@/lib/session';
+import { accessToken, KIND_COOKIE, SESSION_COOKIE } from '@/lib/session';
 
 export interface LoginState {
   readonly error?: AuthError;
@@ -67,13 +67,16 @@ export async function sellerLoginAction(state: LoginState, form: FormData): Prom
     if (result.actorType === 'customer') return { error: 'customer' };
     const expires = new Date(result.expiresAt);
     if (expires.getTime() <= Date.now()) return { ...state, error: 'unavailable' };
-    (await cookies()).set(SESSION_COOKIE, result.accessToken, {
+    const options = {
       httpOnly: true,
       secure: (process.env['SELLER_WEB_ORIGIN'] ?? '').startsWith('https:'),
       sameSite: 'strict',
       path: '/',
       expires,
-    });
+    } as const;
+    const jar = await cookies();
+    jar.set(SESSION_COOKIE, result.accessToken, options);
+    jar.set(KIND_COOKIE, result.actorType === 'staff' ? 'staff' : 'seller', options);
     destination = result.actorType === 'staff' ? '/moderation/sellers' : '/account';
   } catch (error) {
     return { ...state, error: authFailure(error) };

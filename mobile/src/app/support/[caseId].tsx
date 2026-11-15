@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   grow: { flex: 1 },
   bubble: { borderRadius: radius, padding: 12, gap: 4, maxWidth: '88%' },
-  own: { alignSelf: 'flex-end', backgroundColor: '#e3f1e6' },
+  own: { alignSelf: 'flex-end', backgroundColor: colors.soft },
   other: {
     alignSelf: 'flex-start',
     backgroundColor: colors.card,

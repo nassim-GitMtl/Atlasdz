@@ -1,0 +1,52 @@
+/* Atlas DZ blue design (approved 2026-11-15). Loaded after globals.css. */
+:root { --blue: #2957f5; --blue-hover: #1e40c8; --soft: #eef2ff; --surface: #f5f7fa; --danger: #b42318; --warning: #8a4b00; --success: #146c2e; }
+body { background: var(--surface); }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
+.button { border-radius: 10px; font-size: 14px; font-weight: 800; gap: 8px; }
+.button:hover { background: var(--blue-hover); border-color: var(--blue-hover); }
+.button.secondary { background: #fff; }
+.button.secondary:hover { background: var(--surface); border-color: var(--line); }
+
+/* Shell: sidebar grouped by role; dark top bar marks the Atlas staff workspace. */
+.workspace { grid-template-columns: 252px minmax(0, 1fr); }
+.sidebar { position: sticky; top: 0; height: 100vh; overflow-y: auto; background: #fff; padding: 20px 14px; gap: 20px; }
+.wordmark { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 2px 8px; padding: 0 8px; margin: 0; }
+.wordmark img { width: 32px; height: 28px; object-fit: contain; }
+.wordmark > span { font-size: 22px; font-weight: 850; letter-spacing: -1px; }
+.wordmark small { flex-basis: 100%; font-size: 12px; font-weight: 750; color: var(--muted); margin: 0; }
+.sidebar nav { display: flex; flex-direction: column; gap: 18px; }
+.nav-group { display: flex; flex-direction: column; gap: 2px; }
+.nav-group__title { padding: 0 12px 4px; font-size: 12px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; }
+.nav-group__title:empty { display: none; }
+.nav-link { gap: 10px; padding: 0 12px; min-height: 42px; border-radius: 10px; font-size: 14px; font-weight: 700; color: var(--ink); }
+.nav-link:hover { background: var(--surface); }
+.nav-link.active { background: var(--soft); color: var(--blue-hover); }
+.seller-note { margin-top: auto; padding: 12px; border-radius: 12px; background: var(--surface); }
+.seller-note strong { font-size: 13px; line-height: 1.45; }
+.seller-note p { font-size: 12px; line-height: 1.5; margin: 6px 0 0; }
+.topbar { background: #fff; min-height: 64px; padding: 0 32px; }
+.section-label { font-size: 14px; }
+.top-actions { font-size: 14px; gap: 18px; }
+.workspace--staff .topbar { background: var(--ink); border-bottom-color: var(--ink); color: #fff; }
+.workspace--staff .top-actions, .workspace--staff .text-button { color: #fff; }
+.local-banner { font-size: 13px; }
+[dir='rtl'] h1, [dir='rtl'] h2, [dir='rtl'] h3 { letter-spacing: 0; line-height: 1.55; }
+
+@media (max-width: 760px) {
+  .sidebar { position: static; height: auto; overflow: visible; flex-direction: column; align-items: stretch; flex-wrap: nowrap; gap: 10px; padding: 12px 16px 0; }
+  .wordmark small { flex-basis: auto; font-size: 12px; }
+  .sidebar nav { flex-direction: row; gap: 4px; margin: 0 -16px; padding: 0 16px; overflow-x: auto; scrollbar-width: none; }
+  .sidebar nav::-webkit-scrollbar { display: none; }
+  .nav-group { display: contents; }
+  .nav-group__title { display: none; }
+  .nav-link { flex: none; font-size: 14px; padding: 0 12px; gap: 6px; min-height: 44px; white-space: nowrap; border-radius: 0; border-bottom: 3px solid transparent; }
+  .nav-link.active { background: none; border-bottom-color: var(--blue); }
+  .seller-note, .sidebar .install-app { display: none; }
+  .topbar { min-height: 56px; padding: 0 16px; }
+  .section-label, .top-actions, .local-banner { font-size: 13px; }
+  .main-column main { padding: 24px 16px 48px; }
+}
+@media (max-width: 380px) {
+  .sidebar nav { width: auto; }
+  .nav-link { flex: none; }
+}

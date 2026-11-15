@@ -1,152 +1,62 @@
-import { ArrowRight, CheckCircle, Storefront, Truck } from '@phosphor-icons/react/dist/ssr';
+import { ArrowRight, Money, Storefront, Truck } from '@phosphor-icons/react/dist/ssr';
 import Image from 'next/image';
 import Link from 'next/link';
-
-import type { CatalogProduct } from '@atlas/contracts';
-
 import { ProductGrid } from '@/components/product-card';
 import { SiteChrome } from '@/components/site-chrome';
 import { EmptyState } from '@/components/states';
 import { categoryImage } from '@/lib/catalog-view';
-import { getProducts } from '@/lib/catalog-api';
+import { getCategories, getProductPage } from '@/lib/catalog-api';
 import { copy, localizedHref, resolveLocale, text, type SearchParams } from '@/lib/i18n';
 
-function catalogCategories(products: readonly CatalogProduct[]): CatalogProduct['category'][] {
-  const unique = new Map<string, CatalogProduct['category']>();
-  for (const product of products) unique.set(product.category.slug, product.category);
-  return [...unique.values()].sort((left, right) => left.slug.localeCompare(right.slug));
-}
+const editorial = {
+  fr: { title: 'Trouvez votre prochain coup de cœur.', body: 'Les offres de vendeurs algériens, payées à la livraison.', phones: 'Smartphones et écouteurs.', beauty: 'Le rituel beauté.', kitchen: 'Le coin cuisine.', all: 'Tout le catalogue', seller: 'Chaque vendeur prépare et livre sa commande.', sellerBody: 'Plusieurs vendeurs dans un panier : une commande et une livraison par vendeur.', shipping: 'Frais fixés par le vendeur selon votre commune.', shippingBody: 'Affichés au récapitulatif, avant de confirmer.', payment: 'Paiement à la livraison.', paymentBody: 'Vous payez le vendeur ou son livreur, pas Atlas DZ.' },
+  ar: { title: 'اعثر على قطعتك المفضلة التالية.', body: 'عروض لبائعين جزائريين، والدفع عند الاستلام.', phones: 'هواتف ذكية وسماعات.', beauty: 'روتين الجمال.', kitchen: 'ركن المطبخ.', all: 'كل الكتالوج', seller: 'كل بائع يحضّر ويوصل طلبه.', sellerBody: 'عدة بائعين في سلة واحدة: طلب وتوصيل مستقل لكل بائع.', shipping: 'يحدد البائع الرسوم حسب بلديتك.', shippingBody: 'تظهر في الملخص قبل تأكيد الطلب.', payment: 'الدفع عند الاستلام.', paymentBody: 'تدفع للبائع أو لمندوبه، وليس لأطلس DZ.' },
+} as const;
 
-export default async function HomePage({
-  searchParams,
-}: {
-  readonly searchParams: Promise<SearchParams>;
-}) {
+export default async function HomePage({ searchParams }: { readonly searchParams: Promise<SearchParams> }) {
   const params = await searchParams;
   const locale = resolveLocale(params.lang);
   const t = copy[locale];
-  const products = await getProducts();
-  const categories = catalogCategories(products);
-
+  const c = editorial[locale];
+  const [page, categories] = await Promise.all([getProductPage({ limit: 12 }), getCategories()]);
+  const featured = (['phones', 'beauty', 'kitchen'] as const).flatMap((slug) => {
+    const category = categories.find((item) => item.slug === slug);
+    return category ? [{ ...category, heading: c[slug] }] : [];
+  });
+  const assurances = [{ Icon: Storefront, title: c.seller, body: c.sellerBody }, { Icon: Truck, title: c.shipping, body: c.shippingBody }, { Icon: Money, title: c.payment, body: c.paymentBody }];
   return (
     <SiteChrome locale={locale} pathname="/" searchParams={params}>
       <div className="home-shell">
-        <nav className="category-rail" aria-label={t.categoryTitle}>
-          {categories.map((category) => (
-            <Link href={localizedHref(`/category/${category.slug}`, locale)} key={category.slug}>
-              <Image src={categoryImage(category.slug)} alt="" width={320} height={180} priority />
-              <span>{text(category.title, locale)}</span>
-            </Link>
-          ))}
-        </nav>
-
-        <section className="hero-layout" aria-labelledby="hero-title">
-          <article className="hero-card">
-            <Image
-              className="hero-image"
-              src="/assets/hero-mobile-bazaar.png"
-              alt=""
-              fill
-              priority
-              sizes="(max-width: 980px) 100vw, 68vw"
-            />
-            <div className="hero-overlay" />
-            <div className="hero-copy">
-              <p className="hero-kicker">{t.heroKicker}</p>
-              <h1 id="hero-title">
-                {t.heroTitle.map((line) => (
-                  <span key={line}>{line}</span>
-                ))}
-              </h1>
-              <p>{t.heroBody}</p>
-              <Link className="button button--coral" href={localizedHref('/search', locale)}>
-                {t.heroAction}
-                <ArrowRight aria-hidden="true" size={20} weight="bold" />
-              </Link>
-            </div>
-          </article>
-          <aside className="hero-utilities">
-            <article className="utility-card utility-card--delivery">
-              <Image src="/assets/delivery-clear.png" alt="" width={210} height={130} />
-              <div>
-                <Truck aria-hidden="true" size={27} weight="duotone" />
-                <h2>{t.deliveryTitle}</h2>
-                <p>{t.deliveryBody}</p>
-              </div>
-            </article>
-            <article className="utility-card utility-card--seller">
-              <Image src="/assets/payment-flexible.png" alt="" width={210} height={130} />
-              <div>
-                <Storefront aria-hidden="true" size={27} weight="duotone" />
-                <h2>{t.sellerTitle}</h2>
-                <p>{t.sellerBody}</p>
-              </div>
-            </article>
-          </aside>
-        </section>
-
-        <section className="home-section" aria-labelledby="categories-title">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">{t.catalog}</p>
-              <h2 id="categories-title">{t.categoryTitle}</h2>
-              <p>{t.categoryBody}</p>
-            </div>
+        <section className="discovery" aria-labelledby="hero-title">
+          <div className="discovery-heading">
+            <div><h1 id="hero-title">{c.title}</h1><p>{c.body}</p></div>
+            <Link className="section-link" href={localizedHref('/search', locale)}>{t.allOffers}<ArrowRight aria-hidden="true" size={18} /></Link>
           </div>
-          <div className="category-cards">
-            {categories.map((category) => (
-              <Link href={localizedHref(`/category/${category.slug}`, locale)} key={category.slug}>
-                <Image src={categoryImage(category.slug)} alt="" width={520} height={300} />
-                <span>
-                  <strong>{text(category.title, locale)}</strong>
-                  <ArrowRight aria-hidden="true" size={19} weight="bold" />
-                </span>
+          <div className="discovery-tiles">
+            {featured.map((category, index) => (
+              <Link className={`discovery-tile discovery-tile--${category.slug} ${index === 0 ? 'discovery-tile--lead' : ''}`} href={localizedHref(`/category/${category.slug}`, locale)} key={category.slug}>
+                <Image src={categoryImage(category.slug)} alt="" width={600} height={600} priority sizes={index === 0 ? '(max-width: 760px) 100vw, 45vw' : '(max-width: 760px) 50vw, 25vw'} />
+                <div className="discovery-tile__copy">
+                  <span>{text(category.title, locale)}</span><h2>{category.heading}</h2>
+                  {index === 0 && <span className="discovery-arrow"><ArrowRight aria-hidden="true" size={22} weight="bold" /></span>}
+                </div>
               </Link>
             ))}
           </div>
         </section>
-
-        <section className="home-section home-section--products" aria-labelledby="offers-title">
+        <section className="home-section home-section--products" aria-labelledby="catalog-title">
           <div className="section-heading">
-            <div>
-              <p className="eyebrow">{t.browseKicker}</p>
-              <h2 id="offers-title">{t.offersTitle}</h2>
-              <p>{t.offersBody}</p>
-            </div>
-            <Link className="section-link" href={localizedHref('/search', locale)}>
-              {t.allOffers}
-              <ArrowRight aria-hidden="true" size={18} weight="bold" />
-            </Link>
+            <h2 id="catalog-title">{c.all} <span className="result-count">· {page.total}</span></h2>
+            <nav className="home-category-chips" aria-label={t.categoryTitle}>
+              <Link className="is-selected" href={localizedHref('/search', locale)}>{locale === 'ar' ? 'الكل' : 'Tout'}</Link>
+              {categories.map((category) => <Link key={category.slug} href={localizedHref(`/category/${category.slug}`, locale)}>{text(category.title, locale)}</Link>)}
+            </nav>
           </div>
-          {products.length > 0 ? (
-            <ProductGrid locale={locale} products={products.slice(0, 4)} />
-          ) : (
-            <EmptyState locale={locale} />
-          )}
+          {page.items.length ? <ProductGrid locale={locale} products={page.items} /> : <EmptyState locale={locale} />}
+          {page.total > page.items.length && <Link className="button button--secondary catalog-more" href={localizedHref('/search', locale)}>{t.allOffers}<ArrowRight aria-hidden="true" size={18} /></Link>}
         </section>
-
-        <section className="trust-grid" aria-label={t.compareTitle}>
-          <article>
-            <span>
-              <Storefront aria-hidden="true" size={31} weight="duotone" />
-            </span>
-            <h2>{t.sellerTitle}</h2>
-            <p>{t.sellerBody}</p>
-          </article>
-          <article>
-            <span>
-              <Truck aria-hidden="true" size={31} weight="duotone" />
-            </span>
-            <h2>{t.deliveryTitle}</h2>
-            <p>{t.deliveryBody}</p>
-          </article>
-          <article>
-            <span>
-              <CheckCircle aria-hidden="true" size={31} weight="duotone" />
-            </span>
-            <h2>{t.compareTitle}</h2>
-            <p>{t.compareBody}</p>
-          </article>
+        <section className="trust-grid" aria-label={locale === 'ar' ? 'كيف يعمل أطلس DZ' : 'Comment fonctionne Atlas DZ'}>
+          {assurances.map(({ Icon, title, body }) => <article key={title}><span><Icon aria-hidden="true" size={22} /></span><div><h2>{title}</h2><p>{body}</p></div></article>)}
         </section>
       </div>
     </SiteChrome>

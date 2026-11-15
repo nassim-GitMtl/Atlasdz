@@ -20,7 +20,7 @@ import {
   type OfferValues,
 } from '@/lib/offer-input';
 import { localAccountsEnabled, trustedMutationOrigin } from '@/lib/security';
-import { accessToken, SESSION_COOKIE } from '@/lib/session';
+import { accessToken, KIND_COOKIE, SESSION_COOKIE } from '@/lib/session';
 
 export interface ActionState {
   readonly error?:
@@ -55,13 +55,10 @@ export async function loginAction(_state: ActionState, form: FormData): Promise<
     const session = await createLocalSession(account);
     const expiry = new Date(session.expiresAt);
     if (expiry.getTime() <= Date.now()) return { error: 'unauthorized' };
-    (await cookies()).set(SESSION_COOKIE, session.accessToken, {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'strict',
-      path: '/',
-      expires: expiry,
-    });
+    const options = { httpOnly: true, secure: false, sameSite: 'strict', path: '/', expires: expiry } as const;
+    const jar = await cookies();
+    jar.set(SESSION_COOKIE, session.accessToken, options);
+    jar.set(KIND_COOKIE, account === 'admin' ? 'staff' : 'seller', options);
   } catch (error) {
     return { error: error instanceof SellerApiError ? error.code : 'unavailable' };
   }
@@ -83,7 +80,9 @@ export async function logoutAction(_state: ActionState, form: FormData): Promise
         return { error: 'logoutFailure' };
     }
   }
-  (await cookies()).delete(SESSION_COOKIE);
+  const jar = await cookies();
+  jar.delete(SESSION_COOKIE);
+  jar.delete(KIND_COOKIE);
   redirect(href('/', localeFrom(String(form.get('lang')))));
 }
 

@@ -7,7 +7,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "backgroundColor": "#fffaf3",
+    "backgroundColor": "#ffffff",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "dz.atlasdz.app"
@@ -15,7 +15,7 @@
     "android": {
       "package": "dz.atlasdz.app",
       "adaptiveIcon": {
-        "backgroundColor": "#fffaf3",
+        "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
@@ -36,7 +36,7 @@
         {
           "image": "./assets/splash-icon.png",
           "imageWidth": 140,
-          "backgroundColor": "#fffaf3"
+          "backgroundColor": "#ffffff"
         }
       ],
       [

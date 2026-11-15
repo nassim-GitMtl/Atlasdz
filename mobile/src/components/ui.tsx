@@ -197,9 +197,9 @@ export function Badge({
     <View
       style={[
         styles.badge,
-        tone === 'good' && { backgroundColor: '#e3f1e6' },
-        tone === 'bad' && { backgroundColor: '#f8e1de' },
-        tone === 'wait' && { backgroundColor: '#fbf0d9' },
+        tone === 'good' && { backgroundColor: colors.successSoft },
+        tone === 'bad' && { backgroundColor: colors.dangerSoft },
+        tone === 'wait' && { backgroundColor: colors.warningSoft },
       ]}
     >
       <Text
@@ -360,8 +360,8 @@ const styles = StyleSheet.create({
   inputError: { borderColor: colors.danger, borderWidth: 2 },
   hint: { fontSize: 13, color: colors.muted },
   notice: { borderRadius: radius, padding: 14, backgroundColor: colors.soft },
-  noticeError: { backgroundColor: '#f8e1de' },
-  noticeSuccess: { backgroundColor: '#e3f1e6' },
+  noticeError: { backgroundColor: colors.dangerSoft },
+  noticeSuccess: { backgroundColor: colors.successSoft },
   noticeText: { fontSize: 15, lineHeight: 21, color: colors.ink },
   center: { alignItems: 'center', justifyContent: 'center', paddingVertical: 40, gap },
   emptyText: { fontSize: 16, color: colors.muted, textAlign: 'center' },
