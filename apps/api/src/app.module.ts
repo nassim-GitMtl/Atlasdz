@@ -69,8 +69,13 @@ import { createMailer, MAILER, type Mailer } from './notifications/mailer.js';
 import { MEDIA_SERVICE, ProductMediaService } from './media/media.js';
 import { COD_RISK, CodRiskService, type SmsSender } from './commerce/cod-risk.js';
 import { PhoneVerificationController } from './commerce/phone.controller.js';
-import { ADMIN_SERVICE, AdminService } from './admin/admin.js';
-import { AdminController } from './admin/admin.controller.js';
+import {
+  ACCOUNT_ADMIN,
+  ADMIN_SERVICE,
+  AccountAdminService,
+  AdminService,
+} from './admin/admin.js';
+import { AccountAdminController, AdminController } from './admin/admin.controller.js';
 import {
   MediaController,
   SellerProductImageController,
@@ -256,6 +261,7 @@ export class AppModule {
               PhoneVerificationController,
               CustomerAccountController,
               AdminController,
+              AccountAdminController,
             ]),
         ...(options.mediaDirectory === undefined
           ? []
@@ -349,6 +355,11 @@ export class AppModule {
                 inject: [SharedDatabasePool],
                 useFactory: (database: SharedDatabasePool) =>
                   new AdminService(database.pool, options.mediaDirectory ?? null),
+              },
+              {
+                provide: ACCOUNT_ADMIN,
+                inject: [SharedDatabasePool],
+                useFactory: (database: SharedDatabasePool) => new AccountAdminService(database.pool),
               },
               {
                 provide: COD_RISK,

@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import {
   CategoryCreateForm,
@@ -59,7 +60,8 @@ export default async function Admin({
               {result.sellers.items.map((seller) => (
                 <li key={seller.sellerId} className="offers-panel">
                   <h3>
-                    {seller.name} <span className="badge">{seller.status}</span>
+                    <Link href={href(`/admin/sellers/${seller.sellerId}`, locale)}>{seller.name}</Link>{' '}
+                    <span className="badge">{seller.status}</span>
                   </h3>
                   <p>
                     /{seller.slug} · {seller.approvedOffers} {t.offers} · {seller.orders} {t.orders}

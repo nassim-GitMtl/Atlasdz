@@ -788,5 +788,66 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
       [guestEmail],
     );
     assert.equal(guestVerified.rows[0]?.ok, true);
+
+    // Staff see any seller account in full and can remove content or close accounts.
+    await http().get(`/api/v1/admin/sellers/${sellerId}/detail`).set(bearer(seller)).expect(403);
+    const detail = await http().get(`/api/v1/admin/sellers/${sellerId}/detail`).set(bearer(staff)).expect(200);
+    assert.equal(detail.body.seller.sellerId, sellerId);
+    assert.equal(detail.body.users[0].email, 'boutique@example.dz');
+    assert.ok(detail.body.offers.some((o: { offerId: string }) => o.offerId === offer.body.id));
+    assert.ok(detail.body.orders.length >= 1);
+    await http()
+      .post(`/api/v1/admin/offers/${offer.body.id}/status`)
+      .set(bearer(staff))
+      .send({ status: 'SUSPENDED' })
+      .expect(200);
+    await http()
+      .post(`/api/v1/admin/offers/${offer.body.id}/status`)
+      .set(bearer(staff))
+      .send({ status: 'APPROVED' })
+      .expect(200);
+    // An offer that was ordered is kept for the records but taken off sale for good.
+    const removed = await http()
+      .post(`/api/v1/admin/offers/${offer.body.id}/remove`)
+      .set(bearer(staff))
+      .expect(200);
+    assert.equal(removed.body.outcome, 'ARCHIVED');
+    // The guest's order is still open: neither account can be closed yet.
+    await http().post(`/api/v1/admin/sellers/${sellerId}/close`).set(bearer(staff)).expect(409);
+    const found = await http()
+      .get(`/api/v1/admin/customers?email=${encodeURIComponent(guestEmail)}`)
+      .set(bearer(staff))
+      .expect(200);
+    assert.equal(found.body.items.length, 1);
+    await http()
+      .post(`/api/v1/admin/customers/${found.body.items[0].userId}/close`)
+      .set(bearer(staff))
+      .expect(409);
+    // Once the seller refuses it, both accounts close; logins stop working.
+    await http()
+      .post(`/api/v1/seller/orders/${guestOrder.body.sellerOrders[0].id}/reject`)
+      .set(bearer(seller))
+      .send({ reasonCode: 'OUT_OF_STOCK', expectedVersion: guestOrder.body.sellerOrders[0].version })
+      .expect((response) => assert.ok([200, 201].includes(response.status)));
+    await http()
+      .post(`/api/v1/admin/customers/${found.body.items[0].userId}/close`)
+      .set(bearer(staff))
+      .expect(200);
+    await http()
+      .post('/api/v1/auth/login')
+      .send({ email: guestEmail, password: 'Yacine choisit 2026!' })
+      .expect(401);
+    const open = await pool.query<{ count: string }>(
+      `SELECT count(*) FROM commerce.seller_orders WHERE seller_id = $1
+         AND status IN ('AWAITING_SELLER','ACCEPTED','PREPARING','SHIPPED','DELIVERY_REPORTED')`,
+      [sellerId],
+    );
+    if (Number(open.rows[0]?.count ?? 0) === 0) {
+      await http().post(`/api/v1/admin/sellers/${sellerId}/close`).set(bearer(staff)).expect(200);
+      await http()
+        .post('/api/v1/auth/login')
+        .send({ email: 'boutique@example.dz', password })
+        .expect(401);
+    }
   });
 });

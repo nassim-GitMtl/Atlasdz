@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import {
+  accountAction,
   createCategoryAction,
   moderateReviewAction,
   removePhotoAction,
@@ -205,6 +206,64 @@ export function ReviewModerationForm({
       <button className={hide ? 'button secondary' : 'button'} type="submit" disabled={pending}>
         {hide ? t.hideReview : t.publishReview}
       </button>
+    </form>
+  );
+}
+
+const actionCopy = {
+  fr: {
+    confirm: 'Je confirme',
+    done: 'Fait.',
+    conflict: 'Impossible pour le moment : des commandes sont encore en cours, ou l’état a changé.',
+    error: 'Action refusée ou service indisponible.',
+  },
+  ar: {
+    confirm: 'أؤكد',
+    done: 'تم.',
+    conflict: 'غير ممكن حاليًا: توجد طلبات جارية أو تغيرت الحالة.',
+    error: 'رُفض الإجراء أو الخدمة غير متاحة.',
+  },
+} as const;
+
+/** A staff action on one account or item; destructive ones ask for an explicit confirmation. */
+export function AccountActionForm({
+  action,
+  id,
+  label,
+  locale,
+  danger = false,
+  warning,
+}: {
+  readonly action: string;
+  readonly id: string;
+  readonly label: string;
+  readonly locale: Locale;
+  readonly danger?: boolean;
+  /** Shown next to the confirmation box for irreversible actions. */
+  readonly warning?: string;
+}) {
+  const [state, run, pending] = useActionState(accountAction, {});
+  const t = actionCopy[locale];
+  return (
+    <form action={run} className={danger ? 'account-action account-action--danger' : 'account-action'}>
+      <input type="hidden" name="id" value={id} />
+      <input type="hidden" name="action" value={action} />
+      {danger ? (
+        <label className="account-action__confirm">
+          <input type="checkbox" name="confirm" value="yes" required /> {warning ?? t.confirm}
+        </label>
+      ) : (
+        <input type="hidden" name="confirm" value="yes" />
+      )}
+      <button className={danger ? 'button small danger' : 'button secondary small'} disabled={pending} type="submit">
+        {pending ? '…' : label}
+      </button>
+      {state.done && <span role="status">{t.done}</span>}
+      {state.error && (
+        <span role="alert" className="account-action__error">
+          {state.error === 'conflict' ? t.conflict : t.error}
+        </span>
+      )}
     </form>
   );
 }

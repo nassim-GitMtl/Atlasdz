@@ -8,7 +8,12 @@ import {
 } from '../auth/index.js';
 import type { CorrelatedRequest } from '../http-types.js';
 import { RateLimited } from '../rate-limit/index.js';
-import { ADMIN_SERVICE, type AdminService } from './admin.js';
+import {
+  ACCOUNT_ADMIN,
+  ADMIN_SERVICE,
+  type AccountAdminService,
+  type AdminService,
+} from './admin.js';
 
 type StaffRequest = AuthenticatedRequest & CorrelatedRequest;
 const GLOBAL = { scope: { type: 'GLOBAL' as const }, minimumAssurance: 'MFA' as const };
@@ -161,5 +166,100 @@ export class AdminController {
     const ok = await this.admin.removeProductPhoto(uuid(id), actor, request.correlationId);
     if (!ok) throw new SafeApplicationError('RESOURCE_NOT_FOUND');
     return { status: 'REMOVED' };
+  }
+}
+
+/** Staff access to every seller and customer account, and removal of marketplace content. */
+@Controller('api/v1/admin')
+export class AccountAdminController {
+  public constructor(@Inject(ACCOUNT_ADMIN) private readonly accounts: AccountAdminService) {}
+
+  @Get('sellers/:id/detail')
+  @RequirePermission('account.manage', GLOBAL)
+  @RateLimited('authenticated', 'admin.accounts.seller')
+  public async seller(@Req() request: StaffRequest, @Param('id') id: string) {
+    staff(request);
+    const detail = await this.accounts.sellerDetail(uuid(id));
+    if (!detail) throw new SafeApplicationError('RESOURCE_NOT_FOUND');
+    return detail;
+  }
+
+  @Post('sellers/:id/close')
+  @HttpCode(200)
+  @RequirePermission('account.manage', GLOBAL)
+  @RateLimited('authenticated', 'admin.accounts.close')
+  public async closeSeller(@Req() request: StaffRequest, @Param('id') id: string) {
+    const actor = staff(request);
+    const result = await this.accounts.closeSeller(uuid(id), actor, request.correlationId);
+    if (result === null) throw new SafeApplicationError('RESOURCE_NOT_FOUND');
+    if (result === 'OPEN_ORDERS') throw new SafeApplicationError('ORDER_STATE_CONFLICT');
+    return { sellerId: id, status: 'CLOSED' };
+  }
+
+  @Post('offers/:id/status')
+  @HttpCode(200)
+  @RequirePermission('account.manage', GLOBAL)
+  @RateLimited('authenticated', 'admin.accounts.offer')
+  public async offerStatus(@Req() request: StaffRequest, @Param('id') id: string, @Body() input: unknown) {
+    const actor = staff(request);
+    const status = body(input, ['status'])['status'];
+    if (status !== 'SUSPENDED' && status !== 'APPROVED') invalid('status');
+    const ok = await this.accounts.setOfferStatus(uuid(id), status, actor, request.correlationId);
+    if (!ok) throw new SafeApplicationError('OFFER_STATE_CONFLICT');
+    return { offerId: id, status };
+  }
+
+  @Post('offers/:id/remove')
+  @HttpCode(200)
+  @RequirePermission('account.manage', GLOBAL)
+  @RateLimited('authenticated', 'admin.accounts.offer')
+  public async removeOffer(@Req() request: StaffRequest, @Param('id') id: string) {
+    const actor = staff(request);
+    const outcome = await this.accounts.removeOffer(uuid(id), actor, request.correlationId);
+    if (outcome === null) throw new SafeApplicationError('RESOURCE_NOT_FOUND');
+    return { offerId: id, outcome };
+  }
+
+  @Post('products/:id/remove')
+  @HttpCode(200)
+  @RequirePermission('account.manage', GLOBAL)
+  @RateLimited('authenticated', 'admin.accounts.product')
+  public async removeProduct(@Req() request: StaffRequest, @Param('id') id: string) {
+    const actor = staff(request);
+    if (!(await this.accounts.removeProduct(uuid(id), actor, request.correlationId)))
+      throw new SafeApplicationError('RESOURCE_NOT_FOUND');
+    return { productId: id, status: 'REMOVED' };
+  }
+
+  @Post('reviews/:id/delete')
+  @HttpCode(200)
+  @RequirePermission('account.manage', GLOBAL)
+  @RateLimited('authenticated', 'admin.accounts.review')
+  public async deleteReview(@Req() request: StaffRequest, @Param('id') id: string) {
+    const actor = staff(request);
+    if (!(await this.accounts.deleteReview(uuid(id), actor, request.correlationId)))
+      throw new SafeApplicationError('RESOURCE_NOT_FOUND');
+    return { reviewId: id, status: 'DELETED' };
+  }
+
+  @Get('customers')
+  @RequirePermission('account.manage', GLOBAL)
+  @RateLimited('authenticated', 'admin.accounts.customers')
+  public async customers(@Req() request: StaffRequest, @Query('email') email?: string) {
+    staff(request);
+    if (typeof email !== 'string' || email.trim().length < 3 || email.length > 254) invalid('email');
+    return { items: await this.accounts.findCustomers(email.trim()) };
+  }
+
+  @Post('customers/:id/close')
+  @HttpCode(200)
+  @RequirePermission('account.manage', GLOBAL)
+  @RateLimited('authenticated', 'admin.accounts.close')
+  public async closeCustomer(@Req() request: StaffRequest, @Param('id') id: string) {
+    const actor = staff(request);
+    const result = await this.accounts.closeCustomer(uuid(id), actor, request.correlationId);
+    if (result === null) throw new SafeApplicationError('RESOURCE_NOT_FOUND');
+    if (result === 'OPEN_ORDERS') throw new SafeApplicationError('ORDER_STATE_CONFLICT');
+    return { userId: id, status: 'CLOSED' };
   }
 }

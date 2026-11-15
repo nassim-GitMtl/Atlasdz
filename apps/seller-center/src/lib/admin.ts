@@ -81,6 +81,7 @@ const Seller = z.object({
   createdAt: z.string(),
   approvedOffers: z.number(),
   orders: z.number(),
+  closedAt: z.string().nullable().optional(),
 });
 export type AdminSeller = z.infer<typeof Seller>;
 export const getSellers = (token: string) =>
@@ -128,3 +129,80 @@ export const moderateReview = (
     token,
     input,
   );
+
+const Localized = z.object({ fr: z.string(), ar: z.string() });
+const SellerDetail = z.object({
+  seller: z.object({
+    sellerId: z.uuid(),
+    slug: z.string(),
+    name: z.string(),
+    status: z.string(),
+    suspendedReason: z.string().nullable(),
+    description: Localized,
+    createdAt: z.string(),
+    closedAt: z.string().nullable(),
+  }),
+  users: z.array(
+    z.object({ userId: z.uuid(), email: z.string(), phone: z.string().nullable(), status: z.string(), createdAt: z.string() }),
+  ),
+  offers: z.array(
+    z.object({
+      offerId: z.uuid(),
+      productId: z.uuid(),
+      title: Localized,
+      priceMinor: z.number(),
+      availableQuantity: z.number(),
+      status: z.string(),
+      promotion: z.object({ priceMinor: z.number(), endsAt: z.string().nullable() }).nullable(),
+    }),
+  ),
+  orders: z.array(
+    z.object({
+      sellerOrderId: z.uuid(),
+      status: z.string(),
+      totalMinor: z.number(),
+      createdAt: z.string(),
+      recipient: z.string().nullable(),
+    }),
+  ),
+  orderCounts: z.record(z.string(), z.number()),
+  reviews: z.array(
+    z.object({
+      reviewId: z.uuid(),
+      rating: z.number(),
+      body: z.string().nullable(),
+      status: z.string(),
+      product: z.string(),
+      createdAt: z.string(),
+    }),
+  ),
+  activeDeliveryRates: z.number(),
+});
+export type AdminSellerDetail = z.infer<typeof SellerDetail>;
+const Done = z.object({}).passthrough();
+const path = (id: string) => encodeURIComponent(id);
+export const getSellerDetail = (token: string, id: string) =>
+  call(`/api/v1/admin/sellers/${path(id)}/detail`, SellerDetail, token);
+export const closeSeller = (token: string, id: string) =>
+  call(`/api/v1/admin/sellers/${path(id)}/close`, Done, token, {});
+export const setOfferStatusAdmin = (token: string, id: string, status: 'SUSPENDED' | 'APPROVED') =>
+  call(`/api/v1/admin/offers/${path(id)}/status`, Done, token, { status });
+export const removeOfferAdmin = (token: string, id: string) =>
+  call(`/api/v1/admin/offers/${path(id)}/remove`, z.object({ outcome: z.string() }), token, {});
+export const removeProductAdmin = (token: string, id: string) =>
+  call(`/api/v1/admin/products/${path(id)}/remove`, Done, token, {});
+export const deleteReviewAdmin = (token: string, id: string) =>
+  call(`/api/v1/admin/reviews/${path(id)}/delete`, Done, token, {});
+const Customer = z.object({
+  userId: z.uuid(),
+  email: z.string(),
+  status: z.string(),
+  createdAt: z.string(),
+  orders: z.number(),
+  openOrders: z.number(),
+});
+export type AdminCustomer = z.infer<typeof Customer>;
+export const findCustomers = (token: string, email: string) =>
+  call(`/api/v1/admin/customers?email=${encodeURIComponent(email)}`, z.object({ items: Customer.array() }), token);
+export const closeCustomer = (token: string, id: string) =>
+  call(`/api/v1/admin/customers/${path(id)}/close`, Done, token, {});

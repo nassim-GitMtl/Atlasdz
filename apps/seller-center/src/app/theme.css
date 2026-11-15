@@ -135,3 +135,14 @@ body { background: var(--surface); }
 .refuse-form textarea { font: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid var(--border, #8792a6); border-radius: 8px; }
 .reject-reason { display: block; color: var(--danger); font-size: 13px; }
 .promo-note { display: block; color: var(--danger); font-size: 13px; font-weight: 700; }
+.account-action { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.account-action__confirm { font-size: 13px; display: flex; gap: 6px; align-items: flex-start; max-width: 360px; }
+.account-action__error { color: var(--danger); font-size: 13px; font-weight: 700; }
+.button.danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+.button.danger:hover { background: #8f1c13; border-color: #8f1c13; }
+.admin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 16px; }
+.kv-list { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; font-size: 14px; }
+.kv-list dt { color: var(--muted); }
+.kv-list dd { margin: 0; overflow-wrap: anywhere; }
+.danger-zone { border-color: #f3c7c2; }
+.panel-list { padding: 12px 18px; } .panel-list li { flex-wrap: wrap; padding: 6px 0; border-bottom: 1px solid #eef1f5; } .panel-list li:last-child { border-bottom: 0; }

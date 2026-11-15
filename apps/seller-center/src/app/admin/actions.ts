@@ -4,6 +4,12 @@ import { headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import {
   AdminApiError,
+  closeCustomer,
+  closeSeller,
+  deleteReviewAdmin,
+  removeOfferAdmin,
+  removeProductAdmin,
+  setOfferStatusAdmin,
   createCategory,
   moderateReview,
   removePhoto,
@@ -30,7 +36,8 @@ async function run(work: (token: string) => Promise<unknown>): Promise<AdminStat
   } catch (error) {
     return { error: error instanceof AdminApiError ? error.code : 'unavailable' };
   }
-  revalidatePath('/admin');
+  // Detail pages live under /admin too.
+  revalidatePath('/admin', 'layout');
   return { done: true };
 }
 
@@ -80,4 +87,28 @@ export async function moderateReviewAction(_s: AdminState, form: FormData) {
   const reason = str(form, 'reason');
   if (reason.length < 3 || reason.length > 500) return { error: 'invalid' } satisfies AdminState;
   return run((token) => moderateReview(token, id, { action: 'HIDE', reason, expectedVersion }));
+}
+
+/** One staff action on an account or item, chosen by the form's `action` field. */
+export async function accountAction(_s: AdminState, form: FormData): Promise<AdminState> {
+  const id = str(form, 'id');
+  if (!UUID.test(id) || form.get('confirm') !== 'yes') return { error: 'invalid' };
+  switch (str(form, 'action')) {
+    case 'close-seller':
+      return run((token) => closeSeller(token, id));
+    case 'suspend-offer':
+      return run((token) => setOfferStatusAdmin(token, id, 'SUSPENDED'));
+    case 'restore-offer':
+      return run((token) => setOfferStatusAdmin(token, id, 'APPROVED'));
+    case 'remove-offer':
+      return run((token) => removeOfferAdmin(token, id));
+    case 'remove-product':
+      return run((token) => removeProductAdmin(token, id));
+    case 'delete-review':
+      return run((token) => deleteReviewAdmin(token, id));
+    case 'close-customer':
+      return run((token) => closeCustomer(token, id));
+    default:
+      return { error: 'invalid' };
+  }
 }

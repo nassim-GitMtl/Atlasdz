@@ -1,6 +1,7 @@
 import {
   Bell,
   Gauge,
+  IdentificationCard,
   Lifebuoy,
   Package,
   PlusSquare,
@@ -11,6 +12,7 @@ import {
   Tag,
   Truck,
   UserCircle,
+  Users,
 } from '@phosphor-icons/react/dist/ssr';
 import type { Icon } from '@phosphor-icons/react';
 import Image from 'next/image';
@@ -29,8 +31,8 @@ import { adminCopy } from '@/lib/admin-copy';
 import { accountKind } from '@/lib/session';
 
 const groups = {
-  fr: { shop: 'Ma boutique', staff: 'Équipe Atlas DZ', dashboard: 'Tableau de bord', notifications: 'Notifications', offers: 'Offres à valider', account: 'Mon compte', escalations: 'Demandes escaladées' },
-  ar: { shop: 'متجري', staff: 'فريق Atlas DZ', dashboard: 'لوحة التحكم', notifications: 'الإشعارات', offers: 'عروض للمراجعة', account: 'حسابي', escalations: 'طلبات مُصعَّدة' },
+  fr: { shop: 'Ma boutique', staff: 'Équipe Atlas DZ', dashboard: 'Tableau de bord', notifications: 'Notifications', offers: 'Offres à valider', account: 'Mon compte', escalations: 'Demandes escaladées', vendors: 'Comptes vendeurs', customers: 'Comptes clients' },
+  ar: { shop: 'متجري', staff: 'فريق Atlas DZ', dashboard: 'لوحة التحكم', notifications: 'الإشعارات', offers: 'عروض للمراجعة', account: 'حسابي', escalations: 'طلبات مُصعَّدة', vendors: 'حسابات البائعين', customers: 'حسابات الزبائن' },
 } as const;
 
 interface NavItem {
@@ -101,6 +103,8 @@ export async function Shell({
     { path: '/moderation', label: g.offers, Icon: ShieldCheck },
     { path: '/moderation/products', label: productsCopy[locale].review, Icon: Package },
     { path: '/moderation/sellers', label: authCopy[locale].sellerRequests, Icon: Storefront },
+    { path: '/admin/sellers', label: g.vendors, Icon: IdentificationCard, prefix: true },
+    { path: '/admin/customers', label: g.customers, Icon: Users },
     { path: '/admin', label: adminCopy[locale].nav, Icon: Gauge },
   ];
   // Sellers already reach support from their own menu.

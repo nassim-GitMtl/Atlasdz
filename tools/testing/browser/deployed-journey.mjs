@@ -190,10 +190,47 @@ await step('seller creates an offer', sp, async () => {
   await submit(sp, 'form:has(#price)');
   await sp.waitForURL(/\/offers(?!\/new)/, { timeout: 15000 });
 });
+await step('staff refuses the offer with a reason; seller is emailed and resubmits', st, async () => {
+  await st.goto(`${SELLER}/moderation`);
+  const row = st.locator('tr', { hasText: product.fr });
+  await row.locator('summary').click();
+  await row.locator('textarea[name=reason]').fill('Merci de préciser la taille exacte dans le titre.');
+  await row.locator('.refuse-form button').click();
+  await st.waitForURL(/rejected=1/, { timeout: 15000 });
+  const end = Date.now() + 30000;
+  while (Date.now() < end && !(await mailSubjects(sellerEmail)).some((x) => /non validée/.test(x)))
+    await new Promise((r) => setTimeout(r, 1000));
+  if (!(await mailSubjects(sellerEmail)).some((x) => /non validée/.test(x))) throw new Error('no refusal email');
+  await sp.goto(`${SELLER}/offers`);
+  await sp.getByText('Merci de préciser la taille').first().waitFor({ timeout: 15000 });
+  await sp.locator('.offer-row', { hasText: product.fr }).getByRole('link').first().click();
+  await sp.locator('form:has(#price) button:not([type=button])').last().click();
+  await sp.waitForTimeout(2000);
+});
 await step('staff approves the offer', st, async () => {
   await st.goto(`${SELLER}/moderation`);
   await st.locator('tr', { hasText: product.fr }).locator('button:not([type=button])').first().click();
   await st.waitForURL(/approved=1/, { timeout: 15000 });
+});
+await step('seller runs a promotion; staff see the vendor account and can pause the offer', sp, async () => {
+  await sp.goto(`${SELLER}/offers`);
+  await sp.locator('.offer-row', { hasText: product.fr }).getByRole('link').first().click();
+  const today = new Date(Date.now() + 3_600_000).toISOString().slice(0, 10);
+  const later = new Date(Date.now() + 8 * 86_400_000).toISOString().slice(0, 10);
+  await sp.check('#promo');
+  await sp.fill('#promoPrice', '13950');
+  await sp.fill('#promoStart', today);
+  await sp.fill('#promoEnd', later);
+  await sp.locator('form:has(#price) button:not([type=button])').last().click();
+  await sp.waitForTimeout(2000);
+  await st.goto(`${SELLER}/admin/sellers`);
+  await st.locator('tr', { hasText: store }).getByRole('link').click();
+  const row = st.locator('tr', { hasText: product.fr });
+  await row.getByText('Promo').waitFor({ timeout: 15000 });
+  await row.locator('form:has(input[value=suspend-offer]) button').click();
+  await row.locator('form:has(input[value=restore-offer]) button').waitFor({ timeout: 15000 });
+  await row.locator('form:has(input[value=restore-offer]) button').click();
+  await row.locator('form:has(input[value=suspend-offer]) button').waitFor({ timeout: 15000 });
 });
 await step('seller sets a delivery rate for Alger', sp, async () => {
   await sp.goto(`${SELLER}/delivery`);
@@ -215,6 +252,8 @@ const bp = await (await context(390)).newPage();
 let orderUrl;
 await step('guest finds the product and adds it to the cart', bp, async () => {
   await bp.goto(`${SHOP}/search?query=${encodeURIComponent(product.fr)}`);
+  // The promotion shows on the product card with the real regular price.
+  await bp.locator('.product-card', { hasText: product.fr }).getByText(/Promo −10 %/).waitFor({ timeout: 15000 });
   await bp.getByRole('link', { name: product.fr }).first().click();
   // Delivery estimate to the shopper's commune, from the product page.
   await bp.locator('.delivery-estimate__open').click();
@@ -317,6 +356,33 @@ await step('seller replies to the support request', sp, async () => {
 await step('staff sees the indicators page', st, async () => {
   await st.goto(`${SELLER}/admin`);
   await st.getByRole('heading', { name: 'Indicateurs' }).waitFor({ timeout: 15000 });
+});
+
+await step('staff delete the customer account, then the vendor account', st, async () => {
+  await st.goto(`${SELLER}/admin/customers?lang=fr&email=${encodeURIComponent(buyerEmail)}`);
+  const customer = st.locator('li', { hasText: buyerEmail });
+  await customer.locator('input[name=confirm]').check();
+  await customer.locator('button').click();
+  await st.getByText('Fait.').first().waitFor({ timeout: 15000 });
+  await st.goto(`${SELLER}/admin/sellers`);
+  await st.locator('tr', { hasText: store }).getByRole('link').click();
+  const zone = st.locator('.danger-zone');
+  await zone.locator('input[name=confirm]').check();
+  await zone.locator('button').click();
+  await st.getByText('Supprimé').first().waitFor({ timeout: 15000 });
+  // Both logins are gone.
+  const shop = await (await context(390)).newPage();
+  await shop.goto(`${SHOP}/login`);
+  await shop.fill('#login-email', buyerEmail);
+  await shop.fill('#login-password', password);
+  await shop.locator('form:has(#login-password) button:not([type=button])').click();
+  await shop.locator('[role=alert]').first().waitFor({ timeout: 15000 });
+  const seller = await (await context()).newPage();
+  await seller.goto(`${SELLER}/login`);
+  await seller.fill('#login-email', sellerEmail);
+  await seller.fill('#login-password', password);
+  await seller.locator('form.auth-form button:not([type=button])').last().click();
+  await seller.locator('[role=alert]').first().waitFor({ timeout: 15000 });
 });
 
 await browser.close();
