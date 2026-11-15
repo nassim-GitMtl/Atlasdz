@@ -1,7 +1,8 @@
 import { router, useFocusEffect } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { Badge, Button, Card, Empty, ListRow, Notice, Screen, text } from '@/components/ui';
 import { errorCode } from '@/lib/api';

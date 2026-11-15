@@ -3,11 +3,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TabIcon } from '@/components/tab-icon';
 import { useCart } from '@/lib/cart';
+import { fontFor } from '@/lib/fonts';
 import { useI18n } from '@/lib/i18n';
 import { colors, tabBarStyle } from '@/lib/theme';
 
 export default function ShopTabs() {
-  const { t } = useI18n();
+  const { t, rtl } = useI18n();
   const insets = useSafeAreaInsets();
   const cart = useCart();
   return (
@@ -16,18 +17,20 @@ export default function ShopTabs() {
         tabBarActiveTintColor: colors.olive,
         tabBarInactiveTintColor: colors.muted,
         tabBarStyle: tabBarStyle(insets.bottom),
-        headerStyle: { backgroundColor: colors.cream },
         headerTintColor: colors.ink,
-        headerTitleStyle: { fontWeight: '800' },
+        headerTitleStyle: { fontFamily: fontFor(800, rtl) },
+        headerStyle: { backgroundColor: colors.card },
+        headerShadowVisible: false,
+        tabBarLabelStyle: { fontFamily: fontFor(700, rtl), fontSize: 11, lineHeight: 15 },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
           title: t.tabs.home,
-          headerTitle: 'atlas dz',
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
-            <TabIcon name="storefront-outline" color={color} size={size} />
+            <TabIcon name="home-outline" color={color} size={size} />
           ),
         }}
       />

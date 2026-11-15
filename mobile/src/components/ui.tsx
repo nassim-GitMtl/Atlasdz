@@ -1,17 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { ReactNode } from 'react';
-import {
-  ActivityIndicator,
-  I18nManager,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-  type TextInputProps,
-} from 'react-native';
+import { ActivityIndicator, I18nManager, Pressable, RefreshControl, ScrollView, StyleSheet, View, type TextInputProps } from 'react-native';
+import { Text, TextInput } from '@/components/text';
 
 import { useI18n } from '@/lib/i18n';
 import { errorMessage } from '@/lib/strings';
@@ -320,10 +310,10 @@ export function Segmented<T extends string>({
 
 export const text = StyleSheet.create({
   title: { fontSize: 24, fontWeight: '800', color: colors.ink },
-  heading: { fontSize: 18, fontWeight: '700', color: colors.ink },
+  heading: { fontSize: 18, fontWeight: '800', color: colors.ink },
   body: { fontSize: 15, lineHeight: 22, color: colors.ink },
   muted: { fontSize: 14, lineHeight: 20, color: colors.muted },
-  price: { fontSize: 17, fontWeight: '800', color: colors.ink },
+  price: { fontSize: 20, fontWeight: '800', color: colors.primary },
   link: { fontSize: 15, fontWeight: '700', color: colors.olive },
 });
 
@@ -338,18 +328,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   primary: { backgroundColor: colors.olive },
-  secondary: { backgroundColor: colors.soft },
+  secondary: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line },
   dangerButton: { backgroundColor: colors.danger },
   inactive: { opacity: 0.5 },
   pressed: { opacity: 0.8 },
-  buttonText: { color: colors.card, fontSize: 16, fontWeight: '700' },
-  secondaryText: { color: colors.olive },
+  buttonText: { color: colors.card, fontSize: 16, fontWeight: '800' },
+  secondaryText: { color: colors.ink },
   field: { gap: 6 },
   label: { fontSize: 14, fontWeight: '700', color: colors.ink },
   input: {
     minHeight: 50,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: colors.border,
     borderRadius: radius,
     backgroundColor: colors.card,
     paddingHorizontal: 14,
@@ -359,7 +349,7 @@ const styles = StyleSheet.create({
   multiline: { minHeight: 110, textAlignVertical: 'top', paddingTop: 12, paddingBottom: 12 },
   inputError: { borderColor: colors.danger, borderWidth: 2 },
   hint: { fontSize: 13, color: colors.muted },
-  notice: { borderRadius: radius, padding: 14, backgroundColor: colors.soft },
+  notice: { borderRadius: 12, padding: 14, backgroundColor: colors.soft },
   noticeError: { backgroundColor: colors.dangerSoft },
   noticeSuccess: { backgroundColor: colors.successSoft },
   noticeText: { fontSize: 15, lineHeight: 21, color: colors.ink },
@@ -402,16 +392,16 @@ const styles = StyleSheet.create({
     borderRadius: radius,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.soft,
+    backgroundColor: colors.surface,
     paddingHorizontal: 6,
     paddingVertical: 4,
   },
-  segmentActive: { backgroundColor: colors.olive },
-  segmentText: { fontSize: 14, fontWeight: '700', color: colors.olive, textAlign: 'center' },
+  segmentActive: { backgroundColor: colors.primary },
+  segmentText: { fontSize: 14, fontWeight: '700', color: colors.ink, textAlign: 'center' },
   segmentTextActive: { color: colors.card },
   card: {
     backgroundColor: colors.card,
-    borderRadius: radius,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: colors.line,
     padding: gap,

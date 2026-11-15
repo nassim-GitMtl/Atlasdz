@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
+import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Text } from '@/components/text';
 
 import { PlacePicker, type Place } from '@/components/place-picker';
 import { Button, Checkbox, Field, LoadState, Notice, Screen, text } from '@/components/ui';

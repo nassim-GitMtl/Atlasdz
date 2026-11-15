@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Text } from 'react-native';
+import { Text } from '@/components/text';
 
 import { MfaStep } from '@/components/mfa-step';
 import { Button, Field, Notice, Screen, text } from '@/components/ui';

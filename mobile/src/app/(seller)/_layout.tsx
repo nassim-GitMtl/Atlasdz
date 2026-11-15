@@ -2,11 +2,12 @@ import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TabIcon } from '@/components/tab-icon';
+import { fontFor } from '@/lib/fonts';
 import { useI18n } from '@/lib/i18n';
 import { colors, tabBarStyle } from '@/lib/theme';
 
 export default function SellerTabs() {
-  const { t } = useI18n();
+  const { t, rtl } = useI18n();
   const insets = useSafeAreaInsets();
   return (
     <Tabs
@@ -14,9 +15,11 @@ export default function SellerTabs() {
         tabBarActiveTintColor: colors.olive,
         tabBarInactiveTintColor: colors.muted,
         tabBarStyle: tabBarStyle(insets.bottom),
-        headerStyle: { backgroundColor: colors.cream },
         headerTintColor: colors.ink,
-        headerTitleStyle: { fontWeight: '800' },
+        headerTitleStyle: { fontFamily: fontFor(800, rtl) },
+        headerStyle: { backgroundColor: colors.card },
+        headerShadowVisible: false,
+        tabBarLabelStyle: { fontFamily: fontFor(700, rtl), fontSize: 11, lineHeight: 15 },
       }}
     >
       <Tabs.Screen

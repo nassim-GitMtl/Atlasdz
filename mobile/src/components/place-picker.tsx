@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
-import { FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Text, TextInput } from '@/components/text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useI18n } from '@/lib/i18n';

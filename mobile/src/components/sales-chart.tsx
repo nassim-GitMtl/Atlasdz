@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { text } from '@/components/ui';
 import { formatDate, formatMoney } from '@/lib/format';

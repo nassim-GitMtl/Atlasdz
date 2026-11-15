@@ -1,6 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
 import { Fragment, useState } from 'react';
-import { Linking, Share, StyleSheet, Text, View } from 'react-native';
+import { Linking, Share, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import {
   Badge,

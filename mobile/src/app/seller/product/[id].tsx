@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { Text } from '@/components/text';
 
 import { Photo } from '@/components/photo';
 import { Badge, Button, Card, LoadState, Notice, Screen, text } from '@/components/ui';

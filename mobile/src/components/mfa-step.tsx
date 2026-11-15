@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Linking, StyleSheet, Text, View } from 'react-native';
+import { Linking, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { Button, Field, Notice, text } from '@/components/ui';
 import { useI18n } from '@/lib/i18n';

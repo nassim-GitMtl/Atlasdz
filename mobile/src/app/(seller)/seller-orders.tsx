@@ -1,6 +1,7 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { Badge, Card, Empty, Field, LoadState, Screen, Segmented, text } from '@/components/ui';
 import { sellerOrderFilter, type SellerOrderFilter } from '@/lib/collections';

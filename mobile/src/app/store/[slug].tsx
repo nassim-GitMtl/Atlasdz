@@ -1,5 +1,6 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { ProductCard } from '@/components/product-card';
 import { RatingLine, ReviewItem } from '@/components/reviews';

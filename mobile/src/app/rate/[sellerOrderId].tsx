@@ -1,6 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { Photo } from '@/components/photo';
 import { StarPicker } from '@/components/reviews';

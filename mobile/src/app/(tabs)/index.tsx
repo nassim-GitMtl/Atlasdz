@@ -1,15 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import {
-  FlatList,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { FlatList, Image, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Text, TextInput } from '@/components/text';
 
 import { Photo } from '@/components/photo';
 import { ProductCard, SummaryCard } from '@/components/product-card';
@@ -20,7 +13,8 @@ import { imageUri } from '@/lib/config';
 import { fill, localized } from '@/lib/format';
 import { useI18n } from '@/lib/i18n';
 import { useLibrary } from '@/lib/library';
-import { colors, gap, radius } from '@/lib/theme';
+import { fontFor } from '@/lib/fonts';
+import { colors, gap } from '@/lib/theme';
 import type { CatalogCategoryList, CatalogProduct, CatalogProductList } from '@/lib/types';
 import { usePaged } from '@/lib/use-paged';
 import { useRequest } from '@/lib/use-request';
@@ -33,7 +27,8 @@ const SERVER_SORT: Record<SortMode, string> = {
 type ProductPage = CatalogProductList & { readonly nextCursor: string | null };
 
 export default function HomeScreen() {
-  const { t, locale } = useI18n();
+  const { t, locale, setLocale } = useI18n();
+  const insets = useSafeAreaInsets();
   const library = useLibrary();
   const [draft, setDraft] = useState('');
   const [query, setQuery] = useState('');
@@ -45,9 +40,10 @@ export default function HomeScreen() {
   const categoryList = useRequest('categories', () =>
     api<CatalogCategoryList>('/api/v1/catalog/categories'),
   );
-  const categories = (categoryList.data?.items ?? []).map(
-    (item) => [item.slug, localized(item.title, locale)] as const,
-  );
+  const categoryItems = categoryList.data?.items ?? [];
+  const categories = categoryItems.map((item) => [item.slug, localized(item.title, locale)] as const);
+  // The category with the most products leads, with its real product count.
+  const lead = [...categoryItems].sort((a, b) => b.productCount - a.productCount)[0];
   const params = new URLSearchParams({ limit: '24', sort: SERVER_SORT[sort] });
   if (query) params.set('query', query);
   if (category) params.set('category', category);
@@ -63,6 +59,22 @@ export default function HomeScreen() {
 
   const header = (
     <View style={styles.header}>
+      <View style={styles.topBar}>
+        <View style={styles.brand} accessible accessibilityRole="header" accessibilityLabel="atlas dz">
+          <Image source={require('../../../assets/mark.png')} style={styles.mark} />
+          <Text style={styles.wordmark}>atlas dz</Text>
+        </View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLanguage={locale === 'fr' ? 'ar' : 'fr'}
+          onPress={() => void setLocale(locale === 'fr' ? 'ar' : 'fr')}
+          style={styles.language}
+        >
+          <Text style={[styles.languageText, { fontFamily: fontFor(700, locale === 'fr') }]}>
+            {t.home.otherLanguage}
+          </Text>
+        </Pressable>
+      </View>
       <Text style={styles.tagline}>{t.home.tagline}</Text>
       <View style={styles.search}>
         <Ionicons name="search" size={20} color={colors.muted} />
@@ -92,7 +104,6 @@ export default function HomeScreen() {
       </View>
       {categories.length > 0 ? (
         <>
-          <Text style={styles.section}>{t.home.categories}</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -133,6 +144,21 @@ export default function HomeScreen() {
           </ScrollView>
         </>
       ) : null}
+      {!query && !category && lead ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => setCategory(lead.slug)}
+          style={styles.hero}
+        >
+          <View style={styles.heroCopy}>
+            <Text style={styles.heroEyebrow}>
+              {fill(t.home.results, { n: lead.productCount })}
+            </Text>
+            <Text style={styles.heroTitle}>{localized(lead.title, locale)}</Text>
+          </View>
+          <Photo uri={imageUri(categoryImage(lead.slug))} style={styles.heroImage} />
+        </Pressable>
+      ) : null}
       {!query && !category && library.recent.length > 0 ? (
         <>
           <Text style={styles.section}>{t.home.recent}</Text>
@@ -147,6 +173,12 @@ export default function HomeScreen() {
           </ScrollView>
         </>
       ) : null}
+      <Text style={styles.section} accessibilityRole="header">
+        {category ? (categories.find(([slug]) => slug === category)?.[1] ?? t.home.catalog) : t.home.catalog}
+        {shown.data ? (
+          <Text style={styles.sectionCount}> · {shown.data.total ?? products.length}</Text>
+        ) : null}
+      </Text>
       <Segmented<SortMode>
         options={[
           ['relevance', t.home.sortRelevance],
@@ -156,11 +188,6 @@ export default function HomeScreen() {
         value={sort}
         onChange={setSort}
       />
-      {shown.data ? (
-        <Text style={styles.count}>
-          {fill(t.home.results, { n: shown.data.total ?? products.length })}
-        </Text>
-      ) : null}
       <LoadState
         loading={shown.loading && !shown.data}
         error={shown.data ? undefined : shown.error}
@@ -172,7 +199,7 @@ export default function HomeScreen() {
   return (
     <FlatList
       style={styles.list}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 }]}
       columnWrapperStyle={styles.row}
       data={products}
       keyExtractor={(product) => product.id}
@@ -205,31 +232,54 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  list: { flex: 1, backgroundColor: colors.cream },
-  content: { padding: gap, gap: 12, paddingBottom: 40 },
+  list: { flex: 1, backgroundColor: colors.card },
+  content: { padding: gap, gap: 14, paddingBottom: 40 },
   row: { gap: 12 },
-  header: { gap: 12 },
-  tagline: { fontSize: 15, color: colors.muted },
-  section: { fontSize: 18, fontWeight: '800', color: colors.ink, marginTop: 4 },
+  header: { gap: 14 },
+  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  brand: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  mark: { width: 34, height: 30, resizeMode: 'contain' },
+  wordmark: { fontSize: 24, fontWeight: '800', color: colors.ink, letterSpacing: -1 },
+  language: {
+    minHeight: 44,
+    paddingHorizontal: 16,
+    borderRadius: 999,
+    backgroundColor: colors.surface,
+    justifyContent: 'center',
+  },
+  languageText: { fontSize: 15, color: colors.ink },
+  tagline: { fontSize: 15, color: colors.muted, marginTop: -4 },
+  section: { fontSize: 20, fontWeight: '800', color: colors.ink, marginTop: 4 },
+  sectionCount: { color: colors.muted, fontWeight: '700' },
   search: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
     minHeight: 50,
-    borderRadius: radius,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.line,
-    backgroundColor: colors.card,
-    paddingHorizontal: 12,
+    backgroundColor: colors.surface,
+    paddingHorizontal: 14,
   },
   searchInput: { flex: 1, fontSize: 16, color: colors.ink, minHeight: 48 },
-  tiles: { gap: 12, paddingVertical: 2 },
+  tiles: { gap: 10, paddingVertical: 2 },
   tile: { width: 76, alignItems: 'center', gap: 6 },
-  tileImage: { width: 68, height: 68, borderRadius: 34, backgroundColor: colors.soft },
-  tileImageActive: { borderWidth: 3, borderColor: colors.olive },
+  tileImage: { width: 68, height: 68, borderRadius: 18, backgroundColor: colors.soft },
+  tileImageActive: { borderWidth: 3, borderColor: colors.primary },
   allTile: { alignItems: 'center', justifyContent: 'center' },
-  tileText: { fontSize: 12, fontWeight: '600', color: colors.muted, textAlign: 'center' },
-  tileTextActive: { color: colors.olive, fontWeight: '800' },
+  tileText: { fontSize: 13, fontWeight: '700', color: colors.ink, textAlign: 'center' },
+  tileTextActive: { color: colors.primary, fontWeight: '800' },
+  hero: {
+    flexDirection: 'row',
+    height: 132,
+    borderRadius: 18,
+    overflow: 'hidden',
+    backgroundColor: colors.primary,
+  },
+  heroCopy: { flex: 1, padding: 18, justifyContent: 'space-between' },
+  heroEyebrow: { fontSize: 13, fontWeight: '800', color: colors.card },
+  heroTitle: { fontSize: 24, fontWeight: '800', color: colors.card, letterSpacing: -0.5 },
+  heroImage: { width: '44%', height: '100%' },
   recent: { gap: 12, paddingVertical: 2 },
-  count: { fontSize: 13, color: colors.muted },
 });

@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Text } from 'react-native';
+import { Text } from '@/components/text';
 
 import { Button, Field, LoadState, Notice, Screen, text } from '@/components/ui';
 import { errorCode } from '@/lib/api';

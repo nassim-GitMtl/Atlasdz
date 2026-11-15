@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { FavoriteButton } from '@/components/favorite-button';
 import { Photo } from '@/components/photo';
@@ -7,19 +8,20 @@ import { summarize, type ProductSummary } from '@/lib/collections';
 import { imageUri } from '@/lib/config';
 import { fill, formatMoney, localized } from '@/lib/format';
 import { useI18n } from '@/lib/i18n';
-import { colors, radius } from '@/lib/theme';
+import { colors } from '@/lib/theme';
 import type { CatalogProduct } from '@/lib/types';
 
 /** Catalogue card: lowest price, number of sellers, stock, favorite heart. */
 export function ProductCard({ product }: { readonly product: CatalogProduct }) {
   const { t } = useI18n();
   const inStock = product.offers.some((offer) => offer.availableQuantity > 0);
-  return (
-    <SummaryCard
-      item={summarize(product)}
-      meta={inStock ? fill(t.home.sellers, { n: product.offers.length }) : t.home.outOfStock}
-    />
-  );
+  const sellers = new Set(product.offers.map((offer) => offer.seller.id)).size;
+  const meta = !inStock
+    ? t.home.outOfStock
+    : sellers === 1
+      ? product.offers[0]?.seller.name
+      : fill(t.home.sellers, { n: sellers });
+  return <SummaryCard item={summarize(product)} meta={meta} from={product.offers.length > 1} />;
 }
 
 /** Card from what the phone remembers (favorites, recently viewed) or from the catalogue. */
@@ -27,10 +29,13 @@ export function SummaryCard({
   item,
   meta,
   compact = false,
+  from = true,
 }: {
   readonly item: ProductSummary;
-  readonly meta?: string;
+  readonly meta?: string | undefined;
   readonly compact?: boolean;
+  /** Several offers: the price shown is the lowest one. */
+  readonly from?: boolean;
 }) {
   const { t, locale } = useI18n();
   const title = localized(item.title, locale);
@@ -47,10 +52,12 @@ export function SummaryCard({
           <Text style={styles.title} numberOfLines={2}>
             {title}
           </Text>
-          <Text style={styles.price}>
-            {fill(t.home.from, { price: formatMoney(item.priceMinor, locale) })}
-          </Text>
           {meta ? <Text style={styles.meta}>{meta}</Text> : null}
+          <Text style={styles.price}>
+            {from
+              ? fill(t.home.from, { price: formatMoney(item.priceMinor, locale) })
+              : formatMoney(item.priceMinor, locale)}
+          </Text>
         </View>
       </Pressable>
       <FavoriteButton item={item} floating />
@@ -59,18 +66,11 @@ export function SummaryCard({
 }
 
 const styles = StyleSheet.create({
-  card: {
-    flex: 1,
-    backgroundColor: colors.card,
-    borderRadius: radius,
-    borderWidth: 1,
-    borderColor: colors.line,
-    overflow: 'hidden',
-  },
+  card: { flex: 1, backgroundColor: colors.card },
   compact: { width: 150, flex: 0 },
-  image: { width: '100%', aspectRatio: 1, backgroundColor: colors.soft },
-  body: { padding: 10, gap: 4 },
-  title: { fontSize: 14, fontWeight: '700', color: colors.ink, minHeight: 38 },
-  price: { fontSize: 15, fontWeight: '800', color: colors.ink },
-  meta: { fontSize: 12, color: colors.muted },
+  image: { width: '100%', aspectRatio: 1, borderRadius: 14, backgroundColor: colors.surface },
+  body: { paddingTop: 8, gap: 2 },
+  title: { fontSize: 15, fontWeight: '800', color: colors.ink, minHeight: 40 },
+  price: { fontSize: 17, fontWeight: '800', color: colors.primary },
+  meta: { fontSize: 12, fontWeight: '600', color: colors.muted },
 });

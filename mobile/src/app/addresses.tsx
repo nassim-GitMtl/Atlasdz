@@ -1,4 +1,5 @@
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { Button, Card, Empty, Screen, text } from '@/components/ui';
 import { useI18n } from '@/lib/i18n';

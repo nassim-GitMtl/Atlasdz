@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { RatingSummary, ReviewItem } from '@/components/reviews';
 import { Badge, Button, Card, Field, LoadState, Notice, text } from '@/components/ui';

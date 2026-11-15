@@ -1,6 +1,7 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { Badge, Button, Card, Empty, LoadState, Screen, text } from '@/components/ui';
 import { fill, formatDate } from '@/lib/format';

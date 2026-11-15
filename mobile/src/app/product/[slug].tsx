@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { FavoriteButton } from '@/components/favorite-button';
 import { Photo } from '@/components/photo';

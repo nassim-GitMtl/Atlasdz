@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { Badge, Button, Card, ListRow, Screen, text } from '@/components/ui';
 import { webPage } from '@/lib/config';

@@ -11,6 +11,8 @@ export const colors = {
   primaryDark: '#1e40c8',
   coral: '#2957f5',
   line: '#e3e7ef',
+  /** Field outlines: 3:1 against white, as on the websites. */
+  border: '#8792a6',
   soft: '#eef2ff',
   danger: '#b42318',
   dangerSoft: '#fdecec',
@@ -26,7 +28,8 @@ export const gap = 16;
 /** Bottom tab bar tall enough for icon + label, above the phone's gesture/home area. */
 export const tabBarStyle = (bottomInset: number) => ({
   backgroundColor: colors.card,
-  height: 60 + bottomInset,
+  borderTopColor: colors.line,
+  height: 66 + bottomInset,
   paddingTop: 6,
-  paddingBottom: 6 + bottomInset,
+  paddingBottom: 8 + bottomInset,
 });

@@ -1,10 +1,12 @@
 import { LocaleProvider, Stack } from 'expo-router';
+import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { CartProvider } from '@/lib/cart';
+import { fontFiles, fontFor } from '@/lib/fonts';
 import { I18nProvider, useI18n } from '@/lib/i18n';
 import { LibraryProvider } from '@/lib/library';
 import { SessionProvider, useSession } from '@/lib/session';
@@ -18,7 +20,9 @@ function Navigator() {
   // Sellers get the seller workspace; everyone else (signed in or not) the shop.
   const seller = session.status === 'signedIn' && session.actor === 'seller';
   // Links (and a restart in seller mode) are resolved once the saved session is known.
-  const loading = session.status === 'loading';
+  // A font that fails to load falls back to the system font rather than blocking the app.
+  const [fontsLoaded, fontError] = useFonts(fontFiles);
+  const loading = session.status === 'loading' || (!fontsLoaded && !fontError);
   useEffect(() => {
     if (!loading) void SplashScreen.hideAsync();
   }, [loading]);
@@ -27,9 +31,10 @@ function Navigator() {
     <LocaleProvider direction={rtl ? 'rtl' : 'ltr'}>
       <Stack
         screenOptions={{
-          headerStyle: { backgroundColor: colors.cream },
+          headerStyle: { backgroundColor: colors.card },
+          headerShadowVisible: false,
           headerTintColor: colors.ink,
-          headerTitleStyle: { fontWeight: '700' },
+          headerTitleStyle: { fontFamily: fontFor(700, rtl) },
           headerBackTitle: t.common.back,
           contentStyle: { backgroundColor: colors.cream },
         }}

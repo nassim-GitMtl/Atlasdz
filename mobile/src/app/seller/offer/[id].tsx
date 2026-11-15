@@ -1,6 +1,6 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Text } from 'react-native';
+import { Text } from '@/components/text';
 
 import {
   Badge,

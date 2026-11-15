@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
+import { Text } from '@/components/text';
 
 import { MfaStep } from '@/components/mfa-step';
 import { Button, Field, Notice, Screen, Segmented, text } from '@/components/ui';
