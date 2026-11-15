@@ -142,7 +142,7 @@ export default function ProductScreen() {
               <Pressable
                 accessibilityRole="link"
                 onPress={() => router.push(`/store/${offer.seller.slug}`)}
-                hitSlop={6}
+                style={styles.sellerLink}
               >
                 <Text style={text.link}>
                   {fill(t.product.soldBy, { seller: offer.seller.name })}
@@ -225,4 +225,6 @@ const styles = StyleSheet.create({
   headerButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   quantity: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   similar: { gap: 12, paddingVertical: 2 },
+  // A full-size touch target (44 pt), not just the line of text.
+  sellerLink: { minHeight: 44, justifyContent: 'center' },
 });

@@ -15,3 +15,11 @@ export const colors = {
 
 export const radius = 10;
 export const gap = 16;
+
+/** Bottom tab bar tall enough for icon + label, above the phone's gesture/home area. */
+export const tabBarStyle = (bottomInset: number) => ({
+  backgroundColor: colors.card,
+  height: 60 + bottomInset,
+  paddingTop: 6,
+  paddingBottom: 6 + bottomInset,
+});

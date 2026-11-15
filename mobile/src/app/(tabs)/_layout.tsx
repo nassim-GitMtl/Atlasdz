@@ -1,19 +1,21 @@
 import { Tabs } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TabIcon } from '@/components/tab-icon';
 import { useCart } from '@/lib/cart';
 import { useI18n } from '@/lib/i18n';
-import { colors } from '@/lib/theme';
+import { colors, tabBarStyle } from '@/lib/theme';
 
 export default function ShopTabs() {
   const { t } = useI18n();
+  const insets = useSafeAreaInsets();
   const cart = useCart();
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: colors.olive,
         tabBarInactiveTintColor: colors.muted,
-        tabBarStyle: { backgroundColor: colors.card },
+        tabBarStyle: tabBarStyle(insets.bottom),
         headerStyle: { backgroundColor: colors.cream },
         headerTintColor: colors.ink,
         headerTitleStyle: { fontWeight: '800' },
