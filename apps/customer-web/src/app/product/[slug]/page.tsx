@@ -6,7 +6,9 @@ import { OfferSelector } from '@/components/offer-selector';
 import { SiteChrome } from '@/components/site-chrome';
 import type { Metadata } from 'next';
 import { ReviewsSection } from '@/components/reviews-section';
-import { CatalogNotFoundError, getProduct, getReviews } from '@/lib/catalog-api';
+import { Money, Truck } from '@phosphor-icons/react/dist/ssr';
+import { ProductGrid } from '@/components/product-card';
+import { CatalogNotFoundError, getProduct, getProductPage, getReviews } from '@/lib/catalog-api';
 import { copy, localizedHref, resolveLocale, text, type SearchParams } from '@/lib/i18n';
 
 export async function generateMetadata({
@@ -30,6 +32,23 @@ export async function generateMetadata({
   };
 }
 
+const factCopy = {
+  fr: {
+    codTitle: 'Paiement à la livraison.',
+    cod: 'Vous payez le vendeur ou son livreur à la réception, pas Atlas DZ.',
+    shippingTitle: 'Livraison par le vendeur.',
+    shipping: 'Une seule livraison par vendeur, au tarif de votre commune, affichée avant de confirmer.',
+    related: 'Dans la même catégorie',
+  },
+  ar: {
+    codTitle: 'الدفع عند الاستلام.',
+    cod: 'تدفع للبائع أو لمندوبه عند الاستلام، وليس لأطلس DZ.',
+    shippingTitle: 'التوصيل من البائع.',
+    shipping: 'توصيل واحد لكل بائع حسب تعريفة بلديتك، يظهر قبل التأكيد.',
+    related: 'من نفس الفئة',
+  },
+} as const;
+
 export default async function ProductPage({
   params,
   searchParams,
@@ -47,7 +66,14 @@ export default async function ProductPage({
     throw error;
   }
   // Reviews are optional on the page: an outage there must not hide the product.
-  const reviews = await getReviews('products', slug).catch(() => null);
+  const [reviews, related] = await Promise.all([
+    getReviews('products', slug).catch(() => null),
+    // Real products from the same category; nothing is shown when there are none.
+    getProductPage({ category: product.category.slug, limit: 5 })
+      .then((page) => page.items.filter((item) => item.slug !== slug).slice(0, 4))
+      .catch(() => []),
+  ]);
+  const facts = factCopy[locale];
   const t = copy[locale];
   const title = text(product.title, locale);
   return (
@@ -78,10 +104,24 @@ export default async function ProductPage({
             <p className="eyebrow">{text(product.category.title, locale)}</p>
             <h1>{title}</h1>
             <p className="product-description">{text(product.description, locale)}</p>
-            <div className="seller-notice">{t.footerScope}</div>
             <OfferSelector offers={product.offers} productSlug={product.slug} locale={locale} />
+            <div className="fulfilment-facts">
+              <p>
+                <Money aria-hidden="true" size={20} />
+                <span>
+                  <strong>{facts.codTitle}</strong> {facts.cod}
+                </span>
+              </p>
+              <p>
+                <Truck aria-hidden="true" size={20} />
+                <span>
+                  <strong>{facts.shippingTitle}</strong> {facts.shipping}
+                </span>
+              </p>
+            </div>
           </div>
         </section>
+        <div className="product-lower">
         <section className="product-information">
           <h2>{t.productDetails}</h2>
           <p>{text(product.description, locale)}</p>
@@ -92,6 +132,13 @@ export default async function ProductPage({
           </p>
         </section>
         {reviews && <ReviewsSection page={reviews} locale={locale} />}
+        </div>
+        {related.length > 0 && (
+          <section className="related-products" aria-labelledby="related-title">
+            <h2 id="related-title">{facts.related}</h2>
+            <ProductGrid products={related} locale={locale} />
+          </section>
+        )}
       </div>
     </SiteChrome>
   );

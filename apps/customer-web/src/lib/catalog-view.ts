@@ -54,7 +54,10 @@ export function formatMoney(amountMinor: number, locale: Locale): string {
     // Whole dinars, or both centime digits (4 500,50 DA, not 4 500,5 DA), as in the app.
     minimumFractionDigits: amountMinor % 100 === 0 ? 0 : 2,
     maximumFractionDigits: 2,
-  }).format(amountMinor / 100);
+  })
+    .format(amountMinor / 100)
+    // The narrow space Intl uses between thousands is nearly invisible in Manrope.
+    .replace(/\u202f/g, '\u00a0');
 }
 
 export function categoryImage(slug: string): string {

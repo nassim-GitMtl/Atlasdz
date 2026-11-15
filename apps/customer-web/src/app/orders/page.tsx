@@ -7,6 +7,13 @@ import { liveCheckoutEnabled, orderText, orderDate } from '@/lib/orders-copy';
 import { orderProgress } from '@/lib/order-progress';
 import { formatMoney } from '@/lib/catalog-view';
 import { localizedHref, type SearchParams } from '@/lib/i18n';
+/** Colour family for a status: done, stopped, or still in progress. */
+function statusTone(status: string): 'good' | 'bad' | 'wait' {
+  if (status === 'DELIVERED') return 'good';
+  if (['DELIVERY_FAILED', 'REJECTED', 'CANCELLED', 'EXPIRED', 'CLOSED'].includes(status)) return 'bad';
+  return 'wait';
+}
+
 export default async function Orders({
   searchParams,
 }: {
@@ -31,24 +38,34 @@ export default async function Orders({
             {result.items.length === 0 && <p>{t.empty}</p>}
             {result.items.map((order) => (
               <article className="order-card" key={order.id}>
-                <h2>
-                  <Link href={localizedHref(`/orders/${order.id}`, locale)}>
-                    {t.detail} <bdi className="order-id">{order.id}</bdi>
-                  </Link>
-                </h2>
-                <p>
+                <div className="order-card__head">
+                  <h2>
+                    <Link href={localizedHref(`/orders/${order.id}`, locale)}>
+                      {t.detail}{' '}
+                      <bdi className="order-id" title={order.id}>
+                        {order.id}
+                      </bdi>
+                    </Link>
+                  </h2>
+                  <span className={`status-badge status-badge--${statusTone(orderProgress(order.sellerOrders))}`}>
+                    {t[orderProgress(order.sellerOrders)]}
+                  </span>
+                </div>
+                <p className="order-card__meta">
+                  {order.sellerOrders[0] && (
+                    <>
+                      {t.recorded}: {orderDate(order.sellerOrders[0].createdAt, locale)} ·{' '}
+                    </>
+                  )}
                   {t.originalTotal}: <bdi>{formatMoney(order.quote.totalMinor, locale)}</bdi>
                 </p>
-                {order.sellerOrders[0] && (
-                  <p>
-                    {t.recorded}: {orderDate(order.sellerOrders[0].createdAt, locale)}
-                  </p>
-                )}
-                <p>{t[orderProgress(order.sellerOrders)]}</p>
-                <ul>
+                <ul className="order-card__sellers">
                   {order.sellerOrders.map((seller) => (
                     <li key={seller.id}>
-                      {seller.snapshot.sellerName}: {t[seller.status]}
+                      <span>{seller.snapshot.sellerName}</span>
+                      <span className={`status-badge status-badge--${statusTone(seller.status)}`}>
+                        {t[seller.status]}
+                      </span>
                     </li>
                   ))}
                 </ul>

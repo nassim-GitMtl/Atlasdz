@@ -1,3 +1,4 @@
+import { CheckoutSteps } from '@/components/checkout-steps';
 import Link from 'next/link';
 import { UuidSchema } from '@atlas/contracts';
 import { headers } from 'next/headers';
@@ -35,6 +36,7 @@ export default async function Checkout({
   return (
     <SiteChrome locale={locale} pathname={path} searchParams={query}>
       <section className="page-container order-page">
+        <CheckoutSteps locale={locale} current={1} />
         <h1>{t.checkout}</h1>
         <p className="cart-notice">{t.notice}</p>
         {result.quote ? (

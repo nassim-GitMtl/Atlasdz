@@ -1,3 +1,4 @@
+import { CheckoutSteps } from '@/components/checkout-steps';
 import { ProductPhoto } from '@/components/product-photo';
 import Link from 'next/link';
 import { headers } from 'next/headers';
@@ -14,6 +15,25 @@ import { CartApiError, customerToken, getCart } from '@/lib/cart-api';
 import { cartCopy } from '@/lib/cart-copy';
 import { formatMoney } from '@/lib/catalog-view';
 import { localizedHref, type SearchParams } from '@/lib/i18n';
+
+type CartLine = NonNullable<Awaited<ReturnType<typeof getCart>>>['items'][number];
+
+/** One block per seller, as each seller ships and is paid separately. */
+function sellerGroups(lines: readonly CartLine[]) {
+  const groups = new Map<
+    string,
+    { key: string; seller: NonNullable<CartLine['offer']>['seller'] | undefined; lines: CartLine[]; subtotalMinor: number }
+  >();
+  for (const line of lines) {
+    const seller = line.offer?.seller;
+    const key = seller?.id ?? 'unavailable';
+    const group = groups.get(key) ?? { key, seller, lines: [], subtotalMinor: 0 };
+    group.lines.push(line);
+    if (line.offer && line.state === 'AVAILABLE') group.subtotalMinor += line.offer.priceMinor * line.quantity;
+    groups.set(key, group);
+  }
+  return [...groups.values()];
+}
 
 export default async function CartPage({
   searchParams,
@@ -42,6 +62,7 @@ export default async function CartPage({
   return (
     <SiteChrome locale={locale} pathname="/cart" searchParams={params}>
       <section className="page-container cart-page">
+        {Boolean(result.cart?.items.length) && <CheckoutSteps locale={locale} current={0} />}
         <div className="cart-heading">
           <h1>{t.title}</h1>
           {token && <CustomerSessionForm locale={locale} logout />}
@@ -59,13 +80,27 @@ export default async function CartPage({
             ) : (
               <div className="cart-layout">
                 <div className="cart-lines">
-                  {result.cart.items.map((line) => (
+                  {sellerGroups(result.cart.items).map((group) => (
+                    <section className="seller-cart-group" key={group.key}>
+                      <h2>
+                        {group.seller ? (
+                          <>
+                            {t.soldBy}{' '}
+                            <Link href={localizedHref(`/store/${group.seller.slug}`, locale)}>
+                              {group.seller.name}
+                            </Link>
+                          </>
+                        ) : (
+                          t.unavailableLine
+                        )}
+                      </h2>
+                      {group.lines.map((line) => (
                     <article className="cart-line" key={line.offerId}>
                       {line.product && (
                         <ProductPhoto src={line.product.imageUrl} alt="" width={100} height={100} />
                       )}
                       <div className="cart-line-body">
-                        <h2>
+                        <h3>
                           {line.product ? (
                             <Link href={localizedHref(`/product/${line.product.slug}`, locale)}>
                               {line.product.title[locale]}
@@ -73,12 +108,9 @@ export default async function CartPage({
                           ) : (
                             t.unavailableLine
                           )}
-                        </h2>
+                        </h3>
                         {line.offer && (
                           <>
-                            <Link href={localizedHref(`/store/${line.offer.seller.slug}`, locale)}>
-                              {line.offer.seller.name}
-                            </Link>
                             <p>
                               {t.price}: <bdi>{formatMoney(line.offer.priceMinor, locale)}</bdi>
                             </p>
@@ -103,6 +135,19 @@ export default async function CartPage({
                         />
                       </div>
                     </article>
+                      ))}
+                      {group.seller && (
+                        <div className="seller-cart-subtotal">
+                          <p>
+                            <span>{t.sellerSubtotal}</span>
+                            <strong>
+                              <bdi>{formatMoney(group.subtotalMinor, locale)}</bdi>
+                            </strong>
+                          </p>
+                          <p className="seller-cart-shipping">{t.sellerShipping}</p>
+                        </div>
+                      )}
+                    </section>
                   ))}
                 </div>
                 <aside className="cart-summary">

@@ -40,7 +40,11 @@ const navCopy = {
     all: 'Tout le catalogue',
     actions: 'Compte et panier',
     services: 'Suivi et aide',
-    facts: ['Plusieurs vendeurs', 'Expédié par chaque vendeur', 'Paiement à la livraison'],
+    facts: [
+      ['Chaque vendeur prépare et livre sa commande.', 'Plusieurs vendeurs dans un panier : une commande et une livraison par vendeur.'],
+      ['Frais de livraison fixés par le vendeur.', 'Selon votre commune, affichés au récapitulatif avant de confirmer.'],
+      ['Paiement à la livraison.', 'Vous payez le vendeur ou son livreur, pas Atlas DZ.'],
+    ],
     legal: 'Informations légales',
   },
   ar: {
@@ -52,7 +56,11 @@ const navCopy = {
     all: 'كل الكتالوج',
     actions: 'الحساب والسلة',
     services: 'المتابعة والمساعدة',
-    facts: ['عدة بائعين', 'يشحنه كل بائع', 'الدفع عند الاستلام'],
+    facts: [
+      ['كل بائع يحضّر ويوصل طلبه.', 'عدة بائعين في سلة واحدة: طلب وتوصيل مستقل لكل بائع.'],
+      ['يحدد البائع رسوم التوصيل.', 'حسب بلديتك، وتظهر في الملخص قبل التأكيد.'],
+      ['الدفع عند الاستلام.', 'تدفع للبائع أو لمندوبه، وليس لأطلس DZ.'],
+    ],
     legal: 'معلومات قانونية',
   },
 } as const;
@@ -205,15 +213,17 @@ export function SiteChrome({
       <main id="main-content">{children}</main>
       <footer className="site-footer">
         <ul className="footer-facts">
-          <li>
-            <Storefront aria-hidden="true" size={20} /> {nav.facts[0]}
-          </li>
-          <li>
-            <Truck aria-hidden="true" size={20} /> {nav.facts[1]}
-          </li>
-          <li>
-            <Money aria-hidden="true" size={20} /> {nav.facts[2]}
-          </li>
+          {nav.facts.map(([title, body], index) => {
+            const FactIcon = [Storefront, Truck, Money][index] ?? Storefront;
+            return (
+              <li key={title}>
+                <FactIcon aria-hidden="true" size={22} />
+                <span>
+                  <strong>{title}</strong> {body}
+                </span>
+              </li>
+            );
+          })}
         </ul>
         <div className="footer-main">
           <div>
