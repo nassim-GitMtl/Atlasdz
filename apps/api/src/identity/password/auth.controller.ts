@@ -66,9 +66,9 @@ function password(body: Body): string {
   return value;
 }
 
-function locale(body: Body): 'fr' | 'ar' {
+function locale(body: Body): 'fr' | 'ar' | 'en' {
   const value = body['locale'] ?? 'fr';
-  if (value !== 'fr' && value !== 'ar') invalid('locale');
+  if (value !== 'fr' && value !== 'ar' && value !== 'en') invalid('locale');
   return value;
 }
 

@@ -1,8 +1,14 @@
 import type { MailMessage } from './mailer.js';
 
-type Locale = 'fr' | 'ar';
+type Locale = 'fr' | 'ar' | 'en';
 
 export function passwordResetMail(to: string, locale: Locale, link: string): MailMessage {
+  if (locale === 'en')
+    return {
+      to,
+      subject: 'Atlas DZ — Password reset',
+      text: `Hello,\n\nA password reset was requested for your account. Open this link within 30 minutes:\n${link}\n\nIf you did not ask for this, ignore this message: your password has not changed.\n\nAtlas DZ`,
+    };
   return locale === 'ar'
     ? {
         to,
@@ -17,6 +23,12 @@ export function passwordResetMail(to: string, locale: Locale, link: string): Mai
 }
 
 export function guestAccountMail(to: string, locale: Locale, link: string): MailMessage {
+  if (locale === 'en')
+    return {
+      to,
+      subject: 'Atlas DZ — Your account is ready',
+      text: `Hello,\n\nThank you for your order. We created your account with this email address so you can follow your orders.\nChoose your password with this link (valid for 7 days, single use):\n${link}\n\nIf you did not order anything, ignore this message.\n\nAtlas DZ`,
+    };
   return locale === 'ar'
     ? {
         to,
@@ -37,6 +49,14 @@ export function sellerReviewedMail(
   storeName: string,
   reason: string | null,
 ): MailMessage {
+  if (locale === 'en')
+    return {
+      to,
+      subject: approved ? 'Atlas DZ — Your shop is approved' : 'Atlas DZ — Your shop application',
+      text: approved
+        ? `Hello,\n\nYour shop “${storeName}” is approved. You can now propose your products and publish your offers from the Seller Center.\n\nAtlas DZ`
+        : `Hello,\n\nYour shop “${storeName}” was not approved.${reason ? `\nReason: ${reason}` : ''}\n\nAtlas DZ`,
+    };
   if (locale === 'ar') {
     return {
       to,
@@ -64,6 +84,12 @@ export function newSellerOrderMail(
   totalDzd: string,
   deadline: string,
 ): MailMessage {
+  if (locale === 'en')
+    return {
+      to,
+      subject: 'Atlas DZ — New order',
+      text: `Hello,\n\nYou received a new order (cash on delivery) of DZD ${totalDzd}.\nAccept or refuse it before ${deadline}:\n${link}\n\nAtlas DZ`,
+    };
   return locale === 'ar'
     ? {
         to,
@@ -84,6 +110,12 @@ export function sellerOrderReminderMail(
   totalDzd: string,
   deadline: string,
 ): MailMessage {
+  if (locale === 'en')
+    return {
+      to,
+      subject: 'Atlas DZ — Reminder: order waiting for you',
+      text: `Hello,\n\nAn order of DZD ${totalDzd} is still waiting for your answer. After ${deadline} it is cancelled automatically and the customer is told:\n${link}\n\nAtlas DZ`,
+    };
   return locale === 'ar'
     ? {
         to,
@@ -98,6 +130,12 @@ export function sellerOrderReminderMail(
 }
 
 export function sellerOrderCancelledMail(to: string, locale: Locale, link: string): MailMessage {
+  if (locale === 'en')
+    return {
+      to,
+      subject: 'Atlas DZ — Order cancelled by the customer',
+      text: `Hello,\n\nThe customer cancelled this order: do not prepare or ship it.\n${link}\n\nAtlas DZ`,
+    };
   return locale === 'ar'
     ? {
         to,
@@ -112,6 +150,12 @@ export function sellerOrderCancelledMail(to: string, locale: Locale, link: strin
 }
 
 export function verifyEmailMail(to: string, locale: Locale, link: string): MailMessage {
+  if (locale === 'en')
+    return {
+      to,
+      subject: 'Atlas DZ — Confirm your email address',
+      text: `Hello,\n\nTo confirm your email address and be able to order, open this link within 24 hours:\n${link}\n\nAtlas DZ`,
+    };
   return locale === 'ar'
     ? {
         to,
@@ -132,6 +176,12 @@ export function customerOrderPlacedMail(
   totalDzd: string,
   sellerNames: readonly string[],
 ): MailMessage {
+  if (locale === 'en')
+    return {
+      to,
+      subject: 'Atlas DZ — Order received',
+      text: `Hello,\n\nYour order (cash on delivery) of DZD ${totalDzd} is recorded.\nSellers: ${sellerNames.join(', ')}\nEach seller will confirm their part. Follow your order:\n${link}\n\nAtlas DZ`,
+    };
   return locale === 'ar'
     ? {
         to,
@@ -154,6 +204,15 @@ const statusText = {
     DELIVERY_FAILED: 'signale un échec de livraison',
     REJECTED: 'n’a pas pu accepter votre commande (aucun paiement n’est dû)',
     EXPIRED: 'n’a pas répondu à temps ; la commande est annulée (aucun paiement n’est dû)',
+  },
+  en: {
+    ACCEPTED: 'accepted your order',
+    SHIPPED: 'shipped your order',
+    DELIVERY_REPORTED:
+      'says your order was delivered. Confirm receipt on the website if you received it',
+    DELIVERY_FAILED: 'reports a failed delivery',
+    REJECTED: 'could not accept your order (nothing is owed)',
+    EXPIRED: 'did not answer in time; the order is cancelled (nothing is owed)',
   },
   ar: {
     ACCEPTED: 'قبل طلبك',
@@ -178,9 +237,17 @@ export function customerOrderStatusMail(
   const tracking =
     shipment === null
       ? ''
-      : locale === 'ar'
+      : locale === 'en'
+        ? `\nCarrier: ${shipment.carrier} — tracking: ${shipment.trackingReference}`
+        : locale === 'ar'
         ? `\nالناقل: ${shipment.carrier} — مرجع التتبع: ${shipment.trackingReference}`
         : `\nTransporteur : ${shipment.carrier} — suivi : ${shipment.trackingReference}`;
+  if (locale === 'en')
+    return {
+      to,
+      subject: `Atlas DZ — Order update (${sellerName})`,
+      text: `Hello,\n\nThe seller “${sellerName}” ${statusText.en[status]}.${tracking}\n${link}\n\nAtlas DZ`,
+    };
   return locale === 'ar'
     ? {
         to,
@@ -202,6 +269,18 @@ export function offerDecisionMail(
   title: string,
   reason: string | null,
 ): MailMessage {
+  if (locale === 'en')
+    return reason === null
+      ? {
+          to,
+          subject: `Atlas DZ — Your offer is live: ${title}`,
+          text: `Hello,\n\nYour offer “${title}” was approved: customers can see it.\n${link}\n\nAtlas DZ`,
+        }
+      : {
+          to,
+          subject: `Atlas DZ — Offer not approved: ${title}`,
+          text: `Hello,\n\nYour offer “${title}” was not approved.\nReason: ${reason}\n\nEdit it and save it to send it back for review:\n${link}\n\nAtlas DZ`,
+        };
   if (locale === 'ar')
     return reason === null
       ? {

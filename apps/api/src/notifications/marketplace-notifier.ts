@@ -31,8 +31,8 @@ const formatDzd = (minor: number) =>
   new Intl.NumberFormat('fr-DZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
     minor / 100,
   );
-const formatDate = (iso: string, locale: 'fr' | 'ar') =>
-  new Intl.DateTimeFormat(locale === 'ar' ? 'ar-DZ' : 'fr-DZ', {
+const formatDate = (iso: string, locale: 'fr' | 'ar' | 'en') =>
+  new Intl.DateTimeFormat(locale === 'ar' ? 'ar-DZ' : locale === 'en' ? 'en-GB' : 'fr-DZ', {
     dateStyle: 'medium',
     timeStyle: 'short',
     timeZone: 'Africa/Algiers',
@@ -47,14 +47,14 @@ export class MarketplaceNotifier {
     private readonly links: MarketplaceLinks,
   ) {}
 
-  public passwordReset(email: string, locale: 'fr' | 'ar', link: string): void {
+  public passwordReset(email: string, locale: 'fr' | 'ar' | 'en', link: string): void {
     deliver(this.mailer, this.logger, passwordResetMail(email, locale, link));
   }
 
   /** Guest checkout: the account exists; a 7-day link lets the buyer choose a password. */
   public guestAccount(
     email: string,
-    locale: 'fr' | 'ar',
+    locale: 'fr' | 'ar' | 'en',
     token: string,
     origin?: string | null,
   ): void {
@@ -87,7 +87,7 @@ export class MarketplaceNotifier {
       );
   }
 
-  private shopLink(path: string, locale: 'fr' | 'ar'): string {
+  private shopLink(path: string, locale: 'fr' | 'ar' | 'en'): string {
     return `${this.links.customerWebOrigin ?? ''}${path}?lang=${locale}`;
   }
 
@@ -111,7 +111,7 @@ export class MarketplaceNotifier {
       .catch(() => this.logger.warn({ code: 'MAIL_LOOKUP_FAILED' }, 'verification email failed'));
   }
 
-  private sellerLink(sellerOrderId: string, locale: 'fr' | 'ar'): string {
+  private sellerLink(sellerOrderId: string, locale: 'fr' | 'ar' | 'en'): string {
     return this.links.sellerWebOrigin
       ? `${this.links.sellerWebOrigin}/orders/${sellerOrderId}?lang=${locale}`
       : `/orders/${sellerOrderId}`;
@@ -169,7 +169,13 @@ export class MarketplaceNotifier {
       ? `${this.links.sellerWebOrigin}/offers/${offerId}?lang=${contact.locale}`
       : `/offers/${offerId}`;
     await this.mailer.send(
-      offerDecisionMail(contact.email, contact.locale, link, title[contact.locale], reason),
+      offerDecisionMail(
+        contact.email,
+        contact.locale,
+        link,
+        title[contact.locale === 'ar' ? 'ar' : 'fr'],
+        reason,
+      ),
     );
   }
 

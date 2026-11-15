@@ -46,10 +46,9 @@ export class PhoneVerificationController {
   @RateLimited('authenticated', 'identity.phone.start')
   public async start(@Req() request: AuthenticatedRequest, @Body() body: unknown) {
     const phone = field(body, 'phone', /^[+0-9 .-]{8,20}$/);
-    const locale =
-      typeof body === 'object' && body !== null && (body as { locale?: unknown }).locale === 'ar'
-        ? 'ar'
-        : 'fr';
+    const requested =
+      typeof body === 'object' && body !== null ? (body as { locale?: unknown }).locale : undefined;
+    const locale = requested === 'ar' || requested === 'en' ? requested : 'fr';
     const outcome = await this.risk.startPhoneVerification(customerId(request), phone, locale);
     if (outcome === 'INVALID_PHONE') {
       throw new SafeApplicationError('VALIDATION_FAILED', {

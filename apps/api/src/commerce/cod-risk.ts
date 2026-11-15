@@ -176,7 +176,7 @@ export class CodRiskService {
   public async startPhoneVerification(
     userId: string,
     rawPhone: string,
-    locale: 'fr' | 'ar',
+    locale: 'fr' | 'ar' | 'en',
   ): Promise<'SENT' | 'INVALID_PHONE' | 'THROTTLED' | 'UNAVAILABLE'> {
     if (this.sms === null) return 'UNAVAILABLE';
     const phone = toE164(rawPhone);
@@ -204,7 +204,9 @@ export class CodRiskService {
     );
     await this.sms.send(
       phone,
-      locale === 'ar'
+      locale === 'en'
+        ? `Atlas DZ: your confirmation code is ${code} (valid 10 min).`
+        : locale === 'ar'
         ? `رمز تأكيد أطلس دي زد: ${code} (صالح 10 دقائق)`
         : `Atlas DZ : votre code de confirmation est ${code} (valable 10 min).`,
     );

@@ -28,7 +28,8 @@ const SESSION_LIFETIME = {
 } as const;
 
 type ActorType = keyof typeof SESSION_LIFETIME;
-type Locale = 'fr' | 'ar';
+type Locale = 'fr' | 'ar' | 'en';
+const asLocale = (value: string): Locale => (value === 'ar' || value === 'en' ? value : 'fr');
 
 export interface IssuedSession {
   readonly accessToken: string;
@@ -712,7 +713,7 @@ export class PasswordIdentityRepository {
     return result.rows.map((row) => ({
       sellerId: row.seller_id,
       email: row.email,
-      locale: row.locale === 'ar' ? 'ar' : 'fr',
+      locale: asLocale(row.locale),
       name: row.name,
     }));
   }
@@ -767,7 +768,7 @@ export class PasswordIdentityRepository {
       stored = false;
     });
     if (!stored) return null;
-    return { token, locale: row.locale === 'ar' ? 'ar' : 'fr', actorType: row.actor_type };
+    return { token, locale: asLocale(row.locale), actorType: row.actor_type };
   }
 
   /** Consumes a reset token, sets the new password and revokes every existing session. */
@@ -828,7 +829,7 @@ export class PasswordIdentityRepository {
       [userId],
     );
     const row = result.rows[0];
-    return row ? { email: row.email, locale: row.locale === 'ar' ? 'ar' : 'fr' } : null;
+    return row ? { email: row.email, locale: asLocale(row.locale) } : null;
   }
 
   /** Customer contact for a seller order (used for order status emails). */
@@ -854,7 +855,7 @@ export class PasswordIdentityRepository {
     return row
       ? {
           email: row.email,
-          locale: row.locale === 'ar' ? 'ar' : 'fr',
+          locale: asLocale(row.locale),
           orderId: row.order_id,
           sellerName: row.seller_name,
         }
@@ -894,7 +895,7 @@ export class PasswordIdentityRepository {
        VALUES ($1, $2, clock_timestamp() + interval '24 hours')`,
       [userId, tokenHash(token)],
     );
-    return { token, email: row.email, locale: row.locale === 'ar' ? 'ar' : 'fr' };
+    return { token, email: row.email, locale: asLocale(row.locale) };
   }
 
   public async userIdForEmail(email: string): Promise<string | null> {
