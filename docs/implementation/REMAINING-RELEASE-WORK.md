@@ -37,10 +37,20 @@ entries are not a current feature inventory. Do not repeat completed redesign or
   tools/testing/browser/gallery.mjs 7/7 on the local stack; e2e 15/15, mobile-app 20/20,
   mobile-seller 11/11. Not yet run in the production rehearsal.
 
+## Product characteristics (done, migration 000035)
+
+- 11 fixed attributes (brand, model, material, colour, size, dimensions, weight, capacity,
+  power, warranty, country of manufacture) with seller-written values (one line, 120 chars).
+  Labels are translated (FR/AR/EN); values are shown as written, marked as seller-stated.
+- Part of the product submission: reviewed by staff, copied on approval, replaced by an
+  approved revision. Seller Center form and the app's new-product screen; shown on the shop
+  product page and the app product screen. Nothing is filled in automatically.
+- Evidence: API integration 22/22 (validation, approval, revision); Seller Center unit 18/18;
+  mobile-seller 12/12 (specs + extra photo in the app); local shop/Seller Center checks.
+
 ## Remaining implementation
 
-1. Structured specifications: seller authoring, review, publication and multilingual display.
-2. Native push: permission UX, device ownership/revocation, outbox integration, retries,
+1. Native push: permission UX, device ownership/revocation, outbox integration, retries,
    receipts/invalid-token cleanup and authorized deep links.
 
 ## Release gates

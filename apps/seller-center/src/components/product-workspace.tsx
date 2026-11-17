@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import { MAX_GALLERY_PHOTOS } from '@atlas/contracts';
+import { MAX_GALLERY_PHOTOS, PRODUCT_SPEC_LABELS, type ProductSpec } from '@atlas/contracts';
 import Link from 'next/link';
+import { Fragment } from 'react';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { Shell } from './shell';
@@ -8,7 +9,7 @@ import { ServiceState } from './states';
 import { ProductForm, ProductReviewForm } from './product-forms';
 import { ProductPhotoForm, ProductPhotos, RemovePhotoButton } from './auth-forms';
 import { listProductCategories, listProductSubmissions } from '@/lib/api';
-import { href, localeFrom, type SearchParams, localized } from '@/lib/i18n';
+import { href, localeFrom, type Locale, type SearchParams, localized } from '@/lib/i18n';
 import { productsCopy } from '@/lib/products-copy';
 import { localAccountsEnabled } from '@/lib/security';
 import { accessToken } from '@/lib/session';
@@ -88,6 +89,7 @@ export async function ProductWorkspace({
                           </p>
                         </div>
                       ))}
+                      <SpecList specs={s.previous.specs} locale={locale} title={t.specsReview} />
                     </details>
                   )}
                   <details open={review}>
@@ -100,6 +102,7 @@ export async function ProductWorkspace({
                         </p>
                       </div>
                     ))}
+                    <SpecList specs={s.specs} locale={locale} title={t.specsReview} />
                   </details>
                   {s.reviewReason && (
                     <p
@@ -158,5 +161,31 @@ export async function ProductWorkspace({
         </>
       )}
     </Shell>
+  );
+}
+
+/** Characteristics as the seller stated them, for the seller and for staff review. */
+function SpecList({
+  specs,
+  locale,
+  title,
+}: {
+  readonly specs: readonly ProductSpec[] | undefined;
+  readonly locale: Locale;
+  readonly title: string;
+}) {
+  if (!specs?.length) return null;
+  return (
+    <>
+      <h3>{title}</h3>
+      <dl className="kv-list">
+        {specs.map((spec) => (
+          <Fragment key={spec.key}>
+            <dt>{PRODUCT_SPEC_LABELS[spec.key][locale]}</dt>
+            <dd style={{ margin: 0, overflowWrap: 'anywhere' }}>{spec.value}</dd>
+          </Fragment>
+        ))}
+      </dl>
+    </>
   );
 }

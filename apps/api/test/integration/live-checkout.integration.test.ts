@@ -186,8 +186,38 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
         categoryId: category.id,
         title: { fr: 'Plateau en cuivre', ar: 'صينية نحاسية' },
         description: { fr: 'Fait main à Tlemcen.', ar: 'مصنوعة يدويًا في تلمسان.' },
+        specs: [
+          { key: 'material', value: 'Cuivre martelé' },
+          { key: 'dimensions', value: '40 cm de diamètre' },
+        ],
       })
       .expect(201);
+    assert.deepEqual(submission.body.specs, [
+      { key: 'material', value: 'Cuivre martelé' },
+      { key: 'dimensions', value: '40 cm de diamètre' },
+    ]);
+    // Characteristics use known keys, once each, on one line of plain text.
+    for (const specs of [
+      [{ key: 'colour', value: 'Rouge' }],
+      [
+        { key: 'color', value: 'Rouge' },
+        { key: 'color', value: 'Bleu' },
+      ],
+      [{ key: 'brand', value: 'Atlas\nInjected' }],
+      [{ key: 'brand', value: 'x'.repeat(121) }],
+    ]) {
+      const refused = await http()
+        .post('/api/v1/seller/products')
+        .set(bearer(seller))
+        .send({
+          requestId: randomUUID(),
+          categoryId: category.id,
+          title: { fr: 'Plateau', ar: 'صينية' },
+          description: { fr: 'Texte.', ar: 'نص.' },
+          specs,
+        });
+      assert.ok([400, 422].includes(refused.status), `specs ${JSON.stringify(specs)} refused`);
+    }
     const reviewed = await http()
       .post(`/api/v1/admin/products/${submission.body.id}/review`)
       .set(bearer(staff))
@@ -702,8 +732,14 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
       (await http().get(`/api/v1/catalog/products/${productSlug}`).expect(200)).body as {
         imageUrl: string;
         gallery: string[];
+        specs?: { key: string; value: string }[];
       };
     assert.equal((await page()).gallery.length, 7);
+    // Approved characteristics are shown on the product page.
+    assert.deepEqual((await page()).specs, [
+      { key: 'material', value: 'Cuivre martelé' },
+      { key: 'dimensions', value: '40 cm de diamètre' },
+    ]);
     assert.deepEqual((await page()).gallery.slice(0, 2), [firstPhoto.url, secondPhoto.url]);
     const ownProducts = await http().get('/api/v1/seller/products').set(bearer(seller)).expect(200);
     const own = ownProducts.body.items.find(
@@ -742,6 +778,31 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
     assert.equal((await page()).gallery.length, 4);
     await addPhoto(seller).expect(201);
     assert.equal((await page()).gallery.length, 5);
+
+    // A reviewed revision replaces the characteristics; until approval the old ones stay.
+    const revision = await http()
+      .post('/api/v1/seller/products')
+      .set(bearer(seller))
+      .send({
+        requestId: randomUUID(),
+        revisionOfSubmissionId: submission.body.id,
+        categoryId: category.id,
+        title: { fr: 'Plateau en cuivre', ar: 'صينية نحاسية' },
+        description: { fr: 'Fait main à Tlemcen.', ar: 'مصنوعة يدويًا في تلمسان.' },
+        specs: [{ key: 'origin', value: 'Algérie' }],
+      })
+      .expect(201);
+    assert.deepEqual(revision.body.previous.specs, [
+      { key: 'material', value: 'Cuivre martelé' },
+      { key: 'dimensions', value: '40 cm de diamètre' },
+    ]);
+    assert.equal((await page()).specs?.length, 2);
+    await http()
+      .post(`/api/v1/admin/products/${revision.body.id}/review`)
+      .set(bearer(staff))
+      .send({ decision: 'APPROVED', expectedVersion: revision.body.rowVersion })
+      .expect((response) => assert.ok([200, 201].includes(response.status)));
+    assert.deepEqual((await page()).specs, [{ key: 'origin', value: 'Algérie' }]);
 
     // Outbox dispatcher: an EXPIRED live seller order emails the customer; all events drain.
     await pool.query(

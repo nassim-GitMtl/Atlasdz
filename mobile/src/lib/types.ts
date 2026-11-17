@@ -7,6 +7,7 @@ export type {
   CatalogProduct,
   CatalogProductList,
   CatalogSeller,
+  ProductSpecKey,
   ProductSubmission,
   SellerOffer,
 } from '../../../packages/contracts/src/catalog';

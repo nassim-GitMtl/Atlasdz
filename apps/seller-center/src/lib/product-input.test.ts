@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
-import { parseProductValues, parseProductReview } from './product-input.ts';
+import { emptyProductValues, parseProductValues, parseProductReview } from './product-input.ts';
 test('validates both languages, identifiers and text bounds without losing entered text', () => {
   const values = {
+    ...emptyProductValues,
     requestId: randomUUID(),
     revisionOfSubmissionId: '',
     categoryId: randomUUID(),
@@ -27,6 +28,7 @@ test('validates both languages, identifiers and text bounds without losing enter
 });
 test('accepts an immutable revision source, rejects malformed identifiers and preserves form values', () => {
   const values = {
+    ...emptyProductValues,
     requestId: randomUUID(),
     revisionOfSubmissionId: randomUUID(),
     categoryId: randomUUID(),
@@ -40,6 +42,24 @@ test('accepts an immutable revision source, rejects malformed identifiers and pr
   assert.equal(parsed.data.revisionOfSubmissionId, values.revisionOfSubmissionId);
   assert.equal(parseProductValues({ ...values, revisionOfSubmissionId: 'bad' }).success, false);
   assert.equal(parseProductValues({ ...values, revisionOfSubmissionId: '' }).success, true);
+});
+test('publishes only the characteristics the seller filled in', () => {
+  const values = {
+    ...emptyProductValues,
+    requestId: randomUUID(),
+    categoryId: randomUUID(),
+    titleFr: 'Plateau',
+    titleAr: 'صينية',
+    descriptionFr: 'Description',
+    descriptionAr: 'وصف',
+    spec_material: ' Cuivre ',
+    spec_brand: '   ',
+  };
+  const parsed = parseProductValues(values);
+  assert.ok(parsed.success);
+  assert.deepEqual(parsed.data.specs, [{ key: 'material', value: 'Cuivre' }]);
+  assert.equal(parseProductValues({ ...values, spec_color: 'x'.repeat(121) }).success, false);
+  assert.equal(parseProductValues({ ...values, spec_color: 'Rouge\u0007' }).success, false);
 });
 test('requires a bounded rejection reason and an exact integer version', () => {
   const form = new FormData();

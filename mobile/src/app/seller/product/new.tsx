@@ -9,9 +9,10 @@ import { localized } from '@/lib/format';
 import { useI18n } from '@/lib/i18n';
 import { useSession } from '@/lib/session';
 import { errorMessage } from '@/lib/strings';
-import type { CatalogCategory, ProductSubmission } from '@/lib/types';
+import type { CatalogCategory, ProductSpecKey, ProductSubmission } from '@/lib/types';
 import { useRequest } from '@/lib/use-request';
 import { newRequestId } from '@/lib/uuid';
+import { SPEC_KEYS } from '@/lib/specs';
 
 const multiline = { minHeight: 110, textAlignVertical: 'top' as const, paddingTop: 12 };
 
@@ -29,6 +30,7 @@ export default function NewProductScreen() {
   const [failure, setFailure] = useState<string | null>(null);
   const set = (key: keyof typeof form) => (value: string) =>
     setForm((current) => ({ ...current, [key]: value }));
+  const [specs, setSpecs] = useState<Partial<Record<ProductSpecKey, string>>>({});
 
   async function submit() {
     if (!category) return;
@@ -42,6 +44,11 @@ export default function NewProductScreen() {
           categoryId: category.id,
           title: { fr: form.titleFr.trim(), ar: form.titleAr.trim() },
           description: { fr: form.descFr.trim(), ar: form.descAr.trim() },
+          // Only what the seller filled in is sent; empty characteristics stay unpublished.
+          specs: SPEC_KEYS.flatMap((key) => {
+            const value = specs[key]?.trim();
+            return value ? [{ key, value }] : [];
+          }),
         },
       });
       router.replace(`/seller/product/${created.id}`);
@@ -98,6 +105,17 @@ export default function NewProductScreen() {
         maxLength={8000}
         style={multiline}
       />
+      <Text style={text.heading}>{t.specs.formTitle}</Text>
+      <Text style={text.muted}>{t.specs.formNote}</Text>
+      {SPEC_KEYS.map((key) => (
+        <Field
+          key={key}
+          label={t.specs[key]}
+          value={specs[key] ?? ''}
+          onChangeText={(value) => setSpecs((current) => ({ ...current, [key]: value }))}
+          maxLength={120}
+        />
+      ))}
       {failure ? <Notice tone="error">{errorMessage(t, failure)}</Notice> : null}
       <Button
         label={t.catalog.submit}

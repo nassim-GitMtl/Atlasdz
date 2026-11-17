@@ -271,11 +271,20 @@ await check('submit a new product', async () => {
   await page.getByLabel('Titre (arabe)').fill('طاجين');
   await page.getByLabel('Description (français)').fill('Plat en terre cuite fait main.');
   await page.getByLabel('Description (arabe)').fill('طاجين فخاري مصنوع يدويًا.');
+  // Optional characteristics: only the filled ones are sent.
+  await page.getByLabel('Matière').fill('Terre cuite');
+  await page.getByLabel('Pays de fabrication').fill('Algérie');
   await scan('new product');
   await page.getByRole('button', { name: 'Soumettre pour vérification' }).click();
   await page.waitForURL(/\/seller\/product\/[0-9a-f-]{36}/, { timeout: 15000 });
   await page.getByText('En vérification').first().waitFor();
   submissionId = /product\/([0-9a-f-]{36})/.exec(page.url())[1];
+  const sent = await call(`/api/v1/seller/products/${submissionId}`, sellerToken);
+  if (JSON.stringify(sent.specs) !== JSON.stringify([
+    { key: 'material', value: 'Terre cuite' },
+    { key: 'origin', value: 'Algérie' },
+  ]))
+    throw new Error(`specs ${JSON.stringify(sent.specs)}`);
 });
 await check('after staff approval: photo from the gallery, then an offer', async () => {
   const submission = await call(`/api/v1/seller/products/${submissionId}`, sellerToken);
@@ -289,12 +298,31 @@ await check('after staff approval: photo from the gallery, then an offer', async
   await page.getByRole('button', { name: 'Choisir dans la galerie' }).click();
   await (await chooser).setFiles(photoPath);
   await page.locator('img[src*="/media/"]').first().waitFor({ timeout: 30000 });
+  // An extra photo after the main one.
+  const extra = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: 'Ajouter depuis la galerie' }).click();
+  await (await extra).setFiles(photoPath);
+  await page.getByRole('button', { name: 'Photo principale' }).waitFor({ timeout: 30000 });
   await page.getByRole('button', { name: 'Vendre ce produit' }).click();
   await page.getByLabel('Prix (DA)').fill('1500');
   await page.getByLabel('Quantité en stock').fill('5');
   await page.getByRole('button', { name: 'Enregistrer l’offre' }).click();
   await page.waitForURL(/\/seller\/offer\/[0-9a-f-]{36}/, { timeout: 15000 });
   await page.getByText('En vérification').first().waitFor({ timeout: 15000 });
+});
+await check('approved characteristics and photos on the product screen', async () => {
+  const submission = await call(`/api/v1/seller/products/${submissionId}`, sellerToken);
+  // The product is public once staff approve its offer.
+  const offer = (await call('/api/v1/seller/offers', sellerToken)).items.find(
+    (item) => item.productId === submission.productId,
+  );
+  await call(`/api/v1/admin/offers/${offer.id}/approve`, staffToken, { method: 'POST', body: '{}' });
+  await page.goto(`${APP}/product/p-${submission.productId}`);
+  await page.getByText('Caractéristiques', { exact: true }).waitFor({ timeout: 15000 });
+  await page.getByText('Terre cuite', { exact: true }).waitFor();
+  await page.getByText('Pays de fabrication').waitFor();
+  await page.getByRole('button', { name: 'Photos du produit 2/2' }).waitFor();
+  await scan('product with characteristics');
 });
 await check('delivery zones: commune rate', async () => {
   await page.goto(`${APP}/seller/delivery`);

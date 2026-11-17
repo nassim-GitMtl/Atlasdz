@@ -3,8 +3,8 @@ import { useActionState } from 'react';
 import { submitProductAction, reviewProductAction } from '@/app/product-actions';
 import { copy, type Locale, localized } from '@/lib/i18n';
 import { productsCopy } from '@/lib/products-copy';
-import { emptyProductValues } from '@/lib/product-input';
-import type { ProductSubmission } from '@atlas/contracts';
+import { emptyProductValues, specField } from '@/lib/product-input';
+import { PRODUCT_SPEC_KEYS, PRODUCT_SPEC_LABELS, type ProductSubmission } from '@atlas/contracts';
 
 export function ProductForm({
   locale,
@@ -31,6 +31,9 @@ export function ProductForm({
           titleAr: revision.title.ar,
           descriptionFr: revision.description.fr,
           descriptionAr: revision.description.ar,
+          ...Object.fromEntries(
+            (revision.specs ?? []).map((spec) => [specField(spec.key), spec.value]),
+          ),
         }
       : {}),
   };
@@ -84,6 +87,21 @@ export function ProductForm({
           )}
         </div>
       ))}
+      <fieldset className="spec-fields">
+        <legend>{t.specsTitle}</legend>
+        <p className="muted">{t.specsNote}</p>
+        {PRODUCT_SPEC_KEYS.map((key) => (
+          <div className="field" key={key}>
+            <label htmlFor={specField(key)}>{PRODUCT_SPEC_LABELS[key][locale]}</label>
+            <input
+              id={specField(key)}
+              name={specField(key)}
+              maxLength={120}
+              defaultValue={values[specField(key)]}
+            />
+          </div>
+        ))}
+      </fieldset>
       {categories.length === 0 && <p role="status">{t.noCategories}</p>}
       <button className="button" disabled={pending || categories.length === 0}>
         {pending ? common.submitting : t.submit}

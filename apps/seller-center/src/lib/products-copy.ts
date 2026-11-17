@@ -35,6 +35,10 @@ export const productsCopy = {
     details: 'Lire les descriptions',
     createOffer: 'Ajouter une offre',
     noCategories: 'Aucune catégorie disponible.',
+    specsTitle: 'Caractéristiques (facultatif)',
+    specsNote:
+      'Indiquez seulement ce qui est exact pour ce produit ; laissez vide sinon. Elles sont vérifiées avec le produit.',
+    specsReview: 'Caractéristiques',
     conflict:
       'Cette demande a changé ou a déjà été envoyée avec d’autres valeurs. Rechargez la page avant de réessayer.',
     listingLimit:
@@ -75,6 +79,10 @@ export const productsCopy = {
     details: 'Read the descriptions',
     createOffer: 'Add an offer',
     noCategories: 'No category available.',
+    specsTitle: 'Characteristics (optional)',
+    specsNote:
+      'Only state what is accurate for this product; leave the rest empty. They are reviewed with the product.',
+    specsReview: 'Characteristics',
     conflict:
       'This request changed or was already sent with other values. Reload the page before trying again.',
     listingLimit:
@@ -114,6 +122,9 @@ export const productsCopy = {
     details: 'قراءة الأوصاف',
     createOffer: 'إضافة عرض',
     noCategories: 'لا توجد فئات متاحة.',
+    specsTitle: 'المواصفات (اختيارية)',
+    specsNote: 'اذكر فقط ما هو صحيح لهذا المنتج، واترك الباقي فارغًا. تُراجع مع المنتج.',
+    specsReview: 'المواصفات',
     conflict: 'تغير هذا الطلب أو أُرسل سابقاً بقيم مختلفة. أعد تحميل الصفحة قبل المحاولة.',
     listingLimit: 'تظهر أحدث 100 طلب. تعالج قائمة المراجعة أقدم 100 طلب أولاً.',
   },

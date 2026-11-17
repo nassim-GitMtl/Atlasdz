@@ -1,6 +1,6 @@
 import { ProductGallery } from '@/components/product-gallery';
 import { notFound } from 'next/navigation';
-import type { CatalogProduct } from '@atlas/contracts';
+import { PRODUCT_SPEC_LABELS, type CatalogProduct } from '@atlas/contracts';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { OfferSelector } from '@/components/offer-selector';
 import { DeliveryEstimate } from '@/components/delivery-estimate';
@@ -134,6 +134,29 @@ export default async function ProductPage({
         <section className="product-information">
           <h2>{t.productDetails}</h2>
           <p>{text(product.description, locale)}</p>
+          {product.specs && product.specs.length > 0 && (
+            <>
+              <h3>{lang(locale, 'Caractéristiques', 'المواصفات', 'Characteristics')}</h3>
+              <dl className="product-specs">
+                {product.specs.map((spec) => (
+                  <div key={spec.key}>
+                    <dt>{PRODUCT_SPEC_LABELS[spec.key][locale]}</dt>
+                    <dd>
+                      <bdi>{spec.value}</bdi>
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+              <p className="product-specs__note">
+                {lang(
+                  locale,
+                  'Caractéristiques indiquées par le vendeur.',
+                  'مواصفات كما ذكرها البائع.',
+                  'Characteristics as stated by the seller.',
+                )}
+              </p>
+            </>
+          )}
           <p>
             {lang(
               locale,

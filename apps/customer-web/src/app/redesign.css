@@ -286,3 +286,10 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 .product-gallery__thumbs button[aria-pressed="true"] { outline: 2px solid var(--blue); outline-offset: -2px; }
 .product-gallery__thumbs img { display: block; width: 100%; height: 100%; object-fit: contain; }
 @media (max-width: 760px) { .product-gallery { position: static; } }
+/* Seller-stated product characteristics. */
+.product-specs { margin: 0 0 8px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.product-specs div { display: grid; grid-template-columns: minmax(110px, 38%) 1fr; gap: 12px; padding: 9px 12px; border-top: 1px solid var(--line); }
+.product-specs div:first-child { border-top: 0; }
+.product-specs dt { color: var(--muted); font-size: 13px; }
+.product-specs dd { margin: 0; font-size: 14px; overflow-wrap: anywhere; }
+.product-specs__note { color: var(--muted); font-size: 12px; }

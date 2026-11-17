@@ -73,6 +73,56 @@ export const CatalogOfferSchema = z
   })
   .strict();
 
+/** Product characteristics a seller may state; labels are translated by each app. */
+export const PRODUCT_SPEC_KEYS = [
+  'brand',
+  'model',
+  'material',
+  'color',
+  'size',
+  'dimensions',
+  'weight',
+  'capacity',
+  'power',
+  'warranty',
+  'origin',
+] as const;
+export type ProductSpecKey = (typeof PRODUCT_SPEC_KEYS)[number];
+export const PRODUCT_SPEC_LABELS: Readonly<
+  Record<ProductSpecKey, { readonly fr: string; readonly ar: string; readonly en: string }>
+> = {
+  brand: { fr: 'Marque', ar: 'العلامة التجارية', en: 'Brand' },
+  model: { fr: 'Modèle', ar: 'الطراز', en: 'Model' },
+  material: { fr: 'Matière', ar: 'المادة', en: 'Material' },
+  color: { fr: 'Couleur', ar: 'اللون', en: 'Colour' },
+  size: { fr: 'Taille', ar: 'المقاس', en: 'Size' },
+  dimensions: { fr: 'Dimensions', ar: 'الأبعاد', en: 'Dimensions' },
+  weight: { fr: 'Poids', ar: 'الوزن', en: 'Weight' },
+  capacity: { fr: 'Capacité', ar: 'السعة', en: 'Capacity' },
+  power: { fr: 'Puissance', ar: 'القدرة', en: 'Power' },
+  warranty: { fr: 'Garantie', ar: 'الضمان', en: 'Warranty' },
+  origin: { fr: 'Pays de fabrication', ar: 'بلد الصنع', en: 'Country of manufacture' },
+};
+export const ProductSpecSchema = z
+  .object({
+    key: z.enum(PRODUCT_SPEC_KEYS),
+    // One line of plain text, as written by the seller.
+    value: z
+      .string()
+      .trim()
+      .min(1)
+      .max(120)
+      .regex(/^[^\u0000-\u001f\u007f]+$/),
+  })
+  .strict();
+export const ProductSpecsSchema = z
+  .array(ProductSpecSchema)
+  .max(PRODUCT_SPEC_KEYS.length)
+  .refine((specs) => new Set(specs.map((spec) => spec.key)).size === specs.length, {
+    message: 'Each characteristic may appear once.',
+  });
+export type ProductSpec = z.infer<typeof ProductSpecSchema>;
+
 /** A seller photo served by the API: `/media/<uuid>.<ext>`. */
 export const MediaUrlSchema = z
   .string()
@@ -98,6 +148,8 @@ export const CatalogProductSchema = z
     offers: z.array(CatalogOfferSchema).min(1).max(50),
     /** Extra photos after the cover, oldest first (product page only). */
     gallery: z.array(MediaUrlSchema).max(MAX_GALLERY_PHOTOS).optional(),
+    /** Seller-stated characteristics, reviewed with the product (product page only). */
+    specs: ProductSpecsSchema.optional(),
   })
   .strict();
 
@@ -243,6 +295,7 @@ export const SubmitProductInputSchema = z
       .object({ fr: z.string().trim().min(1).max(500), ar: z.string().trim().min(1).max(500) })
       .strict(),
     description: CatalogLocalizedTextSchema,
+    specs: ProductSpecsSchema.optional(),
   })
   .strict();
 export const ReviewProductInputSchema = z.discriminatedUnion('decision', [
@@ -276,10 +329,12 @@ export const ProductSubmissionSchema = z
     /** The product's cover photo and extra photos, once the product exists. */
     imageUrl: z.string().max(200).nullish(),
     gallery: z.array(GalleryPhotoSchema).max(MAX_GALLERY_PHOTOS).optional(),
+    specs: ProductSpecsSchema.optional(),
     previous: z
       .object({
         title: SubmitProductInputSchema.shape.title,
         description: CatalogLocalizedTextSchema,
+        specs: ProductSpecsSchema.optional(),
       })
       .strict()
       .nullable(),

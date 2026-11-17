@@ -153,9 +153,11 @@ const SUBMISSION_SELECT = `SELECT jsonb_build_object(
     AND next.status IN ('PENDING_REVIEW','APPROVED')),
   'imageUrl', (SELECT image_url FROM catalog.products WHERE id = s.product_id),
   'gallery', ${galleryOf('s.product_id', `jsonb_build_object('id', pm.id, 'url', ${MEDIA_URL})`)},
+  'specs', s.specs,
   'previous', CASE WHEN previous.id IS NULL THEN NULL ELSE jsonb_build_object(
     'title', jsonb_build_object('fr',previous.title_fr,'ar',previous.title_ar),
-    'description', jsonb_build_object('fr',previous.description_fr,'ar',previous.description_ar)) END
+    'description', jsonb_build_object('fr',previous.description_fr,'ar',previous.description_ar),
+    'specs', previous.specs) END
 ) AS submission FROM catalog.product_submissions s JOIN catalog.categories c ON c.id=s.category_id
 LEFT JOIN catalog.product_submissions previous ON previous.id=s.revision_of_submission_id`;
 
@@ -481,8 +483,8 @@ export class PostgresCatalogRepository {
       }
       const result = await client.query<{ id: string }>(
         `INSERT INTO catalog.product_submissions
-        (seller_id,request_id,request_hash,category_id,title_fr,title_ar,description_fr,description_ar,revision_of_submission_id)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
+        (seller_id,request_id,request_hash,category_id,title_fr,title_ar,description_fr,description_ar,revision_of_submission_id,specs)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb) RETURNING id`,
         [
           sellerId,
           data.requestId,
@@ -493,6 +495,7 @@ export class PostgresCatalogRepository {
           data.description.fr,
           data.description.ar,
           data.revisionOfSubmissionId ?? null,
+          JSON.stringify(data.specs ?? []),
         ],
       );
       const submission = await submissionById(client, UuidSchema.parse(result.rows[0]?.id));
@@ -558,14 +561,21 @@ export class PostgresCatalogRepository {
           located.categoryId,
         );
         await client.query(
-          `UPDATE catalog.products SET title_fr=$2,title_ar=$3,description_fr=$4,description_ar=$5 WHERE id=$1`,
-          [productId, prior.title.fr, prior.title.ar, prior.description.fr, prior.description.ar],
+          `UPDATE catalog.products SET title_fr=$2,title_ar=$3,description_fr=$4,description_ar=$5,specs=$6::jsonb WHERE id=$1`,
+          [
+            productId,
+            prior.title.fr,
+            prior.title.ar,
+            prior.description.fr,
+            prior.description.ar,
+            JSON.stringify(prior.specs ?? []),
+          ],
         );
       } else if (data.decision === 'APPROVED') {
         productId = randomUUID();
         await client.query(
-          `INSERT INTO catalog.products (id,category_id,slug,title_fr,title_ar,description_fr,description_ar,image_url,status,moderation_status)
-          VALUES ($1,$2,$3,$4,$5,$6,$7,'/assets/product-placeholder.svg','ACTIVE','APPROVED')`,
+          `INSERT INTO catalog.products (id,category_id,slug,title_fr,title_ar,description_fr,description_ar,image_url,status,moderation_status,specs)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,'/assets/product-placeholder.svg','ACTIVE','APPROVED',$8::jsonb)`,
           [
             productId,
             located.categoryId,
@@ -574,6 +584,7 @@ export class PostgresCatalogRepository {
             prior.title.ar,
             prior.description.fr,
             prior.description.ar,
+            JSON.stringify(prior.specs ?? []),
           ],
         );
         await client.query(
@@ -654,9 +665,13 @@ export class PostgresCatalogRepository {
 
   public async getProduct(slug: string): Promise<CatalogProduct | null> {
     const parsed = CatalogSlugSchema.parse(slug);
-    const result = await this.pool.query<{ product: Record<string, unknown>; gallery: unknown }>(
+    const result = await this.pool.query<{
+      product: Record<string, unknown>;
+      gallery: unknown;
+      specs: unknown;
+    }>(
       `
-      SELECT ${PRODUCT_JSON}, ${galleryOf('p.id', MEDIA_URL)} AS gallery
+      SELECT ${PRODUCT_JSON}, ${galleryOf('p.id', MEDIA_URL)} AS gallery, p.specs
       ${PUBLIC_PRODUCTS} AND p.slug = $4
     `,
       [null, null, null, parsed],
@@ -664,7 +679,7 @@ export class PostgresCatalogRepository {
     const row = result.rows[0];
     return row === undefined
       ? null
-      : CatalogProductSchema.parse({ ...row.product, gallery: row.gallery });
+      : CatalogProductSchema.parse({ ...row.product, gallery: row.gallery, specs: row.specs });
   }
 
   public async getSeller(slug: string): Promise<CatalogSeller | null> {

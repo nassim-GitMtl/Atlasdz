@@ -1,4 +1,12 @@
-import { SubmitProductInputSchema, ReviewProductInputSchema } from '@atlas/contracts';
+import {
+  PRODUCT_SPEC_KEYS,
+  SubmitProductInputSchema,
+  ReviewProductInputSchema,
+  type ProductSpecKey,
+} from '@atlas/contracts';
+
+/** Form field holding one characteristic, e.g. `spec_brand`. */
+export const specField = (key: ProductSpecKey) => `spec_${key}` as const;
 
 export const emptyProductValues = {
   requestId: '',
@@ -8,6 +16,10 @@ export const emptyProductValues = {
   titleAr: '',
   descriptionFr: '',
   descriptionAr: '',
+  ...(Object.fromEntries(PRODUCT_SPEC_KEYS.map((key) => [specField(key), ''])) as Record<
+    ReturnType<typeof specField>,
+    string
+  >),
 };
 export type ProductValues = typeof emptyProductValues;
 export function parseProductValues(values: ProductValues) {
@@ -19,6 +31,11 @@ export function parseProductValues(values: ProductValues) {
     categoryId: values.categoryId,
     title: { fr: values.titleFr, ar: values.titleAr },
     description: { fr: values.descriptionFr, ar: values.descriptionAr },
+    // Empty characteristics are left out: only what the seller states is published.
+    specs: PRODUCT_SPEC_KEYS.flatMap((key) => {
+      const value = values[specField(key)].trim();
+      return value ? [{ key, value }] : [];
+    }),
   });
 }
 export function parseProductReview(form: FormData) {

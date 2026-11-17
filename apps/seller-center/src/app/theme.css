@@ -167,3 +167,6 @@ body { background: var(--surface); }
 .photo-strip li form { margin: 0; }
 .photo-strip li .button { width: 100%; min-height: 34px; padding: 6px 8px; font-size: 12px; line-height: 1.2; white-space: normal; }
 .photo-strip img { width: 120px; height: 120px; object-fit: contain; background: #fff; border: 1px solid var(--line); border-radius: 10px; }
+.spec-fields { display: grid; gap: 10px; margin: 0; padding: 14px; border: 1px solid var(--line); border-radius: 12px; }
+.spec-fields legend { padding: 0 6px; font-weight: 700; }
+.spec-fields p { margin: 0; color: var(--muted); font-size: 13px; }

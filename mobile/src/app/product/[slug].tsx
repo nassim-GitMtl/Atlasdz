@@ -197,6 +197,20 @@ export default function ProductScreen() {
           ))}
           <Text style={text.heading}>{t.product.description}</Text>
           <Text style={text.body}>{localized(item.description, locale)}</Text>
+          {item.specs?.length ? (
+            <>
+              <Text style={text.heading}>{t.specs.title}</Text>
+              <Card>
+                {item.specs.map((spec) => (
+                  <View key={spec.key} style={styles.specRow}>
+                    <Text style={[text.muted, styles.specLabel]}>{t.specs[spec.key]}</Text>
+                    <Text style={[text.body, styles.grow]}>{spec.value}</Text>
+                  </View>
+                ))}
+                <Text style={text.muted}>{t.specs.note}</Text>
+              </Card>
+            </>
+          ) : null}
           <Text style={text.heading}>{t.reviews.title}</Text>
           {reviews.data ? (
             <>
@@ -239,6 +253,8 @@ const styles = StyleSheet.create({
   promo: { fontSize: 13, fontWeight: '700', color: colors.danger },
   regular: { color: colors.muted, textDecorationLine: 'line-through', fontWeight: '400' },
   gap: { gap: 4 },
+  specRow: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
+  specLabel: { width: 120 },
   grow: { flex: 1 },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   headerButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
