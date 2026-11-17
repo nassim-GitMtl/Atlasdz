@@ -671,6 +671,78 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
     await http().get(photoAgain.body.imageUrl).expect(404);
     await http().get(variant(photoAgain.body.imageUrl)).expect(404);
 
+    // Extra photos: the submitting seller adds up to 7 after the cover, oldest firstPhoto.
+    const gallery = (path = '') => `/api/v1/seller/products/${productId}/gallery${path}`;
+    const addPhoto = (token: string) =>
+      http().post(gallery()).set(bearer(token)).set('Content-Type', 'image/png').send(png);
+    await http()
+      .post(gallery())
+      .set(bearer(seller))
+      .set('Content-Type', 'image/png')
+      .send(Buffer.from('<svg onload=alert(1)>'))
+      .expect(415);
+    await addPhoto(staff).expect(403);
+    const firstPhoto = (await addPhoto(seller).expect(201)).body.photo as { id: string; url: string };
+    assert.match(firstPhoto.url, /^\/media\/[0-9a-f-]{36}\.webp$/);
+    await http().get(firstPhoto.url).expect(200).expect('content-type', 'image/webp');
+    const secondPhoto = (await addPhoto(seller).expect(201)).body.photo as { id: string; url: string };
+    // Fill the gallery directly (files are not needed to test the limit).
+    for (let index = 0; index < 5; index += 1) {
+      await pool.query(
+        `INSERT INTO catalog.product_media
+           (product_id, seller_id, uploaded_by, content_type, byte_size, sha256, in_gallery)
+         SELECT product_id, seller_id, uploaded_by, content_type, byte_size, sha256, true
+         FROM catalog.product_media WHERE id = $1`,
+        [firstPhoto.id],
+      );
+    }
+    const full = await addPhoto(seller).expect(409);
+    assert.equal(full.body.code, 'PHOTO_LIMIT_REACHED');
+    const page = async () =>
+      (await http().get(`/api/v1/catalog/products/${productSlug}`).expect(200)).body as {
+        imageUrl: string;
+        gallery: string[];
+      };
+    assert.equal((await page()).gallery.length, 7);
+    assert.deepEqual((await page()).gallery.slice(0, 2), [firstPhoto.url, secondPhoto.url]);
+    const ownProducts = await http().get('/api/v1/seller/products').set(bearer(seller)).expect(200);
+    const own = ownProducts.body.items.find(
+      (item: { productId: string | null }) => item.productId === productId,
+    );
+    assert.equal(own.gallery.length, 7);
+    assert.equal(own.imageUrl, '/assets/product-placeholder.svg');
+    // Making an extra photo the cover; a previous uploaded cover moves into the gallery.
+    await http().post(gallery(`/${firstPhoto.id}/cover`)).set(bearer(staff)).expect(403);
+    await http().post(gallery(`/${firstPhoto.id}/cover`)).set(bearer(seller)).expect(200);
+    assert.equal((await page()).imageUrl, firstPhoto.url);
+    assert.equal((await page()).gallery.length, 6);
+    await http().post(gallery(`/${secondPhoto.id}/cover`)).set(bearer(seller)).expect(200);
+    const swapped = await page();
+    assert.equal(swapped.imageUrl, secondPhoto.url);
+    assert.ok(swapped.gallery.includes(firstPhoto.url) && !swapped.gallery.includes(secondPhoto.url));
+    // Removing an extra photo deletes its files; a secondPhoto attempt finds nothing.
+    await http().post(gallery(`/${firstPhoto.id}/remove`)).set(bearer(seller)).expect(200);
+    await http().get(firstPhoto.url).expect(404);
+    await http().post(gallery(`/${firstPhoto.id}/remove`)).set(bearer(seller)).expect(404);
+    assert.equal((await page()).gallery.length, 5);
+    // Staff take down any extra photo.
+    const remainingId = /([0-9a-f-]{36})/.exec((await page()).gallery[0] ?? '')?.[1] ?? '';
+    await http()
+      .post(`/api/v1/admin/products/${productId}/gallery/${remainingId}/remove`)
+      .set(bearer(seller))
+      .expect(403);
+    await http()
+      .post(`/api/v1/admin/products/${productId}/gallery/${remainingId}/remove`)
+      .set(bearer(staff))
+      .expect(200);
+    await http()
+      .post(`/api/v1/admin/products/${productId}/gallery/${remainingId}/remove`)
+      .set(bearer(staff))
+      .expect(404);
+    assert.equal((await page()).gallery.length, 4);
+    await addPhoto(seller).expect(201);
+    assert.equal((await page()).gallery.length, 5);
+
     // Outbox dispatcher: an EXPIRED live seller order emails the customer; all events drain.
     await pool.query(
       `INSERT INTO platform.outbox_events(event_id,event_type,event_version,producer,aggregate_type,

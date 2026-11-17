@@ -176,6 +176,26 @@ export class AdminController {
     if (!ok) throw new SafeApplicationError('RESOURCE_NOT_FOUND');
     return { status: 'REMOVED' };
   }
+
+  @Post('products/:id/gallery/:mediaId/remove')
+  @HttpCode(200)
+  @RequirePermission('catalog.manage', GLOBAL)
+  @RateLimited('authenticated', 'admin.products.photo')
+  public async removeGalleryPhoto(
+    @Req() request: StaffRequest,
+    @Param('id') id: string,
+    @Param('mediaId') mediaId: string,
+  ) {
+    const actor = staff(request);
+    const ok = await this.admin.removeGalleryPhoto(
+      uuid(id),
+      uuid(mediaId),
+      actor,
+      request.correlationId,
+    );
+    if (!ok) throw new SafeApplicationError('RESOURCE_NOT_FOUND');
+    return { status: 'REMOVED' };
+  }
 }
 
 /** Staff access to every seller and customer account, and removal of marketplace content. */

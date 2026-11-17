@@ -93,6 +93,13 @@ export const setSellerStatus = (token: string, id: string, status: string, reaso
     token,
     { status, ...(reason ? { reason } : {}) },
   );
+export const removeGalleryPhoto = (token: string, productId: string, mediaId: string) =>
+  call(
+    `/api/v1/admin/products/${encodeURIComponent(productId)}/gallery/${encodeURIComponent(mediaId)}/remove`,
+    z.object({ status: z.string() }),
+    token,
+    {},
+  );
 export const removePhoto = (token: string, productId: string) =>
   call(
     `/api/v1/admin/products/${encodeURIComponent(productId)}/photo/remove`,

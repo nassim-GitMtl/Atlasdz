@@ -133,6 +133,14 @@ const preorderColumns = (
     ? [true, preorder.minDays, preorder.maxDays, preorder.origin]
     : [false, null, null, null];
 
+/** Public URL of a stored photo row (aliased `pm`). */
+const MEDIA_URL = `'/media/' || pm.id || '.' || CASE pm.content_type
+  WHEN 'image/png' THEN 'png' WHEN 'image/webp' THEN 'webp' ELSE 'jpg' END`;
+/** A product's live extra photos, oldest first, built by `item` (product id expression). */
+const galleryOf = (productId: string, item: string) => `COALESCE((
+  SELECT jsonb_agg(${item} ORDER BY pm.created_at, pm.id) FROM catalog.product_media pm
+  WHERE pm.product_id = ${productId} AND pm.in_gallery), '[]'::jsonb)`;
+
 const SUBMISSION_SELECT = `SELECT jsonb_build_object(
   'id', s.id, 'sellerId', s.seller_id,
   'category', jsonb_build_object('id', c.id, 'slug', c.slug, 'title', jsonb_strip_nulls(jsonb_build_object('fr', c.title_fr, 'ar', c.title_ar, 'en', c.title_en))),
@@ -143,6 +151,8 @@ const SUBMISSION_SELECT = `SELECT jsonb_build_object(
   'canRevise', s.status='APPROVED' AND NOT EXISTS (
     SELECT 1 FROM catalog.product_submissions next WHERE next.revision_of_submission_id=s.id
     AND next.status IN ('PENDING_REVIEW','APPROVED')),
+  'imageUrl', (SELECT image_url FROM catalog.products WHERE id = s.product_id),
+  'gallery', ${galleryOf('s.product_id', `jsonb_build_object('id', pm.id, 'url', ${MEDIA_URL})`)},
   'previous', CASE WHEN previous.id IS NULL THEN NULL ELSE jsonb_build_object(
     'title', jsonb_build_object('fr',previous.title_fr,'ar',previous.title_ar),
     'description', jsonb_build_object('fr',previous.description_fr,'ar',previous.description_ar)) END
@@ -644,13 +654,17 @@ export class PostgresCatalogRepository {
 
   public async getProduct(slug: string): Promise<CatalogProduct | null> {
     const parsed = CatalogSlugSchema.parse(slug);
-    const result = await this.pool.query<{ product: unknown }>(
+    const result = await this.pool.query<{ product: Record<string, unknown>; gallery: unknown }>(
       `
-      SELECT ${PRODUCT_JSON} ${PUBLIC_PRODUCTS} AND p.slug = $4
+      SELECT ${PRODUCT_JSON}, ${galleryOf('p.id', MEDIA_URL)} AS gallery
+      ${PUBLIC_PRODUCTS} AND p.slug = $4
     `,
       [null, null, null, parsed],
     );
-    return result.rows[0] === undefined ? null : CatalogProductSchema.parse(result.rows[0].product);
+    const row = result.rows[0];
+    return row === undefined
+      ? null
+      : CatalogProductSchema.parse({ ...row.product, gallery: row.gallery });
   }
 
   public async getSeller(slug: string): Promise<CatalogSeller | null> {

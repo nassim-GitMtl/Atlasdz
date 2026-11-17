@@ -73,6 +73,15 @@ export const CatalogOfferSchema = z
   })
   .strict();
 
+/** A seller photo served by the API: `/media/<uuid>.<ext>`. */
+export const MediaUrlSchema = z
+  .string()
+  .regex(/^\/media\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(?:jpg|png|webp)$/);
+/** Extra photos a product may show after its cover photo. */
+export const MAX_GALLERY_PHOTOS = 7;
+export const GalleryPhotoSchema = z.object({ id: UuidSchema, url: MediaUrlSchema }).strict();
+export type GalleryPhoto = z.infer<typeof GalleryPhotoSchema>;
+
 export const CatalogProductSchema = z
   .object({
     id: UuidSchema,
@@ -87,6 +96,8 @@ export const CatalogProductSchema = z
         /^(?:\/assets\/[a-zA-Z0-9_-]+\.(?:png|jpg|jpeg|webp|avif)|\/assets\/product-placeholder\.svg|\/media\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(?:jpg|png|webp))$/,
       ),
     offers: z.array(CatalogOfferSchema).min(1).max(50),
+    /** Extra photos after the cover, oldest first (product page only). */
+    gallery: z.array(MediaUrlSchema).max(MAX_GALLERY_PHOTOS).optional(),
   })
   .strict();
 
@@ -262,6 +273,9 @@ export const ProductSubmissionSchema = z
     reviewReason: z.string().max(1000).nullable(),
     revisionOfSubmissionId: UuidSchema.nullable(),
     canRevise: z.boolean(),
+    /** The product's cover photo and extra photos, once the product exists. */
+    imageUrl: z.string().max(200).nullish(),
+    gallery: z.array(GalleryPhotoSchema).max(MAX_GALLERY_PHOTOS).optional(),
     previous: z
       .object({
         title: SubmitProductInputSchema.shape.title,

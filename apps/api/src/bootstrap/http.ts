@@ -78,10 +78,15 @@ export async function createApiApplication(
     next();
   });
   // Product photo uploads are the only non-JSON bodies the API accepts.
-  app.use(
+  for (const path of [
     '/api/v1/seller/products/:productId/image',
-    express.raw({ type: ['image/jpeg', 'image/png', 'image/webp'], limit: MAX_IMAGE_BYTES }),
-  );
+    '/api/v1/seller/products/:productId/gallery',
+  ]) {
+    app.use(
+      path,
+      express.raw({ type: ['image/jpeg', 'image/png', 'image/webp'], limit: MAX_IMAGE_BYTES }),
+    );
+  }
   app.use(express.json({ limit: options.config.requestBodyLimitBytes, strict: true }));
   app.use(cookieParser());
   app.enableCors({

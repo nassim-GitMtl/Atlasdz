@@ -1,6 +1,6 @@
 import type { Pool, PoolClient } from 'pg';
 
-import { deleteMediaFiles } from '../media/media.js';
+import { deleteMediaFiles, removeGalleryPhoto } from '../media/media.js';
 
 export const ADMIN_SERVICE = Symbol('atlas.admin');
 export const ACCOUNT_ADMIN = Symbol('atlas.admin.accounts');
@@ -183,6 +183,23 @@ export class AdminService {
     // A takedown must make the photo unavailable, not just unlinked.
     if (this.mediaDirectory !== null) await deleteMediaFiles(this.mediaDirectory, previous);
     return true;
+  }
+
+  /** Takes down one of a product's extra photos (files deleted for good). */
+  public async removeGalleryPhoto(
+    productId: string,
+    mediaId: string,
+    actorId: string,
+    correlationId: string,
+  ): Promise<boolean> {
+    const removed = await removeGalleryPhoto(this.pool, this.mediaDirectory, {
+      productId,
+      mediaId,
+      sellerId: null,
+      actor: { type: 'staff', id: actorId },
+      correlationId,
+    });
+    return removed !== null;
   }
 
   public async dashboard() {

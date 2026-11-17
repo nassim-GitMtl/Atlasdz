@@ -27,12 +27,20 @@ entries are not a current feature inventory. Do not repeat completed redesign or
   commune a seller does not serve. Live-API mobile journey: 20/20 against the local API.
 - This is not real-device certification.
 
+## Product photo galleries (done, migration 000034)
+
+- Up to 7 extra photos after the main one. The submitting seller adds, removes or promotes one
+  to main photo (Seller Center and app); staff take any down by its address (files deleted).
+- Shown as thumbnails on the shop product page and the app product screen; the single-photo
+  API and old clients keep working (`gallery` is optional).
+- Evidence: API integration 22/22 (limits, ownership, cover swap, takedown, file deletion);
+  tools/testing/browser/gallery.mjs 7/7 on the local stack; e2e 15/15, mobile-app 20/20,
+  mobile-seller 11/11. Not yet run in the production rehearsal.
+
 ## Remaining implementation
 
-1. Multi-photo galleries: seller upload/order/removal, moderation, storage, customer web/native
-   display, ownership/takedown tests and backward-compatible single-photo support.
-2. Structured specifications: seller authoring, review, publication and multilingual display.
-3. Native push: permission UX, device ownership/revocation, outbox integration, retries,
+1. Structured specifications: seller authoring, review, publication and multilingual display.
+2. Native push: permission UX, device ownership/revocation, outbox integration, retries,
    receipts/invalid-token cleanup and authorized deep links.
 
 ## Release gates

@@ -5,6 +5,7 @@ import { useActionState, useState } from 'react';
 import {
   forgotPasswordAction,
   resetPasswordAction,
+  galleryPhotoAction,
   removePhotoAction,
   reviewSellerAction,
   uploadPhotoAction,
@@ -302,6 +303,15 @@ const photoCopy = {
     forbidden: 'Seul le vendeur à l’origine du produit, une fois validé, peut ajouter sa photo.',
     remove: 'Retirer la photo actuelle',
     removed: 'Photo retirée.',
+    galleryLabel: 'Photo supplémentaire (JPEG, PNG ou WebP, 5 Mo max.)',
+    gallerySubmit: 'Ajouter la photo',
+    galleryTitle: 'Photos du produit',
+    galleryNote: 'La photo principale, puis jusqu’à 7 photos supplémentaires.',
+    cover: 'Photo principale',
+    makeCover: 'Mettre en photo principale',
+    removeExtra: 'Retirer',
+    full: 'Ce produit a déjà 7 photos supplémentaires : retirez-en une d’abord.',
+    changed: 'Photos mises à jour.',
   },
   en: {
     label: 'Product photo (JPEG, PNG or WebP, 5 MB max.)',
@@ -311,6 +321,15 @@ const photoCopy = {
     forbidden: 'Only the seller who proposed the product, once approved, can add its photo.',
     remove: 'Remove the current photo',
     removed: 'Photo removed.',
+    galleryLabel: 'Extra photo (JPEG, PNG or WebP, 5 MB max.)',
+    gallerySubmit: 'Add the photo',
+    galleryTitle: 'Product photos',
+    galleryNote: 'The main photo, then up to 7 extra photos.',
+    cover: 'Main photo',
+    makeCover: 'Make main photo',
+    removeExtra: 'Remove',
+    full: 'This product already has 7 extra photos: remove one first.',
+    changed: 'Photos updated.',
   },
   ar: {
     label: 'صورة المنتج (JPEG أو PNG أو WebP، 5 ميغابايت كحد أقصى)',
@@ -320,25 +339,38 @@ const photoCopy = {
     forbidden: 'يمكن فقط للبائع الذي اقترح المنتج، بعد الموافقة عليه، إضافة صورته.',
     remove: 'إزالة الصورة الحالية',
     removed: 'تمت إزالة الصورة.',
+    galleryLabel: 'صورة إضافية (JPEG أو PNG أو WebP، 5 ميغابايت كحد أقصى)',
+    gallerySubmit: 'إضافة الصورة',
+    galleryTitle: 'صور المنتج',
+    galleryNote: 'الصورة الرئيسية، ثم حتى 7 صور إضافية.',
+    cover: 'الصورة الرئيسية',
+    makeCover: 'جعلها الصورة الرئيسية',
+    removeExtra: 'إزالة',
+    full: 'لهذا المنتج 7 صور إضافية بالفعل: أزل واحدة أولًا.',
+    changed: 'تم تحديث الصور.',
   },
 } as const;
 
 export function ProductPhotoForm({
   locale,
   productId,
+  gallery = false,
 }: {
   readonly locale: Locale;
   readonly productId: string;
+  /** Adds an extra photo instead of replacing the main one. */
+  readonly gallery?: boolean;
 }) {
   const [state, action, pending] = useActionState(uploadPhotoAction, {});
   const t = photoCopy[locale];
   const common = copy[locale];
-  const id = `photo-${productId}`;
+  const id = `${gallery ? 'gallery' : 'photo'}-${productId}`;
   return (
     <form action={action} className="auth-form">
       <input type="hidden" name="lang" value={locale} />
       <input type="hidden" name="productId" value={productId} />
-      <Field id={id} label={t.label}>
+      {gallery && <input type="hidden" name="target" value="gallery" />}
+      <Field id={id} label={gallery ? t.galleryLabel : t.label}>
         <input id={id} name="photo" type="file" accept="image/jpeg,image/png,image/webp" required />
       </Field>
       {state.done && (
@@ -352,13 +384,15 @@ export function ProductPhotoForm({
             ? t.invalid
             : state.error === 'forbidden'
               ? t.forbidden
-              : state.error === 'csrf'
-                ? authCopy[locale].csrf
-                : common[state.error]}
+              : state.error === 'full'
+                ? t.full
+                : state.error === 'csrf'
+                  ? authCopy[locale].csrf
+                  : common[state.error]}
         </p>
       )}
       <button className="button secondary" type="submit" disabled={pending}>
-        {pending ? authCopy[locale].busy : t.submit}
+        {pending ? authCopy[locale].busy : gallery ? t.gallerySubmit : t.submit}
       </button>
     </form>
   );
@@ -389,6 +423,80 @@ export function RemovePhotoButton({
       )}
       <button className="button secondary" type="submit" disabled={pending}>
         {t.remove}
+      </button>
+    </form>
+  );
+}
+
+/** Current photos of an approved product: the main one, then extras with their actions. */
+export function ProductPhotos({
+  locale,
+  productId,
+  imageUrl,
+  gallery,
+}: {
+  readonly locale: Locale;
+  readonly productId: string;
+  readonly imageUrl: string | null | undefined;
+  readonly gallery: readonly { readonly id: string; readonly url: string }[];
+}) {
+  const t = photoCopy[locale];
+  const cover = imageUrl?.startsWith('/media/') ? imageUrl : null;
+  if (cover === null && gallery.length === 0) return null;
+  return (
+    <section className="photo-strip" aria-label={t.galleryTitle}>
+      <h3>{t.galleryTitle}</h3>
+      <p className="muted">{t.galleryNote}</p>
+      <ul>
+        {cover && (
+          <li>
+            <img src={cover.replace(/\.webp$/, '-640.webp')} alt="" width={120} height={120} />
+            <strong>{t.cover}</strong>
+          </li>
+        )}
+        {gallery.map((photo) => (
+          <li key={photo.id}>
+            <img src={photo.url.replace(/\.webp$/, '-640.webp')} alt="" width={120} height={120} />
+            <GalleryPhotoButton locale={locale} productId={productId} mediaId={photo.id} change="cover" />
+            <GalleryPhotoButton locale={locale} productId={productId} mediaId={photo.id} change="remove" />
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function GalleryPhotoButton({
+  locale,
+  productId,
+  mediaId,
+  change,
+}: {
+  readonly locale: Locale;
+  readonly productId: string;
+  readonly mediaId: string;
+  readonly change: 'remove' | 'cover';
+}) {
+  const [state, action, pending] = useActionState(galleryPhotoAction, {});
+  const t = photoCopy[locale];
+  if (state.done)
+    return (
+      <p role="status" className="notice success">
+        {t.changed}
+      </p>
+    );
+  return (
+    <form action={action}>
+      <input type="hidden" name="productId" value={productId} />
+      <input type="hidden" name="mediaId" value={mediaId} />
+      <input type="hidden" name="change" value={change} />
+      {state.error && (
+        <p className="notice error" role="alert">
+          {t.forbidden}
+        </p>
+      )}
+      <button className="button secondary small" type="submit" disabled={pending}>
+        {change === 'cover' ? t.makeCover : t.removeExtra}
       </button>
     </form>
   );

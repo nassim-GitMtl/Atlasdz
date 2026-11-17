@@ -5,7 +5,7 @@ import { Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
 import { FavoriteButton } from '@/components/favorite-button';
-import { Photo } from '@/components/photo';
+import { PhotoGallery } from '@/components/photo-gallery';
 import { RatingLine, RatingSummary, ReviewItem } from '@/components/reviews';
 import { SummaryCard } from '@/components/product-card';
 import { Stepper } from '@/components/stepper';
@@ -13,14 +13,14 @@ import { Button, Card, LoadState, Notice, Screen, text } from '@/components/ui';
 import { api, errorCode } from '@/lib/api';
 import { useCart } from '@/lib/cart';
 import { summarize } from '@/lib/collections';
-import { imageUri, SHOP_URL } from '@/lib/config';
+import { SHOP_URL } from '@/lib/config';
 import { fill, formatDate, formatMoney, localized } from '@/lib/format';
 import { useI18n } from '@/lib/i18n';
 import { discountPercent } from '@/lib/promotion';
 import { useLibrary } from '@/lib/library';
 import { useSession } from '@/lib/session';
 import { errorMessage } from '@/lib/strings';
-import { colors, radius } from '@/lib/theme';
+import { colors } from '@/lib/theme';
 import type { CatalogProduct, CatalogProductList, ReviewPage } from '@/lib/types';
 import { useRequest } from '@/lib/use-request';
 import { PreorderNote } from '@/components/preorder-note';
@@ -117,7 +117,11 @@ export default function ProductScreen() {
       />
       {item ? (
         <>
-          <Photo uri={imageUri(item.imageUrl, 'large')} label={title} style={styles.image} />
+          <PhotoGallery
+            urls={[item.imageUrl, ...(item.gallery ?? [])]}
+            label={title}
+            thumbLabel={t.product.photos}
+          />
           <View style={styles.gap}>
             <Text style={text.muted}>{localized(item.category.title, locale)}</Text>
             <Text style={text.title}>{title}</Text>
@@ -143,7 +147,9 @@ export default function ProductScreen() {
               <Text style={text.price}>{formatMoney(offer.priceMinor, locale)}</Text>
               {offer.regularPriceMinor && offer.regularPriceMinor > offer.priceMinor ? (
                 <Text style={styles.promo}>
-                  {fill(t.promo.tag, { n: discountPercent(offer.priceMinor, offer.regularPriceMinor) })}
+                  {fill(t.promo.tag, {
+                    n: discountPercent(offer.priceMinor, offer.regularPriceMinor),
+                  })}
                   {' · '}
                   <Text style={styles.regular}>{formatMoney(offer.regularPriceMinor, locale)}</Text>
                   {offer.promotionEndsAt
@@ -232,7 +238,6 @@ export default function ProductScreen() {
 const styles = StyleSheet.create({
   promo: { fontSize: 13, fontWeight: '700', color: colors.danger },
   regular: { color: colors.muted, textDecorationLine: 'line-through', fontWeight: '400' },
-  image: { width: '100%', aspectRatio: 1, borderRadius: radius, backgroundColor: colors.soft },
   gap: { gap: 4 },
   grow: { flex: 1 },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },

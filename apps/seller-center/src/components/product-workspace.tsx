@@ -1,11 +1,12 @@
 import { randomUUID } from 'node:crypto';
+import { MAX_GALLERY_PHOTOS } from '@atlas/contracts';
 import Link from 'next/link';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { Shell } from './shell';
 import { ServiceState } from './states';
 import { ProductForm, ProductReviewForm } from './product-forms';
-import { ProductPhotoForm, RemovePhotoButton } from './auth-forms';
+import { ProductPhotoForm, ProductPhotos, RemovePhotoButton } from './auth-forms';
 import { listProductCategories, listProductSubmissions } from '@/lib/api';
 import { href, localeFrom, type SearchParams, localized } from '@/lib/i18n';
 import { productsCopy } from '@/lib/products-copy';
@@ -134,8 +135,17 @@ export async function ProductWorkspace({
                         </Link>
                         {s.revisionOfSubmissionId === null && (
                           <>
+                            <ProductPhotos
+                              locale={locale}
+                              productId={s.productId}
+                              imageUrl={s.imageUrl}
+                              gallery={s.gallery ?? []}
+                            />
                             <ProductPhotoForm locale={locale} productId={s.productId} />
                             <RemovePhotoButton locale={locale} productId={s.productId} />
+                            {(s.gallery?.length ?? 0) < MAX_GALLERY_PHOTOS && (
+                              <ProductPhotoForm locale={locale} productId={s.productId} gallery />
+                            )}
                           </>
                         )}
                       </>

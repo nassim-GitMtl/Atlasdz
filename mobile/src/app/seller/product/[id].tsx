@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
 import { Photo } from '@/components/photo';
@@ -29,13 +29,16 @@ export default function SellerProductScreen() {
   );
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
+  // Which card reported the failure: the main photo or the extra photos.
+  const [failedIn, setFailedIn] = useState<'image' | 'gallery'>('image');
   const [denied, setDenied] = useState(false);
 
   const data = submission.data;
   const productId = data?.status === 'APPROVED' ? data.productId : null;
   const entry = productId ? catalog.data?.items.find((item) => item.id === productId) : undefined;
 
-  async function upload(source: PhotoSource) {
+  /** Replaces the main photo, or adds an extra one with `target: 'gallery'`. */
+  async function upload(source: PhotoSource, target: 'image' | 'gallery' = 'image') {
     if (!productId) return;
     setFailure(null);
     setDenied(false);
@@ -47,13 +50,14 @@ export default function SellerProductScreen() {
       }
       if (picked === null) return;
       setBusy(true);
-      await session.request(`/api/v1/seller/products/${productId}/image`, {
+      await session.request(`/api/v1/seller/products/${productId}/${target}`, {
         rawBody: await photoBytes(picked),
         contentType: 'image/jpeg',
         timeoutMs: 60_000,
       });
-      await catalog.reload();
+      await Promise.all([catalog.reload(), submission.reload()]);
     } catch (error) {
+      setFailedIn(target);
       setFailure(errorCode(error));
     } finally {
       setBusy(false);
@@ -68,11 +72,31 @@ export default function SellerProductScreen() {
       await session.request(`/api/v1/seller/products/${productId}/image/remove`, { body: {} });
       await catalog.reload();
     } catch (error) {
+      setFailedIn('image');
       setFailure(errorCode(error));
     } finally {
       setBusy(false);
     }
   }
+
+  async function changeExtra(mediaId: string, change: 'cover' | 'remove') {
+    if (!productId) return;
+    setBusy(true);
+    setFailure(null);
+    try {
+      await session.request(`/api/v1/seller/products/${productId}/gallery/${mediaId}/${change}`, {
+        body: {},
+      });
+      await Promise.all([catalog.reload(), submission.reload()]);
+    } catch (error) {
+      setFailedIn('gallery');
+      setFailure(errorCode(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const extras = data?.gallery ?? [];
 
   return (
     <Screen refreshing={submission.loading && !!data} onRefresh={() => void submission.reload()}>
@@ -110,7 +134,9 @@ export default function SellerProductScreen() {
               ) : null}
               <Text style={text.muted}>{t.catalog.photoNote}</Text>
               {denied ? <Notice tone="error">{t.catalog.permission}</Notice> : null}
-              {failure ? <Notice tone="error">{errorMessage(t, failure)}</Notice> : null}
+              {failure && failedIn === 'image' ? (
+                <Notice tone="error">{errorMessage(t, failure)}</Notice>
+              ) : null}
               <Button
                 label={t.catalog.takePhoto}
                 busy={busy}
@@ -133,6 +159,54 @@ export default function SellerProductScreen() {
             </Card>
           ) : null}
           {productId ? (
+            <Card>
+              <Text style={text.heading}>{t.catalog.extraPhotos}</Text>
+              <Text style={text.muted}>{t.catalog.extraNote}</Text>
+              {failure && failedIn === 'gallery' ? (
+                <Notice tone="error">{errorMessage(t, failure)}</Notice>
+              ) : null}
+              {extras.map((photo, index) => (
+                <View key={photo.id} style={styles.extra}>
+                  <Photo
+                    uri={imageUri(photo.url, 'small')}
+                    label={`${t.catalog.extraPhotos} ${index + 1}`}
+                    style={styles.thumb}
+                  />
+                  <View style={styles.extraActions}>
+                    <Button
+                      label={t.catalog.makeCover}
+                      variant="secondary"
+                      disabled={busy}
+                      onPress={() => void changeExtra(photo.id, 'cover')}
+                    />
+                    <Button
+                      label={t.catalog.removeExtra}
+                      variant="secondary"
+                      disabled={busy}
+                      onPress={() => void changeExtra(photo.id, 'remove')}
+                    />
+                  </View>
+                </View>
+              ))}
+              {extras.length < MAX_EXTRA_PHOTOS ? (
+                <>
+                  <Button
+                    label={t.catalog.extraCamera}
+                    variant="secondary"
+                    disabled={busy}
+                    onPress={() => void upload('camera', 'gallery')}
+                  />
+                  <Button
+                    label={t.catalog.extraLibrary}
+                    variant="secondary"
+                    disabled={busy}
+                    onPress={() => void upload('library', 'gallery')}
+                  />
+                </>
+              ) : null}
+            </Card>
+          ) : null}
+          {productId ? (
             <Button
               label={t.catalog.sell}
               onPress={() => router.push(`/seller/offer/new?productId=${productId}`)}
@@ -144,6 +218,12 @@ export default function SellerProductScreen() {
   );
 }
 
+/** Extra photos a product may show after its cover (the API enforces the same limit). */
+const MAX_EXTRA_PHOTOS = 7;
+
 const styles = StyleSheet.create({
   photo: { width: '100%', aspectRatio: 1, borderRadius: radius, backgroundColor: colors.soft },
+  extra: { flexDirection: 'row', gap: 12, alignItems: 'center' },
+  thumb: { width: 88, height: 88, borderRadius: 10, backgroundColor: colors.soft },
+  extraActions: { flex: 1, gap: 8 },
 });

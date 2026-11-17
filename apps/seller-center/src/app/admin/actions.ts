@@ -12,6 +12,7 @@ import {
   setOfferStatusAdmin,
   createCategory,
   moderateReview,
+  removeGalleryPhoto,
   removePhoto,
   setSellerStatus,
   updateCategory,
@@ -72,10 +73,19 @@ export async function updateCategoryAction(_s: AdminState, form: FormData) {
     }),
   );
 }
-/** Accepts a product ID or a shop URL containing it (product slugs are p-<id>). */
+/**
+ * Accepts a product ID or a shop URL containing it (product slugs are p-<id>). With an extra
+ * photo's address, that photo is taken down; otherwise the main photo.
+ */
 export async function removePhotoAction(_s: AdminState, form: FormData) {
   const id = UUID.exec(str(form, 'product').toLowerCase())?.[0];
   if (!id) return { error: 'invalid' } satisfies AdminState;
+  const photo = str(form, 'photo');
+  if (photo) {
+    const mediaId = UUID.exec(photo.toLowerCase())?.[0];
+    if (!mediaId) return { error: 'invalid' } satisfies AdminState;
+    return run((token) => removeGalleryPhoto(token, id, mediaId));
+  }
   return run((token) => removePhoto(token, id));
 }
 

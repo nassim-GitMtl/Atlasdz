@@ -166,16 +166,18 @@ export const requestPasswordReset = (
 export const resetPassword = (token: string, password: string, clientIp?: string) =>
   call('/api/v1/auth/password/reset', Accepted, { body: { token, password }, clientIp });
 
+/** Uploads the cover photo, or an extra photo with `target: 'gallery'`. */
 export async function uploadProductPhoto(
   token: string,
   productId: string,
   bytes: ArrayBuffer,
   contentType: string,
-): Promise<'ok' | 'invalid' | 'forbidden' | 'unavailable'> {
+  target: 'image' | 'gallery' = 'image',
+): Promise<'ok' | 'invalid' | 'forbidden' | 'full' | 'unavailable'> {
   try {
     const response = await fetch(
       new URL(
-        `/api/v1/seller/products/${encodeURIComponent(productId)}/image`,
+        `/api/v1/seller/products/${encodeURIComponent(productId)}/${target}`,
         apiOrigin(process.env),
       ),
       {
@@ -188,6 +190,7 @@ export async function uploadProductPhoto(
       },
     );
     if (response.ok) return 'ok';
+    if (response.status === 409) return 'full';
     if ([413, 415, 422].includes(response.status)) return 'invalid';
     if ([401, 403, 404].includes(response.status)) return 'forbidden';
     return 'unavailable';
@@ -218,6 +221,33 @@ export const customerSignal = (token: string, sellerOrderId: string) =>
     CustomerSignalSchema,
     { token },
   ).catch(() => null);
+
+/** Removes an extra photo, or makes it the cover photo. */
+export async function changeGalleryPhoto(
+  token: string,
+  productId: string,
+  mediaId: string,
+  change: 'remove' | 'cover',
+): Promise<boolean> {
+  try {
+    const response = await fetch(
+      new URL(
+        `/api/v1/seller/products/${encodeURIComponent(productId)}/gallery/${encodeURIComponent(mediaId)}/${change}`,
+        apiOrigin(process.env),
+      ),
+      {
+        method: 'POST',
+        cache: 'no-store',
+        redirect: 'error',
+        signal: AbortSignal.timeout(8000),
+        headers: { authorization: `Bearer ${token}` },
+      },
+    );
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
 
 export async function removeProductPhoto(token: string, productId: string): Promise<boolean> {
   try {

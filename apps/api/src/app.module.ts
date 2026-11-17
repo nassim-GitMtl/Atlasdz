@@ -78,6 +78,7 @@ import {
 import { AccountAdminController, AdminController } from './admin/admin.controller.js';
 import {
   MediaController,
+  SellerProductGalleryController,
   SellerProductImageController,
   SellerProductImageRemoveController,
 } from './media/media.controller.js';
@@ -265,7 +266,12 @@ export class AppModule {
             ]),
         ...(options.mediaDirectory === undefined
           ? []
-          : [SellerProductImageController, SellerProductImageRemoveController, MediaController]),
+          : [
+              SellerProductImageController,
+              SellerProductImageRemoveController,
+              SellerProductGalleryController,
+              MediaController,
+            ]),
       ],
       providers: [
         {

@@ -36,6 +36,7 @@ export const SafeErrorCodeSchema = z.enum([
   'DELIVERY_CONFLICT',
   'METHOD_NOT_ALLOWED',
   'PAYLOAD_TOO_LARGE',
+  'PHOTO_LIMIT_REACHED',
   'UNSUPPORTED_MEDIA_TYPE',
   'VALIDATION_FAILED',
   'RATE_LIMITED',
@@ -109,6 +110,10 @@ export const SAFE_ERROR_DEFINITIONS: Readonly<
     message: 'Delivery configuration changed. Reload before saving.',
   },
   METHOD_NOT_ALLOWED: { status: 405, message: 'The method is not supported.' },
+  PHOTO_LIMIT_REACHED: {
+    status: 409,
+    message: 'This product already has the maximum number of photos.',
+  },
   PAYLOAD_TOO_LARGE: { status: 413, message: 'The request payload is too large.' },
   UNSUPPORTED_MEDIA_TYPE: { status: 415, message: 'The media type is not supported.' },
   VALIDATION_FAILED: { status: 422, message: 'The request failed validation.' },

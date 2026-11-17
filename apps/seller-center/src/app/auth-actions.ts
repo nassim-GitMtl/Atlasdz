@@ -13,6 +13,7 @@ import {
   resetPassword,
   reviewSeller,
   removeProductPhoto,
+  changeGalleryPhoto,
   uploadProductPhoto,
 } from '@/lib/auth';
 import type { AuthError } from '@/lib/auth-copy';
@@ -182,7 +183,7 @@ export async function resetPasswordAction(
 }
 
 export interface PhotoState {
-  readonly error?: 'invalid' | 'forbidden' | 'unavailable' | 'csrf' | 'unauthorized';
+  readonly error?: 'invalid' | 'forbidden' | 'full' | 'unavailable' | 'csrf' | 'unauthorized';
   readonly done?: boolean;
 }
 
@@ -205,8 +206,25 @@ export async function uploadPhotoAction(_state: PhotoState, form: FormData): Pro
     productId.data,
     await file.arrayBuffer(),
     file.type,
+    form.get('target') === 'gallery' ? 'gallery' : 'image',
   );
   if (result !== 'ok') return { error: result };
+  revalidatePath('/products');
+  return { done: true };
+}
+
+/** Removes an extra photo, or makes it the cover. */
+export async function galleryPhotoAction(_state: PhotoState, form: FormData): Promise<PhotoState> {
+  if (!(await validOrigin())) return { error: 'csrf' };
+  const token = await accessToken();
+  if (!token) return { error: 'unauthorized' };
+  const productId = UuidSchema.safeParse(form.get('productId'));
+  const mediaId = UuidSchema.safeParse(form.get('mediaId'));
+  const change = form.get('change');
+  if (!productId.success || !mediaId.success || (change !== 'remove' && change !== 'cover'))
+    return { error: 'invalid' };
+  if (!(await changeGalleryPhoto(token, productId.data, mediaId.data, change)))
+    return { error: 'forbidden' };
   revalidatePath('/products');
   return { done: true };
 }

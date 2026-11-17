@@ -1,4 +1,4 @@
-import { ProductPhoto } from '@/components/product-photo';
+import { ProductGallery } from '@/components/product-gallery';
 import { notFound } from 'next/navigation';
 import type { CatalogProduct } from '@atlas/contracts';
 import { Breadcrumbs } from '@/components/breadcrumbs';
@@ -98,16 +98,11 @@ export default async function ProductPage({
           ]}
         />
         <section className="product-detail">
-          <div className="product-detail__image">
-            <ProductPhoto
-              src={product.imageUrl}
-              alt={title}
-              width={850}
-              height={700}
-              priority
-              sizes="(max-width: 760px) 100vw, 45vw"
-            />
-          </div>
+          <ProductGallery
+            photos={[product.imageUrl, ...(product.gallery ?? [])]}
+            alt={title}
+            label={lang(locale, 'Photos du produit', 'صور المنتج', 'Product photos')}
+          />
           <div className="product-detail__content">
             <p className="eyebrow">{text(product.category.title, locale)}</p>
             <h1>{title}</h1>

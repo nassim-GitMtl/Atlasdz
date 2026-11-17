@@ -181,6 +181,10 @@ export function RemovePhotoForm({ locale }: { readonly locale: Locale }) {
         <label htmlFor="photo-product">{t.photoProduct}</label>
         <input id="photo-product" name="product" dir="ltr" required maxLength={300} />
       </div>
+      <div className="field">
+        <label htmlFor="photo-address">{t.photoAddress}</label>
+        <input id="photo-address" name="photo" dir="ltr" maxLength={300} />
+      </div>
       <Feedback state={state} locale={locale} />
       <button className="button secondary" type="submit" disabled={pending}>
         {t.removePhoto}

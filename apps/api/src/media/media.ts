@@ -94,7 +94,69 @@ export async function normalizeImage(bytes: Buffer): Promise<NormalizedImage | n
 
 export const WEBP: ImageType = { contentType: 'image/webp', ext: 'webp' };
 
-export type AttachOutcome = 'ATTACHED' | 'NOT_FOUND' | 'SELLER_NOT_APPROVED';
+export type AttachOutcome = 'ATTACHED' | 'NOT_FOUND' | 'SELLER_NOT_APPROVED' | 'LIMIT_REACHED';
+
+/** Extra photos a product may show after its cover. */
+export const MAX_GALLERY_PHOTOS = 7;
+
+/** Photo URL for a stored photo row. */
+export const mediaUrl = (id: string, contentType: string) =>
+  `/media/${id}.${contentType === 'image/png' ? 'png' : contentType === 'image/webp' ? 'webp' : 'jpg'}`;
+
+/** The photo id in a `/media/<uuid>.<ext>` URL, or null. */
+export const mediaIdOf = (imageUrl: string | null | undefined) =>
+  /^\/media\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.(?:jpg|png|webp)$/.exec(
+    imageUrl ?? '',
+  )?.[1] ?? null;
+
+/**
+ * Takes an extra photo out of a product's gallery and deletes its files. `sellerId` limits it
+ * to the submitting seller; null is a staff takedown. Returns the removed URL, or null.
+ */
+export async function removeGalleryPhoto(
+  pool: Pool,
+  directory: string | null,
+  input: {
+    productId: string;
+    mediaId: string;
+    sellerId: string | null;
+    actor: { type: 'seller_user' | 'staff'; id: string };
+    correlationId: string;
+  },
+): Promise<string | null> {
+  const removed = await pool.query<{ content_type: string }>(
+    `UPDATE catalog.product_media pm SET in_gallery = false, removed_at = clock_timestamp()
+     WHERE pm.id = $1 AND pm.product_id = $2 AND pm.in_gallery
+       AND ($3::uuid IS NULL OR EXISTS (
+         SELECT 1 FROM catalog.product_submissions ps
+         WHERE ps.product_id = pm.product_id AND ps.seller_id = $3 AND ps.status = 'APPROVED'
+           AND ps.revision_of_submission_id IS NULL))
+     RETURNING pm.content_type`,
+    [input.mediaId, input.productId, input.sellerId],
+  );
+  const row = removed.rows[0];
+  if (row === undefined) return null;
+  const url = mediaUrl(input.mediaId, row.content_type);
+  await pool.query(
+    `INSERT INTO platform.audit_events
+       (actor_type, actor_id, scope_snapshot, action, outcome, entity_type, entity_id,
+        correlation_id, before_data)
+     VALUES ($1, $2, $3, 'product.gallery_photo_removed', 'SUCCEEDED', 'product', $4, $5, $6)`,
+    [
+      input.actor.type,
+      input.actor.id,
+      JSON.stringify(
+        input.sellerId === null ? { type: 'GLOBAL' } : { type: 'SELLER', id: input.sellerId },
+      ),
+      input.productId,
+      input.correlationId,
+      JSON.stringify({ mediaId: input.mediaId, imageUrl: url }),
+    ],
+  );
+  // A removal or takedown makes the photo unavailable, not just unlinked.
+  if (directory !== null) await deleteMediaFiles(directory, url);
+  return url;
+}
 
 /** Stores product photos on disk and records them; only the submitting seller may upload. */
 export class ProductMediaService {
@@ -141,6 +203,93 @@ export class ProductMediaService {
     return true;
   }
 
+  public removeGalleryPhoto(input: {
+    productId: string;
+    mediaId: string;
+    sellerId: string;
+    userId: string;
+    correlationId: string;
+  }): Promise<string | null> {
+    return removeGalleryPhoto(this.pool, this.directory, {
+      ...input,
+      actor: { type: 'seller_user', id: input.userId },
+    });
+  }
+
+  /**
+   * Makes an extra photo the cover. A previous seller-uploaded cover moves into the gallery
+   * in its place, so no photo is lost; the gallery size does not change.
+   */
+  public async makeCover(input: {
+    productId: string;
+    mediaId: string;
+    sellerId: string;
+    userId: string;
+    correlationId: string;
+  }): Promise<string | null> {
+    const client = await this.pool.connect();
+    let broken = false;
+    try {
+      await client.query('BEGIN');
+      const found = await client.query<{ content_type: string; previous: string }>(
+        `SELECT pm.content_type, p.image_url AS previous
+         FROM catalog.product_media pm
+         JOIN catalog.products p ON p.id = pm.product_id
+         JOIN catalog.product_submissions ps ON ps.product_id = p.id
+         WHERE pm.id = $1 AND pm.product_id = $2 AND pm.in_gallery
+           AND ps.seller_id = $3 AND ps.status = 'APPROVED' AND ps.revision_of_submission_id IS NULL
+         FOR UPDATE OF p, pm`,
+        [input.mediaId, input.productId, input.sellerId],
+      );
+      const row = found.rows[0];
+      if (row === undefined) {
+        await client.query('ROLLBACK');
+        return null;
+      }
+      const imageUrl = mediaUrl(input.mediaId, row.content_type);
+      await client.query('UPDATE catalog.product_media SET in_gallery = false WHERE id = $1', [
+        input.mediaId,
+      ]);
+      const previousId = mediaIdOf(row.previous);
+      if (previousId !== null) {
+        await client.query(
+          `UPDATE catalog.product_media SET in_gallery = true
+           WHERE id = $1 AND product_id = $2 AND removed_at IS NULL`,
+          [previousId, input.productId],
+        );
+      }
+      await client.query('UPDATE catalog.products SET image_url = $2 WHERE id = $1', [
+        input.productId,
+        imageUrl,
+      ]);
+      await client.query(
+        `INSERT INTO platform.audit_events
+           (actor_type, actor_id, scope_snapshot, action, outcome, entity_type, entity_id,
+            correlation_id, before_data, after_data)
+         VALUES ('seller_user', $1, $2, 'product.cover_changed', 'SUCCEEDED', 'product', $3, $4, $5, $6)`,
+        [
+          input.userId,
+          JSON.stringify({ type: 'SELLER', id: input.sellerId }),
+          input.productId,
+          input.correlationId,
+          JSON.stringify({ imageUrl: row.previous }),
+          JSON.stringify({ imageUrl }),
+        ],
+      );
+      await client.query('COMMIT');
+      return imageUrl;
+    } catch (error) {
+      try {
+        await client.query('ROLLBACK');
+      } catch {
+        broken = true;
+      }
+      throw error;
+    } finally {
+      client.release(broken);
+    }
+  }
+
   public filePath(file: string): string | null {
     return MEDIA_FILE_PATTERN.test(file) ? join(this.directory, file) : null;
   }
@@ -154,7 +303,10 @@ export class ProductMediaService {
     smallBytes: Buffer;
     image: ImageType;
     correlationId: string;
-  }): Promise<{ outcome: AttachOutcome; imageUrl?: string }> {
+    /** Adds an extra photo instead of replacing the cover. */
+    gallery?: boolean;
+  }): Promise<{ outcome: AttachOutcome; imageUrl?: string; mediaId?: string }> {
+    const gallery = input.gallery === true;
     const id = randomUUID();
     const file = `${id}.${input.image.ext}`;
     const stored = [
@@ -190,10 +342,21 @@ export class ProductMediaService {
         await client.query('ROLLBACK');
         return { outcome: 'SELLER_NOT_APPROVED' };
       }
+      if (gallery) {
+        // The product row lock above serializes concurrent uploads for the same product.
+        const count = await client.query<{ n: number }>(
+          'SELECT count(*)::int AS n FROM catalog.product_media WHERE product_id = $1 AND in_gallery',
+          [input.productId],
+        );
+        if ((count.rows[0]?.n ?? 0) >= MAX_GALLERY_PHOTOS) {
+          await client.query('ROLLBACK');
+          return { outcome: 'LIMIT_REACHED' };
+        }
+      }
       await client.query(
         `INSERT INTO catalog.product_media
-           (id, product_id, seller_id, uploaded_by, content_type, byte_size, sha256)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+           (id, product_id, seller_id, uploaded_by, content_type, byte_size, sha256, in_gallery)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
         [
           id,
           input.productId,
@@ -202,33 +365,37 @@ export class ProductMediaService {
           input.image.contentType,
           input.bytes.length,
           sha256,
+          gallery,
         ],
       );
       const imageUrl = `/media/${file}`;
-      await client.query('UPDATE catalog.products SET image_url = $2 WHERE id = $1', [
-        input.productId,
-        imageUrl,
-      ]);
+      if (!gallery) {
+        await client.query('UPDATE catalog.products SET image_url = $2 WHERE id = $1', [
+          input.productId,
+          imageUrl,
+        ]);
+      }
       await client.query(
         `INSERT INTO platform.audit_events
            (actor_type, actor_id, scope_snapshot, action, outcome, entity_type, entity_id,
             correlation_id, after_data)
-         VALUES ('seller_user', $1, $2, 'product.photo_uploaded', 'SUCCEEDED', 'product', $3, $4, $5)`,
+         VALUES ('seller_user', $1, $2, $6, 'SUCCEEDED', 'product', $3, $4, $5)`,
         [
           input.userId,
           JSON.stringify({ type: 'SELLER', id: input.sellerId }),
           input.productId,
           input.correlationId,
           JSON.stringify({ mediaId: id, sha256, bytes: input.bytes.length }),
+          gallery ? 'product.gallery_photo_added' : 'product.photo_uploaded',
         ],
       );
       // Publish the files before committing so a committed URL always resolves.
       for (const entry of stored) await rename(`${entry.target}.partial`, entry.target);
       await client.query('COMMIT');
       committed = true;
-      // The replaced photo is deleted for good (a failure only leaves an unreferenced file).
-      await deleteMediaFiles(this.directory, row.previous).catch(() => undefined);
-      return { outcome: 'ATTACHED', imageUrl };
+      // The replaced cover is deleted for good (a failure only leaves an unreferenced file).
+      if (!gallery) await deleteMediaFiles(this.directory, row.previous).catch(() => undefined);
+      return { outcome: 'ATTACHED', imageUrl, mediaId: id };
     } catch (error) {
       try {
         await client.query('ROLLBACK');
