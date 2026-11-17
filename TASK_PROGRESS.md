@@ -12,5 +12,8 @@
 - Tests: API 74 unit + 22 integration; e2e.mjs 15/15; mobile-app 20/20; mobile-seller 11/11.
   Local checkout only for the demo customer; restart API if 429 on /local/session.
 - Rehearsal kit (scratch, not in repo): atlas.sh wrapper, atlas-home secrets, rehearsal.yml.
-- Remaining: real server deploy (owner: Algerian VPS, .com.dz, SMTP, legal), EAS build → Play,
-  push notifications, multi-photo, product specs, fee preview in the app's cart.
+- Mobile cart: grouped by seller, commune fee previews (expiry/stale-safe), unavailable items
+  block checkout, commune carries into checkout, which re-shows each seller's fee and blocks
+  unsupported communes. mobile-app 20/20 (live API), mobile-delivery 3/3 (mocked), 47 unit.
+- Remaining: real server deploy (owner: VPS/domain/SMTP/legal), signed EAS build → Play,
+  push notifications, multi-photo, product specs. See docs/implementation/REMAINING-RELEASE-WORK.md.

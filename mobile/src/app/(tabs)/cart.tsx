@@ -5,6 +5,10 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
 import { Photo } from '@/components/photo';
+import { CartDestination } from '@/components/cart-destination';
+import { cartDeliveryKey, cartDeliveryTotal, sellerCartGroups } from '@/lib/cart-delivery';
+import { cartDeliveryCopy } from '@/lib/cart-delivery-copy';
+import { useDeliveryFees } from '@/lib/use-delivery-fees';
 import { Badge, Button, Card, Empty, LoadState, Notice, Screen, text } from '@/components/ui';
 import { api, errorCode } from '@/lib/api';
 import { useCart } from '@/lib/cart';
@@ -22,6 +26,9 @@ import { preorderSpan } from '@/lib/preorder';
 
 export default function CartScreen() {
   const { t, locale } = useI18n();
+  const deliveryCopy = cartDeliveryCopy[locale];
+  const [destinationId, setDestinationId] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
   const session = useSession();
   const badge = useCart();
   const signedIn = session.status === 'signedIn';
@@ -49,6 +56,7 @@ export default function CartScreen() {
   const reload = source.reload;
   useFocusEffect(
     useCallback(() => {
+      setRefreshKey((value) => value + 1);
       void reload();
     }, [reload]),
   );
@@ -82,11 +90,35 @@ export default function CartScreen() {
     : products.data
       ? buildGuestCart(lines, products.data)
       : undefined;
+  const groups = sellerCartGroups(data?.items ?? []);
+  const fees = useDeliveryFees(
+    destinationId,
+    groups.flatMap((group) => (group.seller ? [group.id] : [])),
+    cartDeliveryKey(data?.items ?? []),
+    refreshKey,
+  );
+  const totalMinor = cartDeliveryTotal(groups, fees.items);
+  const valid = groups.length > 0 && groups.every((group) => group.valid);
+  const ready =
+    totalMinor !== null &&
+    valid &&
+    !busy &&
+    !source.loading &&
+    !source.error &&
+    !fees.loading &&
+    !fees.error;
   return (
-    <Screen refreshing={source.loading && !!data} onRefresh={() => void reload()}>
+    <Screen
+      direction={locale === 'ar' ? 'rtl' : 'ltr'}
+      refreshing={source.loading && !!data}
+      onRefresh={() => {
+        fees.reload();
+        void reload();
+      }}
+    >
       <LoadState
         loading={source.loading && !data}
-        error={data ? undefined : source.error}
+        error={source.error}
         onRetry={() => void reload()}
       />
       {failure ? <Notice tone="error">{errorMessage(t, failure)}</Notice> : null}
@@ -103,75 +135,136 @@ export default function CartScreen() {
           }
         />
       ) : null}
-      {data?.items.map((line) => (
-        <Card key={line.offerId}>
-          <View style={styles.line}>
-            {line.product ? (
-              <Photo uri={imageUri(line.product.imageUrl, 'small')} style={styles.thumb} />
-            ) : null}
-            <View style={styles.lineBody}>
-              <Text style={text.body} numberOfLines={2}>
-                {line.product ? localized(line.product.title, locale) : '—'}
-              </Text>
-              {line.offer ? <Text style={text.muted}>{line.offer.seller.name}</Text> : null}
-              {line.lineSubtotalMinor !== null ? (
-                <Text style={text.price}>{formatMoney(line.lineSubtotalMinor, locale)}</Text>
-              ) : null}
-              {line.offer?.preorder ? <PreorderNote preorder={line.offer.preorder} /> : null}
-              {line.state === 'UNAVAILABLE' ? (
-                <Badge label={t.cart.unavailable} tone="bad" />
-              ) : null}
-              {line.state === 'INSUFFICIENT_STOCK' ? (
-                <Badge label={t.cart.insufficient} tone="wait" />
-              ) : null}
-            </View>
-          </View>
-          <View style={styles.controls}>
-            <Stepper
-              label={t.cart.decrease}
-              icon="remove"
-              disabled={busy !== null}
-              onPress={() => void setQuantity(line, line.quantity - 1)}
+      {data && data.items.length > 0 && (
+        <Card>
+          <Text style={text.heading}>{deliveryCopy.title}</Text>
+          <CartDestination value={destinationId} onChange={setDestinationId} />
+          {!destinationId && <Text style={text.muted}>{deliveryCopy.choose}</Text>}
+          <LoadState loading={fees.loading} onRetry={fees.reload} />
+          {fees.error && <Notice tone="error">{deliveryCopy.unavailable}</Notice>}
+          {destinationId && (
+            <Button
+              label={deliveryCopy.refresh}
+              variant="secondary"
+              busy={fees.loading}
+              onPress={fees.reload}
             />
-            <Text style={styles.quantity} accessibilityLiveRegion="polite">
-              {line.quantity}
-            </Text>
-            <Stepper
-              label={t.cart.increase}
-              icon="add"
-              disabled={busy !== null || line.quantity >= 99}
-              onPress={() => void setQuantity(line, line.quantity + 1)}
-            />
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => void setQuantity(line, 0)}
-              disabled={busy !== null}
-              style={styles.remove}
-              hitSlop={8}
-            >
-              <Text style={text.link}>{t.cart.remove}</Text>
-            </Pressable>
-          </View>
+          )}
         </Card>
-      ))}
+      )}
+      {groups.map((group) => {
+        const fee = fees.items?.find((item) => item.sellerId === group.id);
+        return (
+          <Card key={group.id}>
+            <Text style={text.heading}>
+              {group.seller ? `${deliveryCopy.seller} ${group.seller.name}` : t.cart.unavailable}
+            </Text>
+            {group.items.map((line) => (
+              <View style={styles.groupLine} key={line.offerId}>
+                <View style={styles.line}>
+                  {line.product ? (
+                    <Photo uri={imageUri(line.product.imageUrl, 'small')} style={styles.thumb} />
+                  ) : null}
+                  <View style={styles.lineBody}>
+                    <Text style={text.body} numberOfLines={2}>
+                      {line.product ? localized(line.product.title, locale) : '—'}
+                    </Text>
+                    {line.offer ? <Text style={text.muted}>{line.offer.seller.name}</Text> : null}
+                    {line.lineSubtotalMinor !== null ? (
+                      <Text style={text.price}>{formatMoney(line.lineSubtotalMinor, locale)}</Text>
+                    ) : null}
+                    {line.offer?.preorder ? <PreorderNote preorder={line.offer.preorder} /> : null}
+                    {line.state === 'UNAVAILABLE' ? (
+                      <Badge label={t.cart.unavailable} tone="bad" />
+                    ) : null}
+                    {line.state === 'INSUFFICIENT_STOCK' ? (
+                      <Badge label={t.cart.insufficient} tone="wait" />
+                    ) : null}
+                  </View>
+                </View>
+                <View style={styles.controls}>
+                  <Stepper
+                    label={t.cart.decrease}
+                    icon="remove"
+                    disabled={busy !== null}
+                    onPress={() => void setQuantity(line, line.quantity - 1)}
+                  />
+                  <Text style={styles.quantity} accessibilityLiveRegion="polite">
+                    {line.quantity}
+                  </Text>
+                  <Stepper
+                    label={t.cart.increase}
+                    icon="add"
+                    disabled={busy !== null || line.quantity >= 99}
+                    onPress={() => void setQuantity(line, line.quantity + 1)}
+                  />
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() => void setQuantity(line, 0)}
+                    disabled={busy !== null}
+                    style={styles.remove}
+                    hitSlop={8}
+                  >
+                    <Text style={text.link}>{t.cart.remove}</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ))}
+            <View style={styles.total}>
+              <Text style={text.muted}>{t.cart.subtotal}</Text>
+              <Text style={text.body}>{formatMoney(group.subtotalMinor, locale)}</Text>
+            </View>
+            <View style={styles.total}>
+              <Text style={text.muted}>{deliveryCopy.shipping}</Text>
+              <Text style={text.body}>
+                {fee?.available && fee.shippingFeeMinor !== null
+                  ? formatMoney(fee.shippingFeeMinor, locale)
+                  : fee?.available === false
+                    ? deliveryCopy.invalid
+                    : deliveryCopy.unknown}
+              </Text>
+            </View>
+            {fee?.available === false && <Notice tone="error">{deliveryCopy.unsupported}</Notice>}
+            {group.valid && fee?.available && fee.shippingFeeMinor !== null && (
+              <View style={styles.total}>
+                <Text style={text.body}>{deliveryCopy.payable}</Text>
+                <Text style={text.price}>
+                  {formatMoney(group.subtotalMinor + fee.shippingFeeMinor, locale)}
+                </Text>
+              </View>
+            )}
+          </Card>
+        );
+      })}
       {data && data.items.length > 0 ? (
         <Card>
           <View style={styles.total}>
-            <Text style={text.heading}>{t.cart.subtotal}</Text>
-            <Text style={text.price}>{formatMoney(data.availableSubtotalMinor, locale)}</Text>
+            <Text style={text.heading}>{deliveryCopy.total}</Text>
+            <Text testID="cart-estimated-total" style={text.price}>
+              {totalMinor === null ? deliveryCopy.unknown : formatMoney(totalMinor, locale)}
+            </Text>
           </View>
-          <Text style={text.muted}>{t.cart.shippingNote}</Text>
+          <Text style={text.muted}>{deliveryCopy.estimate}</Text>
+          {!valid && <Notice tone="error">{deliveryCopy.incomplete}</Notice>}
           <Button
             label={t.cart.checkout}
-            disabled={!data.items.some((line) => line.state === 'AVAILABLE')}
+            disabled={!ready}
             onPress={() => {
+              if (!ready || !destinationId) return;
+              if (!fees.isFresh()) {
+                fees.reload();
+                return;
+              }
               // Pre-order items: checkout asks the buyer to accept the widest delivery window.
               const span = preorderSpan(
                 data.items.map((line) => ({ preorder: line.offer?.preorder })),
               );
-              router.push(
-                span ? `/checkout?preorderMin=${span.min}&preorderMax=${span.max}` : '/checkout',
-              );
+              const query = new URLSearchParams({ destinationId });
+              if (span) {
+                query.set('preorderMin', String(span.min));
+                query.set('preorderMax', String(span.max));
+              }
+              router.push(`/checkout?${query}`);
             }}
           />
         </Card>
@@ -206,6 +299,7 @@ function Stepper({
 }
 
 const styles = StyleSheet.create({
+  groupLine: { gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.line },
   line: { flexDirection: 'row', gap: 12 },
   thumb: { width: 76, height: 76, borderRadius: radius, backgroundColor: colors.soft },
   lineBody: { flex: 1, gap: 4 },
@@ -226,5 +320,11 @@ const styles = StyleSheet.create({
     color: colors.ink,
   },
   remove: { marginStart: 'auto' },
-  total: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  total: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
 });

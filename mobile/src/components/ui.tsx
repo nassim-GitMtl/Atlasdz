@@ -1,6 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { ReactNode } from 'react';
-import { ActivityIndicator, I18nManager, Pressable, RefreshControl, ScrollView, StyleSheet, View, type TextInputProps } from 'react-native';
+import {
+  ActivityIndicator,
+  I18nManager,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View,
+  type TextInputProps,
+} from 'react-native';
 import { Text, TextInput } from '@/components/text';
 
 import { useI18n } from '@/lib/i18n';
@@ -12,15 +21,17 @@ export function Screen({
   children,
   refreshing = false,
   onRefresh,
+  direction,
 }: {
   readonly children: ReactNode;
   readonly refreshing?: boolean;
   readonly onRefresh?: () => void;
+  readonly direction?: 'ltr' | 'rtl';
 }) {
   return (
     <ScrollView
       style={styles.screen}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, direction && { direction }]}
       keyboardShouldPersistTaps="handled"
       refreshControl={
         onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} /> : undefined

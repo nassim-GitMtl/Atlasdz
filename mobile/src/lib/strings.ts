@@ -106,6 +106,10 @@ const fr = {
     continue: 'Voir le total',
     invalid: 'Vérifiez les champs signalés.',
     noPlaces: 'Aucune destination disponible pour le moment.',
+    fees: 'Livraison vers cette commune',
+    notDelivered: 'Ne livre pas cette commune',
+    blocked:
+      'Un vendeur ne livre pas cette commune : retirez ses articles du panier ou choisissez une autre commune.',
   },
   review: {
     title: 'Récapitulatif',
@@ -248,7 +252,8 @@ const fr = {
     price: 'Prix promotionnel (DA)',
     start: 'Premier jour (AAAA-MM-JJ)',
     end: 'Dernier jour (AAAA-MM-JJ)',
-    invalid: 'Promotion incomplète : prix plus bas que le prix habituel et dates valides (90 jours au plus).',
+    invalid:
+      'Promotion incomplète : prix plus bas que le prix habituel et dates valides (90 jours au plus).',
     tag: 'Promo −{n} %',
     until: 'jusqu’au {date}',
   },
@@ -369,7 +374,8 @@ const fr = {
     mode: 'Mode vendeur',
     acceptNow: 'À accepter maintenant',
     ordersCount: '{n} commande(s)',
-    acceptBefore: 'La plus ancienne doit être acceptée avant {time}, sinon elle expire et le client est prévenu.',
+    acceptBefore:
+      'La plus ancienne doit être acceptée avant {time}, sinon elle expire et le client est prévenu.',
     nothingToAccept: 'Aucune commande à accepter pour le moment.',
     seeOrders: 'Voir les commandes',
     alsoTodo: 'À traiter aussi',
@@ -424,7 +430,8 @@ const fr = {
     REJECTED: 'Refusé',
     SUSPENDED: 'Suspendu',
     online: 'En ligne',
-    rejectedReason: 'Motif du refus : {reason}. Corrigez l’offre puis enregistrez-la : elle repart en validation.',
+    rejectedReason:
+      'Motif du refus : {reason}. Corrigez l’offre puis enregistrez-la : elle repart en validation.',
     category: 'Catégorie',
     titleFr: 'Titre (français)',
     titleAr: 'Titre (arabe)',
@@ -630,6 +637,9 @@ const ar: Strings = {
     continue: 'عرض المجموع',
     invalid: 'تحقق من الحقول المشار إليها.',
     noPlaces: 'لا توجد وجهة متاحة حاليًا.',
+    fees: 'التوصيل إلى هذه البلدية',
+    notDelivered: 'لا يوصل إلى هذه البلدية',
+    blocked: 'أحد البائعين لا يوصل إلى هذه البلدية: احذف منتجاته من السلة أو اختر بلدية أخرى.',
   },
   review: {
     title: 'ملخص الطلب',
@@ -1145,6 +1155,10 @@ const en: Strings = {
     continue: 'See the total',
     invalid: 'Check the highlighted fields.',
     noPlaces: 'No destination available right now.',
+    fees: 'Delivery to this commune',
+    notDelivered: 'Does not deliver to this commune',
+    blocked:
+      'A seller does not deliver to this commune: remove its items from the cart or choose another commune.',
   },
   review: {
     title: 'Summary',
@@ -1295,7 +1309,8 @@ const en: Strings = {
     origin: 'Ships from: {origin}',
     between: 'Estimated delivery between {from} and {to}',
     add: 'Pre-order',
-    accept: 'I accept the pre-order: item not in stock yet, estimated delivery in {min} to {max} days.',
+    accept:
+      'I accept the pre-order: item not in stock yet, estimated delivery in {min} to {max} days.',
     acceptNeeded: 'Accept the pre-order time to continue.',
     toggle: 'Pre-order item (not in stock yet, for example imported)',
     help: 'Buyers see the estimated time and accept it before ordering. Stock becomes the number of pre-orders accepted.',
@@ -1402,7 +1417,8 @@ const en: Strings = {
     mode: 'Seller mode',
     acceptNow: 'To accept now',
     ordersCount: '{n} order(s)',
-    acceptBefore: 'The oldest must be accepted before {time}, otherwise it expires and the customer is told.',
+    acceptBefore:
+      'The oldest must be accepted before {time}, otherwise it expires and the customer is told.',
     nothingToAccept: 'No orders to accept right now.',
     seeOrders: 'See the orders',
     alsoTodo: 'Also to handle',
@@ -1457,7 +1473,8 @@ const en: Strings = {
     REJECTED: 'Refused',
     SUSPENDED: 'Suspended',
     online: 'Live',
-    rejectedReason: 'Refusal reason: {reason}. Fix the offer, then save it: it goes back for review.',
+    rejectedReason:
+      'Refusal reason: {reason}. Fix the offer, then save it: it goes back for review.',
     category: 'Category',
     titleFr: 'Title (French)',
     titleAr: 'Title (Arabic)',

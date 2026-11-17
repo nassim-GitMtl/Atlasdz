@@ -88,6 +88,20 @@ page.on(
 );
 page.on('pageerror', (e) => problems.push(`pageerror: ${e.message.slice(0, 180)}`));
 let shot = 0;
+// The cart asks for a destination (and shows its delivery estimate) before checkout.
+async function orderFromCart(p) {
+  const order = p.getByRole('button', { name: 'Commander' });
+  await order.waitFor({ timeout: 15000 });
+  if (await order.isDisabled()) {
+    await p.getByRole('button', { name: /^Wilaya:/ }).click();
+    await p.getByRole('button', { name: 'Destinations de test' }).click();
+    await p.getByRole('button', { name: /^Commune:/ }).click();
+    await p.getByRole('button', { name: destination }).last().click();
+    await p.getByText('Total estimé à la livraison').waitFor({ timeout: 15000 });
+  }
+  await order.click();
+}
+
 async function check(name, fn) {
   try {
     await fn();
@@ -220,12 +234,16 @@ await check('switch to the local demo customer (local checkout is limited to it)
   await page.getByRole('button', { name: 'Commander' }).waitFor();
 });
 await check('checkout: wilaya, commune and contact', async () => {
-  await page.getByRole('button', { name: 'Commander' }).click();
-  await page.waitForURL(/\/checkout$/);
+  if (!(await page.getByRole('button', { name: 'Commander' }).isDisabled()))
+    throw new Error('checkout must wait for a destination and delivery estimate');
   await page.getByRole('button', { name: /^Wilaya:/ }).click();
   await page.getByRole('button', { name: 'Destinations de test' }).click();
   await page.getByRole('button', { name: /^Commune:/ }).click();
   await page.getByRole('button', { name: destination }).click();
+  await page.getByText('Total estimé à la livraison').waitFor();
+  await page.getByRole('button', { name: 'Commander' }).click();
+  await page.waitForURL(/\/checkout\?destinationId=/);
+  await page.getByRole('button', { name: `Commune: ${destination}`, exact: true }).waitFor();
   await page.getByLabel('Nom du destinataire').fill('Amina B.');
   await page.getByLabel('Téléphone').fill('0555 12 34 56');
   await page.getByLabel('Adresse').fill('12 rue des Oliviers');
@@ -416,7 +434,7 @@ await check('shop without an account: cart on the phone, email asked at checkout
   await gp.getByText('Ajouté au panier').waitFor({ timeout: 15000 });
   await gp.goto(`${APP}/cart`);
   await gp.getByText(product.title.fr).first().waitFor({ timeout: 15000 });
-  await gp.getByRole('button', { name: 'Commander' }).click();
+  await orderFromCart(gp);
   await gp.getByLabel('Adresse e-mail (pour suivre la commande)').waitFor({ timeout: 15000 });
   await ctx.close();
 });
@@ -448,12 +466,12 @@ await check('pre-order: badge, then the buyer must accept the delay at checkout'
     await page.getByRole('button', { name: 'Précommander' }).first().click();
     await page.getByText('Ajouté au panier').waitFor({ timeout: 15000 });
     await page.goto(`${APP}/cart`);
-    await page.getByRole('button', { name: 'Commander' }).click();
-    await page.getByRole('button', { name: /^Wilaya:/ }).click({ timeout: 15000 });
-    await page.getByRole('button', { name: 'Destinations de test' }).click();
-    await page.getByRole('button', { name: /^Commune:/ }).click();
-    // The picker's entry (a saved address may show the same name above the form).
-    await page.getByRole('button', { name: destination }).last().click();
+    await orderFromCart(page);
+    // The cart's commune carries over, with each seller's fee for it.
+    await page
+      .getByRole('button', { name: `Commune: ${destination}`, exact: true })
+      .waitFor({ timeout: 15000 });
+    await page.getByText('Livraison vers cette commune').waitFor({ timeout: 15000 });
     await page.getByLabel('Nom du destinataire').fill('Amina B.');
     await page.getByLabel('Téléphone').fill('0555 12 34 56');
     await page.getByLabel('Adresse').fill('12 rue des Oliviers');

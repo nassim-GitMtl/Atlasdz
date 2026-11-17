@@ -13,6 +13,7 @@ export type {
 export type { CartLine, CustomerCart } from '../../../packages/contracts/src/cart';
 export type {
   DeliveryDestination,
+  DeliveryFees,
   SellerDeliveryRate,
 } from '../../../packages/contracts/src/delivery';
 export type {
@@ -43,7 +44,11 @@ export type {
 
 export type CatalogCategory = ProductSubmission['category'];
 export type Locale = 'fr' | 'ar' | 'en';
-export type Localized = { readonly fr: string; readonly ar: string; readonly en?: string | undefined };
+export type Localized = {
+  readonly fr: string;
+  readonly ar: string;
+  readonly en?: string | undefined;
+};
 
 export type LoginResult =
   | { status: 'AUTHENTICATED'; accessToken: string; expiresAt: string; actorType: string }

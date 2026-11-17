@@ -26,3 +26,4 @@ var/
 .turbo/
 .expo/
 .claude/settings.local.json
+tools/testing/browser/mobile-shots/

@@ -1,0 +1,52 @@
+export const cartDeliveryCopy = {
+  fr: {
+    title: 'Livraison',
+    seller: 'Vendu et livré par',
+    shipping: 'Livraison',
+    payable: 'À payer à ce vendeur',
+    total: 'Total estimé à la livraison',
+    choose: 'Choisissez votre commune pour calculer les frais de chaque vendeur.',
+    unsupported:
+      'Ce vendeur ne livre pas cette commune. Changez de commune ou retirez ses articles.',
+    incomplete: 'Retirez les articles indisponibles ou corrigez leur quantité pour continuer.',
+    estimate:
+      'Une livraison par vendeur. Vous payez chaque vendeur ou son livreur. Les prix et disponibilités seront vérifiés au récapitulatif.',
+    unavailable: 'Calcul de livraison indisponible. Réessayez avant de continuer.',
+    refresh: 'Actualiser les frais',
+    unknown: 'À calculer',
+    invalid: 'À résoudre',
+  },
+  ar: {
+    title: 'التوصيل',
+    seller: 'البائع والمسؤول عن التوصيل',
+    shipping: 'رسوم التوصيل',
+    payable: 'المبلغ المستحق لهذا البائع',
+    total: 'المجموع التقديري عند الاستلام',
+    choose: 'اختر بلديتك لحساب رسوم كل بائع.',
+    unsupported: 'هذا البائع لا يوصل إلى هذه البلدية. غيّر البلدية أو احذف منتجاته.',
+    incomplete: 'احذف المنتجات غير المتاحة أو صحح الكمية للمتابعة.',
+    estimate:
+      'توصيل مستقل لكل بائع. تدفع لكل بائع أو لمندوبه. تُراجع الأسعار والتوفر في ملخص الطلب.',
+    unavailable: 'تعذر حساب التوصيل. أعد المحاولة قبل المتابعة.',
+    refresh: 'تحديث رسوم التوصيل',
+    unknown: 'لم تحسب بعد',
+    invalid: 'يتطلب المعالجة',
+  },
+  en: {
+    title: 'Delivery',
+    seller: 'Sold and delivered by',
+    shipping: 'Delivery fee',
+    payable: 'Payable to this seller',
+    total: 'Estimated total on delivery',
+    choose: 'Choose your commune to calculate each seller’s delivery fee.',
+    unsupported:
+      'This seller does not deliver to this commune. Change your commune or remove their items.',
+    incomplete: 'Remove unavailable items or correct their quantities to continue.',
+    estimate:
+      'One delivery per seller. Pay each seller or their courier. Prices and availability are checked again at order review.',
+    unavailable: 'Delivery estimate unavailable. Retry before continuing.',
+    refresh: 'Refresh delivery fees',
+    unknown: 'Not calculated',
+    invalid: 'Needs attention',
+  },
+} as const;

@@ -1,5 +1,9 @@
 # Project Atlas DZ — Production Readiness
 
+> Current-state supplement: [Remaining release work](REMAINING-RELEASE-WORK.md) and
+> [repository checkpoint](../../TASK_PROGRESS.md). Entries below retain historical evidence;
+> their older missing-feature statements must not be treated as the latest inventory.
+
 Last checkpoint: 2026-11-08 (reviewed product revisions: 43 focused checks, affected builds/lint/types pass; migration 000018 applied; release-image evidence remains 2026-11-01 and full-suite evidence 2026-10-21)
 Current stage: release packaging, bilingual product submissions/revisions and local commerce implemented; production identity, product media and deployment/restore rehearsal incomplete
 Target: technically deployable controlled MVP  

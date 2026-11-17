@@ -1,26 +1,28 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
 import { PlacePicker, type Place } from '@/components/place-picker';
-import { Button, Checkbox, Field, LoadState, Notice, Screen, text } from '@/components/ui';
-import { errorCode } from '@/lib/api';
+import { Button, Card, Checkbox, Field, LoadState, Notice, Screen, text } from '@/components/ui';
+import { api, errorCode } from '@/lib/api';
 import { useCart } from '@/lib/cart';
 import type { SavedAddress } from '@/lib/collections';
 import { contactErrors, emptyContact } from '@/lib/contact';
-import { fill, localized, normalizePhone } from '@/lib/format';
+import { fill, formatMoney, localized, normalizePhone } from '@/lib/format';
 import { useI18n } from '@/lib/i18n';
 import { useLibrary } from '@/lib/library';
 import { useSession } from '@/lib/session';
 import { errorMessage } from '@/lib/strings';
 import { colors, radius } from '@/lib/theme';
 import type {
+  CatalogProduct,
   CheckoutQuote,
   CustomerCart,
   DeliveryContact,
   DeliveryDestination,
 } from '@/lib/types';
+import { useDeliveryFees } from '@/lib/use-delivery-fees';
 import { useRequest } from '@/lib/use-request';
 
 const TEST_GROUP = 'test';
@@ -30,7 +32,11 @@ export default function CheckoutScreen() {
   const session = useSession();
   const library = useLibrary();
   const cartState = useCart();
-  const params = useLocalSearchParams<{ preorderMin?: string; preorderMax?: string }>();
+  const params = useLocalSearchParams<{
+    preorderMin?: string;
+    preorderMax?: string;
+    destinationId?: string;
+  }>();
   const preorder =
     params.preorderMin && params.preorderMax
       ? { min: Number(params.preorderMin), max: Number(params.preorderMax) }
@@ -43,14 +49,37 @@ export default function CheckoutScreen() {
   const destinations = useRequest('destinations', () =>
     session.request<{ items: DeliveryDestination[] }>('/api/v1/delivery/destinations'),
   );
-  const [wilaya, setWilaya] = useState<Place | null>(null);
-  const [commune, setCommune] = useState<Place | null>(null);
+  const [selectedWilaya, setWilaya] = useState<Place | null>();
+  const [selectedCommune, setCommune] = useState<Place | null>();
   const [contact, setContact] = useState<DeliveryContact>(emptyContact);
   const [showErrors, setShowErrors] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
 
   const items = useMemo(() => destinations.data?.items ?? [], [destinations.data]);
+  // Sellers in the cart, to show each one's delivery fee for the chosen commune.
+  const sellerList = useRequest(`checkout-sellers-${guest ? 'guest' : 'account'}`, async () => {
+    const found = new Map<string, string>();
+    if (!guest) {
+      const cart = await session.request<CustomerCart>('/api/v1/cart');
+      for (const line of cart.items)
+        if (line.offer) found.set(line.offer.seller.id, line.offer.seller.name);
+    } else {
+      const slugs = [...new Set(cartState.guestLines.map((line) => line.slug))];
+      const products = await Promise.all(
+        slugs.map((slug) =>
+          api<CatalogProduct>(`/api/v1/catalog/products/${encodeURIComponent(slug)}`).catch(
+            () => null,
+          ),
+        ),
+      );
+      for (const offer of products.flatMap((product) => product?.offers ?? []))
+        if (cartState.guestLines.some((line) => line.offerId === offer.id))
+          found.set(offer.seller.id, offer.seller.name);
+    }
+    return [...found].map(([id, name]) => ({ id, name }));
+  });
+
   const wilayas = useMemo(() => {
     const byId = new Map<string, Place & { code: string }>();
     for (const d of items) {
@@ -66,6 +95,22 @@ export default function CheckoutScreen() {
     if (items.some((d) => !d.wilaya)) list.push({ id: TEST_GROUP, label: t.checkout.testPlaces });
     return list;
   }, [items, locale, t]);
+  // Resolve the cart's initial selection from the live register. Once edited, even a null
+  // selection belongs to the user and must not be overwritten when data reloads.
+  const initialDestination = items.find((item) => item.id === params.destinationId);
+  const wilaya =
+    selectedWilaya !== undefined
+      ? selectedWilaya
+      : initialDestination
+        ? (wilayas.find((item) => item.id === (initialDestination.wilaya?.id ?? TEST_GROUP)) ??
+          null)
+        : null;
+  const commune =
+    selectedCommune !== undefined
+      ? selectedCommune
+      : initialDestination
+        ? { id: initialDestination.id, label: localized(initialDestination.name, locale) }
+        : null;
   const communes = useMemo(
     () =>
       items
@@ -74,6 +119,13 @@ export default function CheckoutScreen() {
         .sort((a, b) => a.label.localeCompare(b.label, locale)),
     [items, wilaya, locale],
   );
+  const sellerIds = useMemo(
+    () => (sellerList.data ?? []).map((seller) => seller.id),
+    [sellerList.data],
+  );
+  const fees = useDeliveryFees(commune?.id ?? null, sellerIds, sellerIds.join(','), 0);
+  const currentFees = commune ? fees.items : undefined;
+  const blocked = currentFees?.some((fee) => !fee.available) ?? false;
 
   // Only addresses whose commune still exists are offered.
   const saved = library.addresses.filter((address) =>
@@ -190,6 +242,25 @@ export default function CheckoutScreen() {
             disabled={wilaya === null}
             onChange={setCommune}
           />
+          {commune && currentFees ? (
+            <Card>
+              <Text style={text.heading}>{t.checkout.fees}</Text>
+              {(sellerList.data ?? []).map((seller) => {
+                const fee = currentFees.find((item) => item.sellerId === seller.id);
+                return (
+                  <View key={seller.id} style={styles.feeRow}>
+                    <Text style={styles.feeSeller}>{seller.name}</Text>
+                    <Text style={[styles.feeValue, !fee?.available && styles.feeNone]}>
+                      {fee?.available && fee.shippingFeeMinor !== null
+                        ? formatMoney(fee.shippingFeeMinor, locale)
+                        : t.checkout.notDelivered}
+                    </Text>
+                  </View>
+                );
+              })}
+              {blocked ? <Notice tone="error">{t.checkout.blocked}</Notice> : null}
+            </Card>
+          ) : null}
           <Text style={text.heading}>{t.checkout.contact}</Text>
           {guest ? (
             <Field
@@ -255,7 +326,12 @@ export default function CheckoutScreen() {
           ) : failure ? (
             <Notice tone="error">{errorMessage(t, failure)}</Notice>
           ) : null}
-          <Button label={t.checkout.continue} busy={submitting} onPress={() => void submit()} />
+          <Button
+            label={t.checkout.continue}
+            busy={submitting}
+            disabled={blocked}
+            onPress={() => void submit()}
+          />
         </>
       ) : null}
     </Screen>
@@ -263,6 +339,16 @@ export default function CheckoutScreen() {
 }
 
 const styles = StyleSheet.create({
+  feeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+    minHeight: 28,
+    alignItems: 'center',
+  },
+  feeSeller: { flex: 1, fontSize: 15, color: colors.ink },
+  feeValue: { fontSize: 15, fontWeight: '800', color: colors.ink },
+  feeNone: { color: colors.danger },
   chips: { gap: 10, paddingVertical: 2 },
   chip: {
     width: 220,
