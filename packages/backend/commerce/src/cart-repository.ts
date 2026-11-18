@@ -43,7 +43,7 @@ export async function readCartSnapshot(
         'state', CASE WHEN NOT (${PUBLIC}) THEN 'UNAVAILABLE'
           WHEN ci.quantity > o.available_quantity THEN 'INSUFFICIENT_STOCK' ELSE 'AVAILABLE' END,
         'product', CASE WHEN ${PUBLIC} THEN jsonb_build_object(
-          'id', p.id, 'slug', p.slug, 'title', jsonb_build_object('fr', p.title_fr, 'ar', p.title_ar),
+          'id', p.id, 'slug', p.slug, 'title', jsonb_strip_nulls(jsonb_build_object('fr', p.title_fr, 'ar', p.title_ar, 'en', p.title_en)),
           'imageUrl', p.image_url) ELSE NULL END,
         'offer', CASE WHEN ${PUBLIC} THEN jsonb_build_object(
           'id', o.id, 'seller', jsonb_build_object('id', s.id, 'slug', s.slug, 'name', s.name),

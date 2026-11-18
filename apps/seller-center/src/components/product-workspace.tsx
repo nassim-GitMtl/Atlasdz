@@ -81,9 +81,11 @@ export async function ProductWorkspace({
                   {s.previous && (
                     <details open={review}>
                       <summary>{t.previous}</summary>
-                      {(['fr', 'ar'] as const).map((lang) => (
+                      {written(s.previous).map((lang) => (
                         <div key={lang} lang={lang} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-                          <h3 style={{ overflowWrap: 'anywhere' }}>{s.previous?.title[lang]}</h3>
+                          {s.previous?.title[lang] && (
+                            <h3 style={{ overflowWrap: 'anywhere' }}>{s.previous?.title[lang]}</h3>
+                          )}
                           <p style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
                             {s.previous?.description[lang]}
                           </p>
@@ -94,9 +96,11 @@ export async function ProductWorkspace({
                   )}
                   <details open={review}>
                     <summary>{t.details}</summary>
-                    {(['fr', 'ar'] as const).map((lang) => (
+                    {written(s).map((lang) => (
                       <div key={lang} lang={lang} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-                        <h3 style={{ overflowWrap: 'anywhere' }}>{s.title[lang]}</h3>
+                        {s.title[lang] && (
+                          <h3 style={{ overflowWrap: 'anywhere' }}>{s.title[lang]}</h3>
+                        )}
                         <p style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
                           {s.description[lang]}
                         </p>
@@ -188,4 +192,12 @@ function SpecList({
       </dl>
     </>
   );
+}
+
+/** Languages the seller wrote: French and Arabic always, English when given. */
+function written(texts: {
+  readonly title: { readonly en?: string | undefined };
+  readonly description: { readonly en?: string | undefined };
+}): ('fr' | 'ar' | 'en')[] {
+  return texts.title.en || texts.description.en ? ['fr', 'ar', 'en'] : ['fr', 'ar'];
 }

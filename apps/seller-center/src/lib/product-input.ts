@@ -16,6 +16,8 @@ export const emptyProductValues = {
   titleAr: '',
   descriptionFr: '',
   descriptionAr: '',
+  titleEn: '',
+  descriptionEn: '',
   ...(Object.fromEntries(PRODUCT_SPEC_KEYS.map((key) => [specField(key), ''])) as Record<
     ReturnType<typeof specField>,
     string
@@ -29,8 +31,17 @@ export function parseProductValues(values: ProductValues) {
       ? { revisionOfSubmissionId: values.revisionOfSubmissionId }
       : {}),
     categoryId: values.categoryId,
-    title: { fr: values.titleFr, ar: values.titleAr },
-    description: { fr: values.descriptionFr, ar: values.descriptionAr },
+    // English is optional: empty fields are left out and English pages show French.
+    title: {
+      fr: values.titleFr,
+      ar: values.titleAr,
+      ...(values.titleEn.trim() ? { en: values.titleEn } : {}),
+    },
+    description: {
+      fr: values.descriptionFr,
+      ar: values.descriptionAr,
+      ...(values.descriptionEn.trim() ? { en: values.descriptionEn } : {}),
+    },
     // Empty characteristics are left out: only what the seller states is published.
     specs: PRODUCT_SPEC_KEYS.flatMap((key) => {
       const value = values[specField(key)].trim();

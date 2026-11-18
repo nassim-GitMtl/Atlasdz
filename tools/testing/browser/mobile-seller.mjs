@@ -271,6 +271,8 @@ await check('submit a new product', async () => {
   await page.getByLabel('Titre (arabe)').fill('طاجين');
   await page.getByLabel('Description (français)').fill('Plat en terre cuite fait main.');
   await page.getByLabel('Description (arabe)').fill('طاجين فخاري مصنوع يدويًا.');
+  // Optional English title (English screens fall back to French without it).
+  await page.getByLabel('Titre (anglais, facultatif)').fill(`Tagine dish ${tag}`);
   // Optional characteristics: only the filled ones are sent.
   await page.getByLabel('Matière').fill('Terre cuite');
   await page.getByLabel('Pays de fabrication').fill('Algérie');
@@ -323,6 +325,14 @@ await check('approved characteristics and photos on the product screen', async (
   await page.getByText('Pays de fabrication').waitFor();
   await page.getByRole('button', { name: 'Photos du produit 2/2' }).waitFor();
   await scan('product with characteristics');
+  // In English, the seller's English title is shown; the French description is the fallback.
+  await page.evaluate(() => localStorage.setItem('atlas.locale', 'en'));
+  await page.reload();
+  await page.getByText(`Tagine dish ${tag}`).first().waitFor({ timeout: 15000 });
+  await page.getByText('Country of manufacture').waitFor();
+  await page.evaluate(() => localStorage.setItem('atlas.locale', 'fr'));
+  await page.reload();
+  await page.getByText('Caractéristiques', { exact: true }).waitFor({ timeout: 15000 });
 });
 await check('delivery zones: commune rate', async () => {
   await page.goto(`${APP}/seller/delivery`);

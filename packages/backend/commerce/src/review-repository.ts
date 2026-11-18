@@ -33,7 +33,7 @@ const REVIEWABLE = new Set(['DELIVERY_REPORTED', 'DELIVERED']);
 const stamp = (column: string) =>
   `to_char(${column} AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`;
 const publicColumns = `r.id, r.rating, r.body,
-  jsonb_build_object('fr', p.title_fr, 'ar', p.title_ar) AS "productTitle",
+  jsonb_strip_nulls(jsonb_build_object('fr', p.title_fr, 'ar', p.title_ar, 'en', p.title_en)) AS "productTitle",
   s.name AS "sellerName", r.reply, ${stamp('r.replied_at')} AS "repliedAt",
   ${stamp('r.created_at')} AS "createdAt", ${stamp('r.updated_at')} AS "updatedAt"`;
 const sellerColumns = `${publicColumns}, r.product_id AS "productId",

@@ -48,6 +48,12 @@ entries are not a current feature inventory. Do not repeat completed redesign or
 - Evidence: API integration 22/22 (validation, approval, revision); Seller Center unit 18/18;
   mobile-seller 12/12 (specs + extra photo in the app); local shop/Seller Center checks.
 
+## English product texts (done, migration 000036)
+
+- Optional English title and description on product submissions (Seller Center and app),
+  reviewed and copied on approval; shown on English pages, searchable, carried into carts,
+  orders, reviews and seller emails. Without them, English pages show the French text.
+
 ## Remaining implementation
 
 1. Native push: permission UX, device ownership/revocation, outbox integration, retries,

@@ -44,8 +44,8 @@ export class OutboxDispatcher {
     const { offerId, sellerId, reason } = claim.data;
     if (this.notifier === null || typeof offerId !== 'string' || typeof sellerId !== 'string')
       return;
-    const title = await this.pool.query<{ fr: string; ar: string }>(
-      `SELECT p.title_fr AS fr, p.title_ar AS ar
+    const title = await this.pool.query<{ fr: string; ar: string; en: string | null }>(
+      `SELECT p.title_fr AS fr, p.title_ar AS ar, p.title_en AS en
        FROM offers.offers o JOIN catalog.products p ON p.id = o.product_id WHERE o.id = $1`,
       [offerId],
     );

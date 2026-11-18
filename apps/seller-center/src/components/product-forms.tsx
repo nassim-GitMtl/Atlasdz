@@ -31,6 +31,8 @@ export function ProductForm({
           titleAr: revision.title.ar,
           descriptionFr: revision.description.fr,
           descriptionAr: revision.description.ar,
+          titleEn: revision.title.en ?? '',
+          descriptionEn: revision.description.en ?? '',
           ...Object.fromEntries(
             (revision.specs ?? []).map((spec) => [specField(spec.key), spec.value]),
           ),
@@ -60,33 +62,40 @@ export function ProductForm({
           ))}
         </select>
       </div>
-      {(['titleFr', 'titleAr', 'descriptionFr', 'descriptionAr'] as const).map((key) => (
-        <div className="field" key={key}>
-          <label htmlFor={key}>{t[key]}</label>
-          {key.startsWith('title') ? (
-            <input
-              id={key}
-              name={key}
-              lang={key.endsWith('Ar') ? 'ar' : 'fr'}
-              dir={key.endsWith('Ar') ? 'rtl' : 'ltr'}
-              required
-              maxLength={500}
-              defaultValue={values[key]}
-            />
-          ) : (
-            <textarea
-              id={key}
-              name={key}
-              lang={key.endsWith('Ar') ? 'ar' : 'fr'}
-              dir={key.endsWith('Ar') ? 'rtl' : 'ltr'}
-              required
-              maxLength={8000}
-              rows={5}
-              defaultValue={values[key]}
-            />
-          )}
-        </div>
-      ))}
+      {(
+        ['titleFr', 'titleAr', 'titleEn', 'descriptionFr', 'descriptionAr', 'descriptionEn'] as const
+      ).map((key) => {
+        const language = key.endsWith('Ar') ? 'ar' : key.endsWith('En') ? 'en' : 'fr';
+        // French and Arabic are required; English is optional (English pages fall back to French).
+        const required = language !== 'en';
+        return (
+          <div className="field" key={key}>
+            <label htmlFor={key}>{t[key]}</label>
+            {key.startsWith('title') ? (
+              <input
+                id={key}
+                name={key}
+                lang={language}
+                dir={language === 'ar' ? 'rtl' : 'ltr'}
+                required={required}
+                maxLength={500}
+                defaultValue={values[key]}
+              />
+            ) : (
+              <textarea
+                id={key}
+                name={key}
+                lang={language}
+                dir={language === 'ar' ? 'rtl' : 'ltr'}
+                required={required}
+                maxLength={8000}
+                rows={5}
+                defaultValue={values[key]}
+              />
+            )}
+          </div>
+        );
+      })}
       <fieldset className="spec-fields">
         <legend>{t.specsTitle}</legend>
         <p className="muted">{t.specsNote}</p>

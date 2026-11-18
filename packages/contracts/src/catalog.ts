@@ -11,7 +11,7 @@ export const CatalogLocalizedTextSchema = z
   .object({
     fr: z.string().trim().min(1).max(8000),
     ar: z.string().trim().min(1).max(8000),
-    /** Optional English text (categories); English pages fall back to French. */
+    /** Optional English text; English pages fall back to French. */
     en: z.string().trim().min(1).max(8000).optional(),
   })
   .strict();
@@ -292,7 +292,12 @@ export const SubmitProductInputSchema = z
     revisionOfSubmissionId: UuidSchema.optional(),
     categoryId: UuidSchema,
     title: z
-      .object({ fr: z.string().trim().min(1).max(500), ar: z.string().trim().min(1).max(500) })
+      .object({
+        fr: z.string().trim().min(1).max(500),
+        ar: z.string().trim().min(1).max(500),
+        /** Optional; English pages fall back to French. */
+        en: z.string().trim().min(1).max(500).optional(),
+      })
       .strict(),
     description: CatalogLocalizedTextSchema,
     specs: ProductSpecsSchema.optional(),

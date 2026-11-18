@@ -61,6 +61,25 @@ test('publishes only the characteristics the seller filled in', () => {
   assert.equal(parseProductValues({ ...values, spec_color: 'x'.repeat(121) }).success, false);
   assert.equal(parseProductValues({ ...values, spec_color: 'Rouge\u0007' }).success, false);
 });
+test('English texts are optional and left out when empty', () => {
+  const values = {
+    ...emptyProductValues,
+    requestId: randomUUID(),
+    categoryId: randomUUID(),
+    titleFr: 'Plateau',
+    titleAr: 'صينية',
+    descriptionFr: 'Description',
+    descriptionAr: 'وصف',
+  };
+  const without = parseProductValues({ ...values, titleEn: '  ' });
+  assert.ok(without.success);
+  assert.equal(without.data.title.en, undefined);
+  const withEnglish = parseProductValues({ ...values, titleEn: ' Tray ', descriptionEn: 'Copper.' });
+  assert.ok(withEnglish.success);
+  assert.equal(withEnglish.data.title.en, 'Tray');
+  assert.equal(withEnglish.data.description.en, 'Copper.');
+  assert.equal(parseProductValues({ ...values, titleEn: 'x'.repeat(501) }).success, false);
+});
 test('requires a bounded rejection reason and an exact integer version', () => {
   const form = new FormData();
   form.set('decision', 'REJECTED');

@@ -787,8 +787,12 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
         requestId: randomUUID(),
         revisionOfSubmissionId: submission.body.id,
         categoryId: category.id,
-        title: { fr: 'Plateau en cuivre', ar: 'صينية نحاسية' },
-        description: { fr: 'Fait main à Tlemcen.', ar: 'مصنوعة يدويًا في تلمسان.' },
+        title: { fr: 'Plateau en cuivre', ar: 'صينية نحاسية', en: 'Copper tray' },
+        description: {
+          fr: 'Fait main à Tlemcen.',
+          ar: 'مصنوعة يدويًا في تلمسان.',
+          en: 'Handmade in Tlemcen.',
+        },
         specs: [{ key: 'origin', value: 'Algérie' }],
       })
       .expect(201);
@@ -803,6 +807,12 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
       .send({ decision: 'APPROVED', expectedVersion: revision.body.rowVersion })
       .expect((response) => assert.ok([200, 201].includes(response.status)));
     assert.deepEqual((await page()).specs, [{ key: 'origin', value: 'Algérie' }]);
+    // Optional English texts are published with the approved revision, and searchable.
+    const english = (await http().get(`/api/v1/catalog/products/${productSlug}`).expect(200)).body;
+    assert.equal(english.title.en, 'Copper tray');
+    assert.equal(english.description.en, 'Handmade in Tlemcen.');
+    const byEnglish = await http().get('/api/v1/catalog/products?query=copper').expect(200);
+    assert.ok(byEnglish.body.items.some((item: { slug: string }) => item.slug === productSlug));
 
     // Outbox dispatcher: an EXPIRED live seller order emails the customer; all events drain.
     await pool.query(

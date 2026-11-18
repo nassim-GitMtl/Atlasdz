@@ -25,6 +25,8 @@ export default function NewProductScreen() {
   );
   const [category, setCategory] = useState<Place | null>(null);
   const [form, setForm] = useState({ titleFr: '', titleAr: '', descFr: '', descAr: '' });
+  // Optional English texts: English screens fall back to French without them.
+  const [english, setEnglish] = useState({ title: '', description: '' });
   const [requestId] = useState(newRequestId);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
@@ -42,8 +44,16 @@ export default function NewProductScreen() {
         body: {
           requestId,
           categoryId: category.id,
-          title: { fr: form.titleFr.trim(), ar: form.titleAr.trim() },
-          description: { fr: form.descFr.trim(), ar: form.descAr.trim() },
+          title: {
+            fr: form.titleFr.trim(),
+            ar: form.titleAr.trim(),
+            ...(english.title.trim() ? { en: english.title.trim() } : {}),
+          },
+          description: {
+            fr: form.descFr.trim(),
+            ar: form.descAr.trim(),
+            ...(english.description.trim() ? { en: english.description.trim() } : {}),
+          },
           // Only what the seller filled in is sent; empty characteristics stay unpublished.
           specs: SPEC_KEYS.flatMap((key) => {
             const value = specs[key]?.trim();
@@ -90,6 +100,12 @@ export default function NewProductScreen() {
         maxLength={500}
       />
       <Field
+        label={t.catalog.titleEn}
+        value={english.title}
+        onChangeText={(title) => setEnglish((current) => ({ ...current, title }))}
+        maxLength={500}
+      />
+      <Field
         label={t.catalog.descFr}
         value={form.descFr}
         onChangeText={set('descFr')}
@@ -101,6 +117,14 @@ export default function NewProductScreen() {
         label={t.catalog.descAr}
         value={form.descAr}
         onChangeText={set('descAr')}
+        multiline
+        maxLength={8000}
+        style={multiline}
+      />
+      <Field
+        label={t.catalog.descEn}
+        value={english.description}
+        onChangeText={(description) => setEnglish((current) => ({ ...current, description }))}
         multiline
         maxLength={8000}
         style={multiline}

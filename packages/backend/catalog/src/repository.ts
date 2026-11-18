@@ -64,8 +64,8 @@ const utcIso = (column: string) =>
 
 const PRODUCT_JSON = `jsonb_build_object(
   'id', p.id, 'slug', p.slug,
-  'title', jsonb_build_object('fr', p.title_fr, 'ar', p.title_ar),
-  'description', jsonb_build_object('fr', p.description_fr, 'ar', p.description_ar),
+  'title', jsonb_strip_nulls(jsonb_build_object('fr', p.title_fr, 'ar', p.title_ar, 'en', p.title_en)),
+  'description', jsonb_strip_nulls(jsonb_build_object('fr', p.description_fr, 'ar', p.description_ar, 'en', p.description_en)),
   'category', jsonb_build_object('slug', c.slug, 'title', jsonb_strip_nulls(jsonb_build_object('fr', c.title_fr, 'ar', c.title_ar, 'en', c.title_en))),
   'imageUrl', p.image_url, 'offers', public_offers.items
 ) AS product`;
@@ -101,7 +101,7 @@ const PUBLIC_PRODUCTS = `
   ) public_offers ON public_offers.items IS NOT NULL
   WHERE p.status = 'ACTIVE' AND p.moderation_status = 'APPROVED'
     AND c.status = 'ACTIVE' AND c.moderation_status = 'APPROVED' AND c.restriction_class = 'STANDARD'
-    AND ($1::text IS NULL OR p.title_fr ILIKE $1 OR p.title_ar ILIKE $1 OR p.slug ILIKE $1
+    AND ($1::text IS NULL OR p.title_fr ILIKE $1 OR p.title_ar ILIKE $1 OR p.title_en ILIKE $1 OR p.slug ILIKE $1
       OR p.description_fr ILIKE $1 OR p.description_ar ILIKE $1
       OR c.title_fr ILIKE $1 OR c.title_ar ILIKE $1 OR c.title_en ILIKE $1)
     AND ($2::text IS NULL OR c.slug = $2)
@@ -144,8 +144,8 @@ const galleryOf = (productId: string, item: string) => `COALESCE((
 const SUBMISSION_SELECT = `SELECT jsonb_build_object(
   'id', s.id, 'sellerId', s.seller_id,
   'category', jsonb_build_object('id', c.id, 'slug', c.slug, 'title', jsonb_strip_nulls(jsonb_build_object('fr', c.title_fr, 'ar', c.title_ar, 'en', c.title_en))),
-  'title', jsonb_build_object('fr', s.title_fr, 'ar', s.title_ar),
-  'description', jsonb_build_object('fr', s.description_fr, 'ar', s.description_ar),
+  'title', jsonb_strip_nulls(jsonb_build_object('fr', s.title_fr, 'ar', s.title_ar, 'en', s.title_en)),
+  'description', jsonb_strip_nulls(jsonb_build_object('fr', s.description_fr, 'ar', s.description_ar, 'en', s.description_en)),
   'status', s.status, 'rowVersion', s.row_version, 'productId', s.product_id,
   'reviewReason', s.review_reason, 'revisionOfSubmissionId', s.revision_of_submission_id,
   'canRevise', s.status='APPROVED' AND NOT EXISTS (
@@ -155,8 +155,8 @@ const SUBMISSION_SELECT = `SELECT jsonb_build_object(
   'gallery', ${galleryOf('s.product_id', `jsonb_build_object('id', pm.id, 'url', ${MEDIA_URL})`)},
   'specs', s.specs,
   'previous', CASE WHEN previous.id IS NULL THEN NULL ELSE jsonb_build_object(
-    'title', jsonb_build_object('fr',previous.title_fr,'ar',previous.title_ar),
-    'description', jsonb_build_object('fr',previous.description_fr,'ar',previous.description_ar),
+    'title', jsonb_strip_nulls(jsonb_build_object('fr',previous.title_fr,'ar',previous.title_ar,'en',previous.title_en)),
+    'description', jsonb_strip_nulls(jsonb_build_object('fr',previous.description_fr,'ar',previous.description_ar,'en',previous.description_en)),
     'specs', previous.specs) END
 ) AS submission FROM catalog.product_submissions s JOIN catalog.categories c ON c.id=s.category_id
 LEFT JOIN catalog.product_submissions previous ON previous.id=s.revision_of_submission_id`;
@@ -407,8 +407,8 @@ export class PostgresCatalogRepository {
 
   public async listOfferProducts() {
     const result = await this.pool.query<{ product: unknown }>(`SELECT jsonb_build_object(
-      'id',p.id,'slug',p.slug,'title',jsonb_build_object('fr',p.title_fr,'ar',p.title_ar),
-      'description',jsonb_build_object('fr',p.description_fr,'ar',p.description_ar),
+      'id',p.id,'slug',p.slug,'title',jsonb_strip_nulls(jsonb_build_object('fr',p.title_fr,'ar',p.title_ar,'en',p.title_en)),
+      'description',jsonb_strip_nulls(jsonb_build_object('fr',p.description_fr,'ar',p.description_ar,'en',p.description_en)),
       'category',jsonb_build_object('slug',c.slug,'title',jsonb_build_object('fr',c.title_fr,'ar',c.title_ar)),
       'imageUrl',p.image_url) AS product
       FROM catalog.products p JOIN catalog.categories c ON c.id=p.category_id
@@ -483,8 +483,8 @@ export class PostgresCatalogRepository {
       }
       const result = await client.query<{ id: string }>(
         `INSERT INTO catalog.product_submissions
-        (seller_id,request_id,request_hash,category_id,title_fr,title_ar,description_fr,description_ar,revision_of_submission_id,specs)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb) RETURNING id`,
+        (seller_id,request_id,request_hash,category_id,title_fr,title_ar,description_fr,description_ar,revision_of_submission_id,specs,title_en,description_en)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb,$11,$12) RETURNING id`,
         [
           sellerId,
           data.requestId,
@@ -496,6 +496,8 @@ export class PostgresCatalogRepository {
           data.description.ar,
           data.revisionOfSubmissionId ?? null,
           JSON.stringify(data.specs ?? []),
+          data.title.en ?? null,
+          data.description.en ?? null,
         ],
       );
       const submission = await submissionById(client, UuidSchema.parse(result.rows[0]?.id));
@@ -561,7 +563,8 @@ export class PostgresCatalogRepository {
           located.categoryId,
         );
         await client.query(
-          `UPDATE catalog.products SET title_fr=$2,title_ar=$3,description_fr=$4,description_ar=$5,specs=$6::jsonb WHERE id=$1`,
+          `UPDATE catalog.products SET title_fr=$2,title_ar=$3,description_fr=$4,description_ar=$5,specs=$6::jsonb,
+            title_en=$7,description_en=$8 WHERE id=$1`,
           [
             productId,
             prior.title.fr,
@@ -569,13 +572,15 @@ export class PostgresCatalogRepository {
             prior.description.fr,
             prior.description.ar,
             JSON.stringify(prior.specs ?? []),
+            prior.title.en ?? null,
+            prior.description.en ?? null,
           ],
         );
       } else if (data.decision === 'APPROVED') {
         productId = randomUUID();
         await client.query(
-          `INSERT INTO catalog.products (id,category_id,slug,title_fr,title_ar,description_fr,description_ar,image_url,status,moderation_status,specs)
-          VALUES ($1,$2,$3,$4,$5,$6,$7,'/assets/product-placeholder.svg','ACTIVE','APPROVED',$8::jsonb)`,
+          `INSERT INTO catalog.products (id,category_id,slug,title_fr,title_ar,description_fr,description_ar,image_url,status,moderation_status,specs,title_en,description_en)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,'/assets/product-placeholder.svg','ACTIVE','APPROVED',$8::jsonb,$9,$10)`,
           [
             productId,
             located.categoryId,
@@ -585,6 +590,8 @@ export class PostgresCatalogRepository {
             prior.description.fr,
             prior.description.ar,
             JSON.stringify(prior.specs ?? []),
+            prior.title.en ?? null,
+            prior.description.en ?? null,
           ],
         );
         await client.query(
@@ -614,7 +621,7 @@ export class PostgresCatalogRepository {
     const order = {
       // In-stock products first; with a search, title matches before description matches.
       recommended: `public_offers.in_stock DESC,
-        CASE WHEN $1::text IS NOT NULL AND (p.title_fr ILIKE $1 OR p.title_ar ILIKE $1) THEN 0 ELSE 1 END,
+        CASE WHEN $1::text IS NOT NULL AND (p.title_fr ILIKE $1 OR p.title_ar ILIKE $1 OR p.title_en ILIKE $1) THEN 0 ELSE 1 END,
         p.slug`,
       'price-asc': 'public_offers.best_total ASC, p.slug',
       'price-desc': 'public_offers.best_total DESC, p.slug',

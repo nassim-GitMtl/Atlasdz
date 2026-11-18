@@ -160,7 +160,7 @@ export class MarketplaceNotifier {
   public async offerDecision(
     sellerId: string,
     offerId: string,
-    title: { readonly fr: string; readonly ar: string },
+    title: { readonly fr: string; readonly ar: string; readonly en?: string | null },
     reason: string | null,
   ): Promise<void> {
     const contact = await this.sellerContact(sellerId);
@@ -173,7 +173,7 @@ export class MarketplaceNotifier {
         contact.email,
         contact.locale,
         link,
-        title[contact.locale === 'ar' ? 'ar' : 'fr'],
+        contact.locale === 'ar' ? title.ar : contact.locale === 'en' ? (title.en ?? title.fr) : title.fr,
         reason,
       ),
     );

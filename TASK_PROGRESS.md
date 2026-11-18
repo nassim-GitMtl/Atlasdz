@@ -2,7 +2,7 @@
 
 - State: redesign A–E done. Deployed-mode verified on a local production rehearsal (release
   images + vps/compose.vps.yml + TLS via Caddy on shop.localhost / vendeur.localhost + Mailpit,
-  live COD on): tools/testing/browser/deployed-journey.mjs 23/23. Migrations 000001–000035.
+  live COD on): tools/testing/browser/deployed-journey.mjs 23/23. Migrations 000001–000036.
 - Added today: offer refusal with reason + seller emails (000030); delivery fee per seller for a
   commune before checkout (GET /api/v1/delivery/fees); seller promotions (000031); staff account
   powers: vendor/customer accounts, remove offers/products/reviews, close accounts (000032,
@@ -19,5 +19,6 @@
   shop + app thumbnails. gallery.mjs 7/7; API integration 22/22.
 - Product characteristics (000035): 11 seller-stated attributes, reviewed with the product;
   shop + app display. mobile-seller 12/12, e2e 15/15, mobile-app 20/20.
+- English product texts (000036): optional title/description, reviewed; English pages and search.
 - Remaining: real server deploy (owner: VPS/domain/SMTP/legal), signed EAS build → Play,
   push notifications. See docs/implementation/REMAINING-RELEASE-WORK.md.
