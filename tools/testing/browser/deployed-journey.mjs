@@ -20,6 +20,7 @@ const tag = Math.random().toString(16).slice(2, 8);
 const password = `Journey ${tag} horse battery`;
 const store = `Atelier ${tag}`;
 const product = { fr: `Tapis berbère ${tag}`, ar: `زربية أمازيغية ${tag}` };
+const productEn = `Berber rug ${tag}`;
 const buyerEmail = `client-${tag}@example.dz`;
 
 const B32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
@@ -159,6 +160,10 @@ await step('seller proposes a product', sp, async () => {
   await sp.fill('#titleAr', product.ar);
   await sp.fill('#descriptionFr', 'Tapis en laine, 120 × 180 cm, motifs traditionnels.');
   await sp.fill('#descriptionAr', 'زربية من الصوف، 120 × 180 سم، بزخارف تقليدية.');
+  // Optional English title and seller-stated characteristics, reviewed with the product.
+  await sp.fill('#titleEn', productEn);
+  await sp.fill('#spec_material', 'Laine');
+  await sp.fill('#spec_dimensions', '120 × 180 cm');
   await submit(sp, 'form:has(#titleFr)');
   await sp.getByText(product.fr).first().waitFor({ timeout: 15000 });
 });
@@ -176,6 +181,12 @@ await step('seller uploads the product photo', sp, async () => {
   await sp.locator('input[type=file][name=photo]').first().setInputFiles({ name: 'tapis.png', mimeType: 'image/png', buffer: png });
   await sp.locator('form:has(input[type=file][name=photo]) button:not([type=button])').first().click();
   await sp.locator('[role=status]').first().waitFor({ timeout: 20000 });
+  // An extra photo for the product gallery.
+  await sp.goto(`${SELLER}/products`);
+  const extra = sp.locator('form:has(input[id^="gallery-"])').first();
+  await extra.locator('input[type=file]').setInputFiles({ name: 'tapis-2.png', mimeType: 'image/png', buffer: png });
+  await extra.locator('button:not([type=button])').click();
+  await extra.getByText('Photo publiée.').waitFor({ timeout: 20000 });
 });
 
 // --- Offer, approval and delivery rate ---
@@ -255,6 +266,13 @@ await step('guest finds the product and adds it to the cart', bp, async () => {
   // The promotion shows on the product card with the real regular price.
   await bp.locator('.product-card', { hasText: product.fr }).getByText(/Promo −10 %/).waitFor({ timeout: 15000 });
   await bp.getByRole('link', { name: product.fr }).first().click();
+  // Gallery thumbnails and the reviewed characteristics; the English title in English.
+  await bp.getByRole('group', { name: 'Photos du produit' }).getByRole('button').nth(1).waitFor({ timeout: 15000 });
+  await bp.locator('dl.product-specs').getByText('Laine').waitFor();
+  const english = await bp.context().newPage();
+  await english.goto(`${bp.url().split('?')[0]}?lang=en`);
+  await english.getByRole('heading', { level: 1, name: productEn }).waitFor({ timeout: 15000 });
+  await english.close();
   // Delivery estimate to the shopper's commune, from the product page.
   await bp.locator('.delivery-estimate__open').click();
   const wilayaValue = await bp.locator('.delivery-estimate select').first().locator('option', { hasText: /^\s*16\b/ }).first().getAttribute('value');

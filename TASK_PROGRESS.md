@@ -20,5 +20,6 @@
 - Product characteristics (000035): 11 seller-stated attributes, reviewed with the product;
   shop + app display. mobile-seller 12/12, e2e 15/15, mobile-app 20/20.
 - English product texts (000036): optional title/description, reviewed; English pages and search.
+- Rehearsal 2026-11-18: migrations 34–36 applied on existing data; deployed-journey 23/23.
 - Remaining: real server deploy (owner: VPS/domain/SMTP/legal), signed EAS build → Play,
   push notifications. See docs/implementation/REMAINING-RELEASE-WORK.md.

@@ -35,7 +35,7 @@ entries are not a current feature inventory. Do not repeat completed redesign or
   API and old clients keep working (`gallery` is optional).
 - Evidence: API integration 22/22 (limits, ownership, cover swap, takedown, file deletion);
   tools/testing/browser/gallery.mjs 7/7 on the local stack; e2e 15/15, mobile-app 20/20,
-  mobile-seller 11/11. Not yet run in the production rehearsal.
+  mobile-seller 11/11.
 
 ## Product characteristics (done, migration 000035)
 
@@ -53,6 +53,15 @@ entries are not a current feature inventory. Do not repeat completed redesign or
 - Optional English title and description on product submissions (Seller Center and app),
   reviewed and copied on approval; shown on English pages, searchable, carried into carts,
   orders, reviews and seller emails. Without them, English pages show the French text.
+
+## Production rehearsal (2026-11-18)
+
+- Release images rebuilt; migrations 000034–000036 applied to the existing rehearsal database
+  (checksums verified), i.e. the upgrade path a live server will take.
+- deployed-journey.mjs 23/23 over HTTPS with live COD and Mailpit, now also covering an English
+  title, characteristics and an extra photo through review to the public product page.
+- The rehearsal's secrets had to be regenerated (temporary folder cleaned by the OS); on a real
+  server keep `/opt/atlas/secrets` backed up off the machine, as setup.sh says.
 
 ## Remaining implementation
 

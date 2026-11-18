@@ -48,8 +48,13 @@ destination if it has none.
 seller mode; an order (placed by the demo customer through the API) accepted → prepared →
 shipped with a tracking number → delivered; a reply to the customer's review; order search, the delivery slip, the sales chart
 (after the customer confirms receipt) and the stock alert; the customer's question answered; an offer edited;
-a new product submitted, approved through the local staff session, given a photo from the file
-picker and an offer; a commune delivery rate; notifications; sign-out back to the shop.
+a new product submitted (with characteristics and an English title), approved through the local
+staff session, given a main and an extra photo from the file picker and an offer, then shown with
+its characteristics in French and English; a commune delivery rate; notifications; sign-out.
+
+`gallery.mjs` (same stack, plus Seller Center on 3002): a seller adds extra photos in Seller
+Center, makes one the main photo and removes another; shop and app thumbnails switch the large
+photo; a staff account made with `create-staff` takes down an extra photo by its address.
 
 ```sh
 # API with the app's test origin allowed (apps/api)
@@ -65,6 +70,7 @@ cp /path/to/repo/tools/testing/browser/mobile-{app,seller}.mjs .
 node mobile-app.mjs && node mobile-seller.mjs
 ```
 
-Result on 2026-11-15: customer 20/20 (cart without account, pre-order) and seller 11/11,
+Result on 2026-11-18: customer 20/20, seller 12/12, gallery 7/7. On 2026-11-15: customer 20/20
+(cart without account, pre-order) and seller 11/11,
 0 accessibility findings. The
 only HTTP error is a 404 on `/api/v1/account` for the demo customer, which has no email account.
