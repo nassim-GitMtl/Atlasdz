@@ -168,6 +168,15 @@ describe('PostgreSQL seller catalog', () => {
       'air-fryer-5l',
     );
     assert.equal((await repository.listProducts({ query: 'Friteuse' })).items.length, 1);
+    // Accents, case and Arabic spelling variants do not matter.
+    const slugsFor = async (query: string) =>
+      (await repository.listProducts({ query })).items.map((item) => item.slug);
+    assert.deepEqual(await slugsFor('MACHINE A CAFE'), ['coffee-maker-compact']);
+    assert.deepEqual(await slugsFor('\u0627\u0644\u0629 \u0642\u0647\u0648\u0647'), ['coffee-maker-compact']);
+    assert.deepEqual(await slugsFor('\u0642\u064e\u0644\u0627\u064a\u0647'), ['air-fryer-5l']);
+    assert.equal((await repository.listProducts({ query: 'caf_' })).items.length, 0);
+    // Arabic presentation forms (as some copy-paste sources produce them).
+    assert.deepEqual(await slugsFor('\ufed7\ufefc\ufef3\ufe94'), ['air-fryer-5l']);
     assert.equal((await repository.listProducts({ category: 'phones' })).items.length, 2);
     assert.equal((await repository.listProducts({ seller: 'maison-plus' })).items.length, 2);
     assert.equal((await repository.listProducts({ limit: 2 })).items.length, 2);

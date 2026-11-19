@@ -70,6 +70,12 @@ const PRODUCT_JSON = `jsonb_build_object(
   'imageUrl', p.image_url, 'offers', public_offers.items
 ) AS product`;
 
+/**
+ * Search match on normalised text (migration 000038): accents, case and Arabic spelling
+ * variants (hamza/alef forms, ya, ta marbuta, diacritics, tatweel) are ignored on both sides.
+ */
+const MATCHES = (column: string) => `catalog.search_text(${column}) LIKE catalog.search_text($1)`;
+
 // The seller filter restricts the included offers as well as the product result.
 const PUBLIC_PRODUCTS = `
   FROM catalog.products p
@@ -102,9 +108,10 @@ const PUBLIC_PRODUCTS = `
   ) public_offers ON public_offers.items IS NOT NULL
   WHERE p.status = 'ACTIVE' AND p.moderation_status = 'APPROVED'
     AND c.status = 'ACTIVE' AND c.moderation_status = 'APPROVED' AND c.restriction_class = 'STANDARD'
-    AND ($1::text IS NULL OR p.title_fr ILIKE $1 OR p.title_ar ILIKE $1 OR p.title_en ILIKE $1 OR p.slug ILIKE $1
-      OR p.description_fr ILIKE $1 OR p.description_ar ILIKE $1
-      OR c.title_fr ILIKE $1 OR c.title_ar ILIKE $1 OR c.title_en ILIKE $1)
+    AND ($1::text IS NULL OR p.slug ILIKE $1
+      OR ${MATCHES('p.title_fr')} OR ${MATCHES('p.title_ar')} OR ${MATCHES('p.title_en')}
+      OR ${MATCHES('p.description_fr')} OR ${MATCHES('p.description_ar')} OR ${MATCHES('p.description_en')}
+      OR ${MATCHES('c.title_fr')} OR ${MATCHES('c.title_ar')} OR ${MATCHES('c.title_en')})
     AND ($2::text IS NULL OR c.slug = $2)
 `;
 
@@ -622,7 +629,7 @@ export class PostgresCatalogRepository {
     const order = {
       // In-stock products first; with a search, title matches before description matches.
       recommended: `public_offers.in_stock DESC,
-        CASE WHEN $1::text IS NOT NULL AND (p.title_fr ILIKE $1 OR p.title_ar ILIKE $1 OR p.title_en ILIKE $1) THEN 0 ELSE 1 END,
+        CASE WHEN $1::text IS NOT NULL AND (${MATCHES('p.title_fr')} OR ${MATCHES('p.title_ar')} OR ${MATCHES('p.title_en')}) THEN 0 ELSE 1 END,
         p.slug`,
       'price-asc': 'public_offers.best_total ASC, p.slug',
       'price-desc': 'public_offers.best_total DESC, p.slug',
@@ -634,7 +641,8 @@ export class PostgresCatalogRepository {
       AND ($4::bigint IS NULL OR public_offers.best_price >= $4)
       AND ($5::bigint IS NULL OR public_offers.best_price <= $5)`;
     const values = [
-      parsed.query ? `%${escapeCatalogSearch(parsed.query)}%` : null,
+      // NFKC turns Arabic presentation forms, full-width letters and ligatures into plain text.
+      parsed.query ? `%${escapeCatalogSearch(parsed.query.normalize('NFKC'))}%` : null,
       parsed.category ?? null,
       parsed.seller ?? null,
       parsed.minPrice ?? null,

@@ -2,7 +2,7 @@
 
 - State: redesign A–E done. Deployed-mode verified on a local production rehearsal (release
   images + vps/compose.vps.yml + TLS via Caddy on shop.localhost / vendeur.localhost + Mailpit,
-  live COD on): tools/testing/browser/deployed-journey.mjs 23/23. Migrations 000001–000037.
+  live COD on): tools/testing/browser/deployed-journey.mjs 23/23. Migrations 000001–000038.
 - Added today: offer refusal with reason + seller emails (000030); delivery fee per seller for a
   commune before checkout (GET /api/v1/delivery/fees); seller promotions (000031); staff account
   powers: vendor/customer accounts, remove offers/products/reviews, close accounts (000032,
@@ -29,5 +29,6 @@
 - App seller quick update (/seller/quick). Rehearsal 11-19: deployed-journey 24/24.
 - Staff audit log (/admin/audit, account.manage): who did what, filters, paging.
 - Shop /favorites: device favorites + recently viewed, header heart link. axe on new pages: 0.
+- Search (000038): accent/case/Arabic-spelling tolerant (unaccent + catalog.search_text), NFKC query.
 - Remaining: real server deploy (owner: VPS/domain/SMTP/legal), signed EAS build → Play,
   push notifications. See docs/implementation/REMAINING-RELEASE-WORK.md.
