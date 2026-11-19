@@ -3,7 +3,40 @@ import { CatalogResults } from '@/components/catalog-results';
 import { SiteChrome } from '@/components/site-chrome';
 import { getCategories, getProductPage } from '@/lib/catalog-api';
 import { parsePriceBound, parseSort } from '@/lib/catalog-view';
-import { firstParam, resolveLocale, text, type SearchParams } from '@/lib/i18n';
+import { firstParam, lang, resolveLocale, text, type SearchParams } from '@/lib/i18n';
+import type { Metadata } from 'next';
+
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  readonly params: Promise<{ slug: string }>;
+  readonly searchParams: Promise<SearchParams>;
+}): Promise<Metadata> {
+  const [{ slug }, query] = await Promise.all([params, searchParams]);
+  const locale = resolveLocale(query.lang);
+  const category = (await getCategories().catch(() => [])).find((item) => item.slug === slug);
+  if (!category) return {};
+  const title = text(category.title, locale);
+  const path = `/category/${slug}`;
+  return {
+    title,
+    description: lang(
+      locale,
+      `${title} : ${category.productCount} produit(s) de vendeurs algériens, payés à la livraison.`,
+      `${title}: ${category.productCount} منتج من بائعين جزائريين، الدفع عند الاستلام.`,
+      `${title}: ${category.productCount} product(s) from Algerian sellers, cash on delivery.`,
+    ),
+    alternates: {
+      canonical: path,
+      languages: { fr: path, ar: `${path}?lang=ar`, en: `${path}?lang=en` },
+    },
+    // Filtered or sorted variants are not separate pages for search engines.
+    ...(firstParam(query.query) || firstParam(query.sort) || firstParam(query.min) || firstParam(query.max)
+      ? { robots: { index: false, follow: true } }
+      : {}),
+  };
+}
 
 export default async function CategoryPage({
   params,

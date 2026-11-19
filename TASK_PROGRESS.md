@@ -1,36 +1,17 @@
-# Atlas DZ checkpoint — 2026-11-15
+# Atlas DZ checkpoint — 2026-11-19
 
-- State: redesign A–E done. Deployed-mode verified on a local production rehearsal (release
-  images + vps/compose.vps.yml + TLS via Caddy on shop.localhost / vendeur.localhost + Mailpit,
-  live COD on): tools/testing/browser/deployed-journey.mjs 23/23. Migrations 000001–000038.
-- Added today: offer refusal with reason + seller emails (000030); delivery fee per seller for a
-  commune before checkout (GET /api/v1/delivery/fees); seller promotions (000031); staff account
-  powers: vendor/customer accounts, remove offers/products/reviews, close accounts (000032,
-  account.manage); Seller Center reviews replies + orders CSV. English (3rd language) in shop,
-  Seller Center, app and emails; product texts fall back to French; categories have optional
-  English names (000033).
-- Tests: API 74 unit + 22 integration; e2e.mjs 15/15; mobile-app 20/20; mobile-seller 11/11.
-  Local checkout only for the demo customer; restart API if 429 on /local/session.
-- Rehearsal kit (scratch, not in repo): atlas.sh wrapper, atlas-home secrets, rehearsal.yml.
-- Mobile cart: grouped by seller, commune fee previews (expiry/stale-safe), unavailable items
-  block checkout, commune carries into checkout, which re-shows each seller's fee and blocks
-  unsupported communes. mobile-app 20/20 (live API), mobile-delivery 3/3 (mocked), 47 unit.
-- Photo galleries (000034): 7 extra photos per product, seller add/remove/main, staff takedown;
-  shop + app thumbnails. gallery.mjs 7/7; API integration 22/22.
-- Product characteristics (000035): 11 seller-stated attributes, reviewed with the product;
-  shop + app display. mobile-seller 12/12, e2e 15/15, mobile-app 20/20.
-- English product texts (000036): optional title/description, reviewed; English pages and search.
-- Rehearsal 2026-11-18: migrations 34–36 applied on existing data; deployed-journey 23/23.
-- 11-19: price range filter (API, shop, app panel with stock toggle); schema.org Product data
-  (real ratings only) + sitemap with categories/stores/fr-ar-en; app language radios a11y fix.
-- Seller Center quick update (/offers/quick): price + stock of many offers, version-checked.
-- Back-in-stock alerts (000037): shop/app subscribe on sold-out products, one email via the
-  outbox on restock; account page list; deleted with the account. Shop disabled-button style.
-- App seller quick update (/seller/quick). Rehearsal 11-19: deployed-journey 24/24.
-- Staff audit log (/admin/audit, account.manage): who did what, filters, paging.
-- Shop /favorites: device favorites + recently viewed, header heart link. axe on new pages: 0.
-- Search (000038): accent/case/Arabic-spelling tolerant (unaccent + catalog.search_text), NFKC query.
-- Sellers see waiting-customer counts (offers, quick update, app). Rehearsal: 000038 ok, 24/24.
-- Shop: "Commander à nouveau" on order pages (like the app); styled notices.
-- Remaining: real server deploy (owner: VPS/domain/SMTP/legal), signed EAS build → Play,
-  push notifications. See docs/implementation/REMAINING-RELEASE-WORK.md.
+- State: redesign done; FR/AR/EN everywhere. Migrations 000001–000038 (checksum-locked).
+- Deployed mode: local production rehearsal (release images, vps compose, Caddy TLS on
+  shop.localhost / vendeur.localhost, Mailpit, live COD): deployed-journey.mjs 24/24 on 11-19.
+- Added 11-17…11-19: app cart delivery estimates; photo galleries (034); product
+  characteristics (035); English product texts (036); back-in-stock alerts (037) with seller
+  waiting counts; accent/Arabic-tolerant search (038); price filter; schema.org product data;
+  sitemap; Seller Center + app quick price/stock update; staff audit log; shop favorites page;
+  web "order again".
+- Tests: API 74 unit + 22 integration; catalog 15, commerce 42, database 17 integration;
+  e2e 15/15; mobile-app 20/20; mobile-seller 12/12; gallery 7/7; app 51 unit.
+  Restart the local API if a suite hits 429 on /api/v1/local/session.
+- Rehearsal kit lives in the scratchpad (atlas.sh, atlas-home); the OS may clean it: regenerate
+  secrets with infra/release/vps/setup.sh (chown lines disabled) and reset role passwords.
+- Remaining (owner): real VPS/domain/SMTP/legal, signed EAS build → Play, push notifications.
+  See docs/implementation/REMAINING-RELEASE-WORK.md.

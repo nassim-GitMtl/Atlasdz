@@ -1,9 +1,13 @@
+import type { Metadata } from 'next';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { CatalogResults } from '@/components/catalog-results';
 import { SiteChrome } from '@/components/site-chrome';
 import { getCategories, getProductPage } from '@/lib/catalog-api';
 import { parsePriceBound, parseSort } from '@/lib/catalog-view';
 import { copy, firstParam, resolveLocale, type SearchParams } from '@/lib/i18n';
+
+/** Result pages are for shoppers, not search engines (categories are the indexable lists). */
+export const metadata: Metadata = { robots: { index: false, follow: true } };
 
 export default async function SearchPage({
   searchParams,

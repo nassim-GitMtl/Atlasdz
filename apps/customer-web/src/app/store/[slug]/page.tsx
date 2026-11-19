@@ -8,6 +8,29 @@ import { ReviewsSection } from '@/components/reviews-section';
 import { EmptyState } from '@/components/states';
 import { CatalogNotFoundError, getProductPage, getReviews, getSeller } from '@/lib/catalog-api';
 import { copy, resolveLocale, text, type SearchParams } from '@/lib/i18n';
+import type { Metadata } from 'next';
+
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  readonly params: Promise<{ slug: string }>;
+  readonly searchParams: Promise<SearchParams>;
+}): Promise<Metadata> {
+  const [{ slug }, query] = await Promise.all([params, searchParams]);
+  const locale = resolveLocale(query.lang);
+  const seller = await getSeller(slug).catch(() => null);
+  if (seller === null) return {};
+  const path = `/store/${slug}`;
+  return {
+    title: seller.name,
+    description: text(seller.description, locale).slice(0, 180),
+    alternates: {
+      canonical: path,
+      languages: { fr: path, ar: `${path}?lang=ar`, en: `${path}?lang=en` },
+    },
+  };
+}
 
 export default async function StorePage({
   params,
