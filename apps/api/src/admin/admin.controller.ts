@@ -1,4 +1,4 @@
-import { SafeApplicationError, UuidSchema } from '@atlas/contracts';
+import { IsoTimestampSchema, SafeApplicationError, UuidSchema } from '@atlas/contracts';
 import { Body, Controller, Get, HttpCode, Inject, Param, Post, Query, Req } from '@nestjs/common';
 
 import {
@@ -269,6 +269,40 @@ export class AccountAdminController {
     if (!(await this.accounts.deleteReview(uuid(id), actor, request.correlationId)))
       throw new SafeApplicationError('RESOURCE_NOT_FOUND');
     return { reviewId: id, status: 'DELETED' };
+  }
+
+  /** Who did what, newest first: filter by area (action prefix), actor type or entity id. */
+  @Get('audit')
+  @RequirePermission('account.manage', GLOBAL)
+  @RateLimited('authenticated', 'admin.audit.read')
+  public async audit(
+    @Req() request: StaffRequest,
+    @Query('area') area?: string,
+    @Query('actor') actor?: string,
+    @Query('entity') entity?: string,
+    @Query('beforeAt') beforeAt?: string,
+    @Query('beforeId') beforeId?: string,
+  ) {
+    staff(request);
+    if (area !== undefined && !/^[a-z][a-z0-9_]{1,40}$/.test(area)) invalid('area');
+    if (
+      actor !== undefined &&
+      !['customer', 'seller_user', 'staff', 'service', 'anonymous', 'courier'].includes(actor)
+    )
+      invalid('actor');
+    const before =
+      beforeAt !== undefined || beforeId !== undefined
+        ? {
+            at: IsoTimestampSchema.safeParse(beforeAt).success ? (beforeAt as string) : invalid('beforeAt'),
+            id: uuid(beforeId ?? ''),
+          }
+        : undefined;
+    return this.accounts.auditLog({
+      area,
+      actorType: actor,
+      entityId: entity === undefined || entity === '' ? undefined : uuid(entity),
+      before,
+    });
   }
 
   @Get('customers')

@@ -1,5 +1,6 @@
 import {
   Bell,
+  ClockCounterClockwise,
   Gauge,
   IdentificationCard,
   Lifebuoy,
@@ -32,9 +33,9 @@ import { adminCopy } from '@/lib/admin-copy';
 import { accountKind } from '@/lib/session';
 
 const groups = {
-  fr: { shop: 'Ma boutique', staff: 'Équipe Atlas DZ', dashboard: 'Tableau de bord', notifications: 'Notifications', offers: 'Offres à valider', account: 'Mon compte', escalations: 'Demandes escaladées', vendors: 'Comptes vendeurs', customers: 'Comptes clients', reviews: 'Avis clients' },
-  en: { shop: 'My shop', staff: 'Atlas DZ team', dashboard: 'Dashboard', notifications: 'Notifications', offers: 'Offers to approve', account: 'My account', escalations: 'Escalated requests', vendors: 'Seller accounts', customers: 'Customer accounts', reviews: 'Customer reviews' },
-  ar: { shop: 'متجري', staff: 'فريق Atlas DZ', dashboard: 'لوحة التحكم', notifications: 'الإشعارات', offers: 'عروض للمراجعة', account: 'حسابي', escalations: 'طلبات مُصعَّدة', vendors: 'حسابات البائعين', customers: 'حسابات الزبائن', reviews: 'تقييمات الزبائن' },
+  fr: { shop: 'Ma boutique', staff: 'Équipe Atlas DZ', dashboard: 'Tableau de bord', notifications: 'Notifications', offers: 'Offres à valider', account: 'Mon compte', escalations: 'Demandes escaladées', vendors: 'Comptes vendeurs', customers: 'Comptes clients', reviews: 'Avis clients' , audit: 'Journal d’audit' },
+  en: { shop: 'My shop', staff: 'Atlas DZ team', dashboard: 'Dashboard', notifications: 'Notifications', offers: 'Offers to approve', account: 'My account', escalations: 'Escalated requests', vendors: 'Seller accounts', customers: 'Customer accounts', reviews: 'Customer reviews' , audit: 'Audit log' },
+  ar: { shop: 'متجري', staff: 'فريق Atlas DZ', dashboard: 'لوحة التحكم', notifications: 'الإشعارات', offers: 'عروض للمراجعة', account: 'حسابي', escalations: 'طلبات مُصعَّدة', vendors: 'حسابات البائعين', customers: 'حسابات الزبائن', reviews: 'تقييمات الزبائن' , audit: 'سجل التدقيق' },
 } as const;
 
 interface NavItem {
@@ -108,6 +109,7 @@ export async function Shell({
     { path: '/moderation/sellers', label: authCopy[locale].sellerRequests, Icon: Storefront },
     { path: '/admin/sellers', label: g.vendors, Icon: IdentificationCard, prefix: true },
     { path: '/admin/customers', label: g.customers, Icon: Users },
+    { path: '/admin/audit', label: g.audit, Icon: ClockCounterClockwise },
     { path: '/admin', label: adminCopy[locale].nav, Icon: Gauge },
   ];
   // Sellers already reach support from their own menu.

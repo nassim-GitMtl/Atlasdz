@@ -596,6 +596,64 @@ export class AccountAdminService {
     }));
   }
 
+  /**
+   * Recent audit events, newest first, for staff accountability. Staff and seller actors are
+   * shown by their login email; customers only by id. `before` pages on (occurredAt, id).
+   */
+  public async auditLog(filters: {
+    readonly area?: string | undefined;
+    readonly actorType?: string | undefined;
+    readonly entityId?: string | undefined;
+    readonly before?: { readonly at: string; readonly id: string } | undefined;
+  }) {
+    const result = await this.pool.query<{
+      id: string; occurred_at: Date; actor_type: string; actor_id: string | null;
+      actor_email: string | null; action: string; outcome: string; entity_type: string;
+      entity_id: string | null; reason: string | null; details: unknown;
+    }>(
+      `SELECT e.event_id AS id, e.occurred_at, e.actor_type, e.actor_id,
+         CASE WHEN e.actor_type IN ('staff', 'seller_user') THEN c.email END AS actor_email,
+         e.action, e.outcome, e.entity_type, e.entity_id, e.reason,
+         COALESCE(e.after_data, e.before_data) AS details
+       FROM platform.audit_events e
+       LEFT JOIN identity.password_credentials c ON c.user_id = e.actor_id
+       WHERE ($1::text IS NULL OR e.action LIKE $1 || '.%')
+         AND ($2::text IS NULL OR e.actor_type = $2)
+         AND ($3::uuid IS NULL OR e.entity_id = $3 OR e.actor_id = $3)
+         AND ($4::timestamptz IS NULL OR (e.occurred_at, e.event_id) < ($4::timestamptz, $5::uuid))
+       ORDER BY e.occurred_at DESC, e.event_id DESC LIMIT 51`,
+      [
+        filters.area ?? null,
+        filters.actorType ?? null,
+        filters.entityId ?? null,
+        filters.before?.at ?? null,
+        filters.before?.id ?? null,
+      ],
+    );
+    const rows = result.rows.slice(0, 50);
+    const last = rows.at(-1);
+    return {
+      items: rows.map((row) => ({
+        id: row.id,
+        occurredAt: row.occurred_at.toISOString(),
+        actorType: row.actor_type,
+        actorId: row.actor_id,
+        actorEmail: row.actor_email,
+        action: row.action,
+        outcome: row.outcome,
+        entityType: row.entity_type,
+        entityId: row.entity_id,
+        reason: row.reason,
+        // A short, readable summary of what changed (never more than 400 characters).
+        details: row.details === null ? null : JSON.stringify(row.details).slice(0, 400),
+      })),
+      next:
+        result.rows.length > 50 && last
+          ? { at: last.occurred_at.toISOString(), id: last.id }
+          : null,
+    };
+  }
+
   /** Deletes a customer account as the customer could (orders stay as commercial records). */
   public async closeCustomer(
     userId: string,

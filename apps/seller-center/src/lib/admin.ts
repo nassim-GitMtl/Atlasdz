@@ -213,3 +213,35 @@ export const findCustomers = (token: string, email: string) =>
   call(`/api/v1/admin/customers?email=${encodeURIComponent(email)}`, z.object({ items: Customer.array() }), token);
 export const closeCustomer = (token: string, id: string) =>
   call(`/api/v1/admin/customers/${path(id)}/close`, Done, token, {});
+
+const AuditEvent = z.object({
+  id: z.uuid(),
+  occurredAt: z.string(),
+  actorType: z.string(),
+  actorId: z.string().nullable(),
+  actorEmail: z.string().nullable(),
+  action: z.string(),
+  outcome: z.string(),
+  entityType: z.string(),
+  entityId: z.string().nullable(),
+  reason: z.string().nullable(),
+  details: z.string().nullable(),
+});
+export type AdminAuditEvent = z.infer<typeof AuditEvent>;
+/** Who did what, newest first (filters: area = action prefix, actor type, entity or actor id). */
+export const auditLog = (
+  token: string,
+  filters: { area?: string; actor?: string; entity?: string; beforeAt?: string; beforeId?: string },
+) => {
+  const query = new URLSearchParams(
+    Object.entries(filters).filter((entry): entry is [string, string] => Boolean(entry[1])),
+  );
+  return call(
+    `/api/v1/admin/audit?${query.toString()}`,
+    z.object({
+      items: AuditEvent.array(),
+      next: z.object({ at: z.string(), id: z.uuid() }).nullable(),
+    }),
+    token,
+  );
+};

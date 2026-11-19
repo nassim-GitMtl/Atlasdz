@@ -1005,6 +1005,52 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
       .set(bearer(staff))
       .expect(200);
     assert.equal(removed.body.outcome, 'ARCHIVED');
+    // Audit log: staff see who did what (staff and sellers by login email); sellers cannot.
+    await http().get('/api/v1/admin/audit').set(bearer(seller)).expect(403);
+    const audit = await http().get('/api/v1/admin/audit?area=product').set(bearer(staff)).expect(200);
+    const takedown = audit.body.items.find(
+      (item: { action: string }) => item.action === 'product.photo_removed',
+    );
+    assert.ok(takedown, 'the photo takedown is in the audit log');
+    assert.equal(takedown.actorEmail, 'ops@example.dz');
+    assert.ok(
+      audit.body.items.every((item: { action: string }) => item.action.startsWith('product.')),
+    );
+    const byEntity = await http()
+      .get(`/api/v1/admin/audit?entity=${productId}`)
+      .set(bearer(staff))
+      .expect(200);
+    assert.ok(byEntity.body.items.length > 0);
+    assert.ok(
+      byEntity.body.items.every((item: { entityId: string | null; actorId: string | null }) =>
+        [item.entityId, item.actorId].includes(productId),
+      ),
+    );
+    const sellerActions = await http()
+      .get('/api/v1/admin/audit?actor=seller_user')
+      .set(bearer(staff))
+      .expect(200);
+    assert.ok(sellerActions.body.items.length > 0);
+    assert.ok(
+      sellerActions.body.items.every(
+        (item: { actorType: string; actorEmail: string | null }) =>
+          item.actorType === 'seller_user' && item.actorEmail === 'boutique@example.dz',
+      ),
+    );
+    await http().get('/api/v1/admin/audit?area=DROP%20TABLE').set(bearer(staff)).expect(422);
+    // Paging continues strictly before the last item shown.
+    const first = await http().get('/api/v1/admin/audit').set(bearer(staff)).expect(200);
+    if (first.body.next) {
+      const older = await http()
+        .get(
+          `/api/v1/admin/audit?beforeAt=${encodeURIComponent(first.body.next.at)}&beforeId=${first.body.next.id}`,
+        )
+        .set(bearer(staff))
+        .expect(200);
+      const shown = new Set(first.body.items.map((item: { id: string }) => item.id));
+      assert.ok(older.body.items.every((item: { id: string }) => !shown.has(item.id)));
+    }
+
     // The guest's order is still open: neither account can be closed yet.
     await http().post(`/api/v1/admin/sellers/${sellerId}/close`).set(bearer(staff)).expect(409);
     const found = await http()

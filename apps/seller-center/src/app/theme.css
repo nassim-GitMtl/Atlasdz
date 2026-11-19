@@ -182,3 +182,11 @@ body { background: var(--surface); }
 .quick-edit__row input { min-height: 40px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font: inherit; color: inherit; width: 100%; }
 @media (max-width: 640px) { .quick-edit__row { grid-template-columns: 1fr 1fr; } .quick-edit__product { grid-column: 1 / -1; } }
 .quick-edit .button[type=submit] { justify-self: start; }
+/* Staff audit log. */
+.audit-filters { display: flex; flex-direction: row; flex-wrap: wrap; justify-content: flex-start; gap: 12px; align-items: flex-end; }
+.audit-filters label { display: grid; gap: 4px; font-size: 13px; flex: 1 1 160px; }
+.audit-action { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px; overflow-wrap: anywhere; }
+.audit-list small { font-weight: 400; }
+.audit-filters select, .audit-filters input { min-height: 38px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; font: inherit; }
+.audit-list li > span { display: grid; gap: 3px; min-width: 0; }
+.audit-details { display: block; font-size: 12px; color: var(--muted); overflow-wrap: anywhere; white-space: pre-wrap; }

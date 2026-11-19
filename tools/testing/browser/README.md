@@ -52,6 +52,9 @@ a new product submitted (with characteristics and an English title), approved th
 staff session, given a main and an extra photo from the file picker and an offer, then shown with
 its characteristics in French and English; a commune delivery rate; notifications; sign-out.
 
+`audit-log.mjs` (Seller Center): a staff account made with `create-staff` opens the audit log,
+filters by area and pages to older events.
+
 `stock-alerts.mjs` (shop, app web, API): a sold-out product offers "tell me when it is back"
 to a registered customer, the account page lists it, the app shows it as waiting; with
 `ATLAS_DISPATCHER=1` (a stack running the outbox dispatcher, e.g. the rehearsal) the restock

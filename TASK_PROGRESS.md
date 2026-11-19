@@ -27,5 +27,6 @@
 - Back-in-stock alerts (000037): shop/app subscribe on sold-out products, one email via the
   outbox on restock; account page list; deleted with the account. Shop disabled-button style.
 - App seller quick update (/seller/quick). Rehearsal 11-19: deployed-journey 24/24.
+- Staff audit log (/admin/audit, account.manage): who did what, filters, paging.
 - Remaining: real server deploy (owner: VPS/domain/SMTP/legal), signed EAS build → Play,
   push notifications. See docs/implementation/REMAINING-RELEASE-WORK.md.
