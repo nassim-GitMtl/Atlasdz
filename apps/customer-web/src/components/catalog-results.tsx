@@ -15,6 +15,9 @@ interface CatalogResultsProps {
   readonly results: ProductPage;
   readonly categories: CatalogCategoryList['items'];
   readonly availableOnly: boolean;
+  /** Price range in whole dinars, as entered. */
+  readonly minPrice?: number | undefined;
+  readonly maxPrice?: number | undefined;
   readonly category?: string | undefined;
   readonly locale: Locale;
   readonly query?: string | undefined;
@@ -26,6 +29,8 @@ export function CatalogResults({
   results,
   categories,
   availableOnly,
+  minPrice,
+  maxPrice,
   category,
   locale,
   query,
@@ -41,6 +46,8 @@ export function CatalogResults({
       ...(query ? { query } : {}),
       ...(sort ? { sort } : {}),
       ...(availableOnly ? { available: '1' } : {}),
+      ...(minPrice !== undefined ? { min: String(minPrice) } : {}),
+      ...(maxPrice !== undefined ? { max: String(maxPrice) } : {}),
       ...(page > 1 ? { page: String(page) } : {}),
     });
 
@@ -82,6 +89,28 @@ export function CatalogResults({
             <input defaultChecked={availableOnly} name="available" type="checkbox" value="1" />
             <span>{t.availableOnly}</span>
           </label>
+          <label className="price-bound">
+            <span>{t.priceFrom}</span>
+            <input
+              defaultValue={minPrice}
+              inputMode="numeric"
+              min={0}
+              name="min"
+              pattern="[0-9]*"
+              type="number"
+            />
+          </label>
+          <label className="price-bound">
+            <span>{t.priceTo}</span>
+            <input
+              defaultValue={maxPrice}
+              inputMode="numeric"
+              min={0}
+              name="max"
+              pattern="[0-9]*"
+              type="number"
+            />
+          </label>
           <label className="sort-select">
             <span>{t.sort}</span>
             <select defaultValue={parseSort(sort)} name="sort">
@@ -95,7 +124,7 @@ export function CatalogResults({
           <button className="button button--secondary" type="submit">
             {t.apply}
           </button>
-          {(availableOnly || sort || query) && (
+          {(availableOnly || sort || query || minPrice !== undefined || maxPrice !== undefined) && (
             <Link className="clear-filter" href={localizedHref(path, locale)}>
               {t.clear}
             </Link>

@@ -64,3 +64,11 @@ export function categoryImage(slug: string): string {
   const supported = new Set(['phones', 'kitchen', 'beauty', 'fashion', 'home', 'auto', 'baby']);
   return supported.has(slug) ? `/assets/category-${slug}.png` : '/assets/hero-mobile-bazaar.png';
 }
+
+/** A whole-dinar price bound from the URL (`min`/`max`), or undefined when absent or invalid. */
+export function parsePriceBound(value: string | undefined): number | undefined {
+  if (value === undefined || !/^\d{1,8}$/.test(value.trim())) return undefined;
+  const dinars = Number(value.trim());
+  // The API accepts prices up to 2 000 000 000 centimes (20 000 000 DA).
+  return dinars <= 20_000_000 ? dinars : undefined;
+}

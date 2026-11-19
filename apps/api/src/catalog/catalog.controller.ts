@@ -65,6 +65,8 @@ export class CatalogController {
       ...query,
       ...number('limit'),
       ...number('page'),
+      ...number('minPrice'),
+      ...number('maxPrice'),
       ...(query['available'] === undefined ? {} : { available: query['available'] === 'true' }),
     });
     if (!parsed.success) throw new SafeApplicationError('VALIDATION_FAILED');

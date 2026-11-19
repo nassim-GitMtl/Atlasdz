@@ -293,3 +293,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 .product-specs dt { color: var(--muted); font-size: 13px; }
 .product-specs dd { margin: 0; font-size: 14px; overflow-wrap: anywhere; }
 .product-specs__note { color: var(--muted); font-size: 12px; }
+/* Price range filter (whole dinars). */
+.price-bound { display: flex; flex-direction: column; align-items: stretch; gap: 4px; }
+.price-bound input { width: 110px; min-height: 40px; padding: 8px 10px; background: #fff; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); font: inherit; }
+@media (max-width: 760px) { .price-bound { flex: 1 1 130px; } .price-bound input { width: 100%; } .availability-check { flex-basis: 100%; } }

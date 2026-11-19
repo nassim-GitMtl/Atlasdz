@@ -1,12 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { FlatList, Image, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  FlatList,
+  Image,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, TextInput } from '@/components/text';
 
 import { Photo } from '@/components/photo';
 import { ProductCard, SummaryCard } from '@/components/product-card';
-import { Button, Empty, LoadState, Segmented } from '@/components/ui';
+import { Button, Checkbox, Empty, Field, LoadState, Segmented } from '@/components/ui';
+import { filterParams, parsePriceBound } from '@/lib/price-filter';
 import { api } from '@/lib/api';
 import { categoryImage, type SortMode } from '@/lib/collections';
 import { imageUri } from '@/lib/config';
@@ -15,12 +24,7 @@ import { useI18n } from '@/lib/i18n';
 import { useLibrary } from '@/lib/library';
 import { fontFor } from '@/lib/fonts';
 import { colors, gap } from '@/lib/theme';
-import type {
-  CatalogCategoryList,
-  CatalogProduct,
-  CatalogProductList,
-  Locale,
-} from '@/lib/types';
+import type { CatalogCategoryList, CatalogProduct, CatalogProductList, Locale } from '@/lib/types';
 import { usePaged } from '@/lib/use-paged';
 import { useRequest } from '@/lib/use-request';
 
@@ -46,6 +50,14 @@ export default function HomeScreen() {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<string | null>(null);
   const [sort, setSort] = useState<SortMode>('relevance');
+  // Stock and price filters: typed in the panel, applied together.
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [priceDraft, setPriceDraft] = useState({ min: '', max: '' });
+  const [filters, setFilters] = useState<{ inStock: boolean; min?: number; max?: number }>({
+    inStock: false,
+  });
+  const activeFilters =
+    Number(filters.inStock) + Number(filters.min !== undefined) + Number(filters.max !== undefined);
 
   // Every category with products on sale, and pages of products sorted by the API across the
   // whole catalogue (more load as the shopper scrolls).
@@ -53,12 +65,15 @@ export default function HomeScreen() {
     api<CatalogCategoryList>('/api/v1/catalog/categories'),
   );
   const categoryItems = categoryList.data?.items ?? [];
-  const categories = categoryItems.map((item) => [item.slug, localized(item.title, locale)] as const);
+  const categories = categoryItems.map(
+    (item) => [item.slug, localized(item.title, locale)] as const,
+  );
   // The category with the most products leads, with its real product count.
   const lead = [...categoryItems].sort((a, b) => b.productCount - a.productCount)[0];
   const params = new URLSearchParams({ limit: '24', sort: SERVER_SORT[sort] });
   if (query) params.set('query', query);
   if (category) params.set('category', category);
+  for (const [key, value] of Object.entries(filterParams(filters))) params.set(key, value);
   const shown = usePaged<CatalogProduct, ProductPage>(params.toString(), async (cursor) => {
     const page = Number(cursor ?? '1');
     const list = await api<CatalogProductList>(
@@ -72,7 +87,12 @@ export default function HomeScreen() {
   const header = (
     <View style={styles.header}>
       <View style={styles.topBar}>
-        <View style={styles.brand} accessible accessibilityRole="header" accessibilityLabel="atlas dz">
+        <View
+          style={styles.brand}
+          accessible
+          accessibilityRole="header"
+          accessibilityLabel="atlas dz"
+        >
           <Image source={require('../../../assets/mark.png')} style={styles.mark} />
           <Text style={styles.wordmark}>atlas dz</Text>
         </View>
@@ -84,6 +104,8 @@ export default function HomeScreen() {
               accessibilityLabel={name}
               accessibilityLanguage={code}
               accessibilityState={{ checked: locale === code }}
+              // react-native-web does not map `checked` to aria-checked for radios.
+              aria-checked={locale === code}
               onPress={() => void setLocale(code)}
               style={[styles.language, locale === code && styles.languageActive]}
             >
@@ -176,9 +198,7 @@ export default function HomeScreen() {
           style={styles.hero}
         >
           <View style={styles.heroCopy}>
-            <Text style={styles.heroEyebrow}>
-              {fill(t.home.results, { n: lead.productCount })}
-            </Text>
+            <Text style={styles.heroEyebrow}>{fill(t.home.results, { n: lead.productCount })}</Text>
             <Text style={styles.heroTitle}>{localized(lead.title, locale)}</Text>
           </View>
           <Photo uri={imageUri(categoryImage(lead.slug))} style={styles.heroImage} />
@@ -199,7 +219,9 @@ export default function HomeScreen() {
         </>
       ) : null}
       <Text style={styles.section} accessibilityRole="header">
-        {category ? (categories.find(([slug]) => slug === category)?.[1] ?? t.home.catalog) : t.home.catalog}
+        {category
+          ? (categories.find(([slug]) => slug === category)?.[1] ?? t.home.catalog)
+          : t.home.catalog}
         {shown.data ? (
           <Text style={styles.sectionCount}> · {shown.data.total ?? products.length}</Text>
         ) : null}
@@ -213,6 +235,70 @@ export default function HomeScreen() {
         value={sort}
         onChange={setSort}
       />
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${t.home.filters}${activeFilters ? ` · ${activeFilters}` : ''}`}
+        accessibilityState={{ expanded: filtersOpen }}
+        onPress={() => setFiltersOpen((open) => !open)}
+        style={styles.filterToggle}
+      >
+        <Ionicons name="options-outline" size={18} color={colors.primary} />
+        <Text style={styles.filterToggleText}>
+          {t.home.filters}
+          {activeFilters ? ` · ${activeFilters}` : ''}
+        </Text>
+      </Pressable>
+      {filtersOpen ? (
+        <View style={styles.filterPanel}>
+          <Checkbox
+            checked={filters.inStock}
+            label={t.home.inStock}
+            onToggle={() => setFilters((current) => ({ ...current, inStock: !current.inStock }))}
+          />
+          <View style={styles.priceRow}>
+            <View style={styles.priceField}>
+              <Field
+                label={t.home.priceMin}
+                value={priceDraft.min}
+                onChangeText={(min) => setPriceDraft((current) => ({ ...current, min }))}
+                keyboardType="number-pad"
+                maxLength={8}
+              />
+            </View>
+            <View style={styles.priceField}>
+              <Field
+                label={t.home.priceMax}
+                value={priceDraft.max}
+                onChangeText={(max) => setPriceDraft((current) => ({ ...current, max }))}
+                keyboardType="number-pad"
+                maxLength={8}
+              />
+            </View>
+          </View>
+          <Button
+            label={t.home.applyFilters}
+            variant="secondary"
+            onPress={() =>
+              setFilters((current) => ({
+                inStock: current.inStock,
+                min: parsePriceBound(priceDraft.min),
+                max: parsePriceBound(priceDraft.max),
+              }))
+            }
+          />
+          {activeFilters ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                setPriceDraft({ min: '', max: '' });
+                setFilters({ inStock: false });
+              }}
+            >
+              <Text style={styles.clearFilters}>{t.home.clearFilters}</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
       <LoadState
         loading={shown.loading && !shown.data}
         error={shown.data ? undefined : shown.error}
@@ -257,6 +343,25 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  filterToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    minHeight: 44,
+    alignSelf: 'flex-start',
+  },
+  filterToggleText: { color: colors.primary, fontSize: 15, fontWeight: '700' },
+  filterPanel: {
+    gap: 10,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.surface,
+  },
+  priceRow: { flexDirection: 'row', gap: 10 },
+  priceField: { flex: 1 },
+  clearFilters: { color: colors.primary, textDecorationLine: 'underline', paddingVertical: 6 },
   list: { flex: 1, backgroundColor: colors.card },
   content: { padding: gap, gap: 14, paddingBottom: 40 },
   row: { gap: 12 },
@@ -265,7 +370,13 @@ const styles = StyleSheet.create({
   brand: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   mark: { width: 34, height: 30, resizeMode: 'contain' },
   wordmark: { fontSize: 24, fontWeight: '800', color: colors.ink, letterSpacing: -1 },
-  languages: { flexDirection: 'row', gap: 2, padding: 2, borderRadius: 999, backgroundColor: colors.surface },
+  languages: {
+    flexDirection: 'row',
+    gap: 2,
+    padding: 2,
+    borderRadius: 999,
+    backgroundColor: colors.surface,
+  },
   language: {
     minWidth: 44,
     minHeight: 44,

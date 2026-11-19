@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import type { CatalogProduct } from '@atlas/contracts';
 
-import { bestOffer, formatMoney, sortProducts } from './catalog-view.ts';
+import { bestOffer, formatMoney, sortProducts, parsePriceBound } from './catalog-view.ts';
 
 const product = {
   id: '018f0c12-8c71-7a4b-9f2a-7f56a3e74519',
@@ -64,4 +64,12 @@ test('sortProducts uses item price without guessing destination shipping', () =>
 test('formatMoney interprets contract values as minor DZD units', () => {
   assert.match(formatMoney(1_250_000, 'fr'), /12[\s\u202f]?500/);
   assert.match(formatMoney(450_050, 'fr'), /4[\s\u202f]?500,50/);
+});
+
+test('price bounds are whole dinars within the API range', () => {
+  assert.equal(parsePriceBound('1500'), 1500);
+  assert.equal(parsePriceBound(' 0 '), 0);
+  assert.equal(parsePriceBound('20000000'), 20_000_000);
+  for (const bad of [undefined, '', '-5', '12.5', '1e5', 'abc', '20000001', '999999999'])
+    assert.equal(parsePriceBound(bad), undefined, String(bad));
 });

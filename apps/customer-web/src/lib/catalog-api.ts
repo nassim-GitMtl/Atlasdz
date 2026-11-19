@@ -146,6 +146,9 @@ export async function getProductPage(
   filters: ProductFilters & {
     readonly sort?: string | undefined;
     readonly available?: boolean;
+    /** Price range in minor units. */
+    readonly minPrice?: number;
+    readonly maxPrice?: number;
     readonly page?: number;
     readonly limit?: number;
   } = {},
@@ -156,6 +159,8 @@ export async function getProductPage(
   if (filters.seller) query.set('seller', filters.seller);
   if (filters.sort) query.set('sort', filters.sort);
   if (filters.available) query.set('available', 'true');
+  if (filters.minPrice !== undefined) query.set('minPrice', String(filters.minPrice));
+  if (filters.maxPrice !== undefined) query.set('maxPrice', String(filters.maxPrice));
   if (filters.page && filters.page > 1) query.set('page', String(filters.page));
   query.set('limit', String(filters.limit ?? 24));
   const result = await requestJson(

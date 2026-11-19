@@ -107,17 +107,24 @@ describe('PostgreSQL seller catalog', () => {
       [offer.id],
     );
     assert.equal(events.rows.length, 2);
-    for (const status of ['REJECTED', 'SUSPENDED']) {
-      await pool.query('UPDATE offers.offers SET status=$2 WHERE id=$1', [offer.id, status]);
-      await assert.rejects(
-        repository.updateOffer(
-          sellerId,
-          offer.id,
-          { ...change, expectedVersion: live.rowVersion },
-          context(),
-        ),
-      );
-    }
+    // A suspended offer cannot be edited; a refused one is corrected and goes back to review.
+    await pool.query("UPDATE offers.offers SET status='SUSPENDED' WHERE id=$1", [offer.id]);
+    await assert.rejects(
+      repository.updateOffer(
+        sellerId,
+        offer.id,
+        { ...change, expectedVersion: live.rowVersion },
+        context(),
+      ),
+    );
+    await pool.query("UPDATE offers.offers SET status='REJECTED' WHERE id=$1", [offer.id]);
+    const resubmitted = await repository.updateOffer(
+      sellerId,
+      offer.id,
+      { ...change, expectedVersion: live.rowVersion },
+      context(),
+    );
+    assert.equal(resubmitted.status, 'PENDING_REVIEW');
     await pool.query("UPDATE sellers.sellers SET status='SUSPENDED' WHERE id=$1", [sellerId]);
     await assert.rejects(
       repository.updateOffer(sellerId, offer.id, change, context()),
@@ -164,6 +171,23 @@ describe('PostgreSQL seller catalog', () => {
     assert.equal((await repository.listProducts({ category: 'phones' })).items.length, 2);
     assert.equal((await repository.listProducts({ seller: 'maison-plus' })).items.length, 2);
     assert.equal((await repository.listProducts({ limit: 2 })).items.length, 2);
+    // Price range on each product's lowest offer price (offers come cheapest first).
+    const lowest = (product: { offers: { priceMinor: number }[] }) =>
+      Math.min(...product.offers.map((offer) => offer.priceMinor));
+    const prices = all.items.map(lowest).sort((a, b) => a - b);
+    const middle = prices[Math.floor(prices.length / 2)] ?? 0;
+    const cheap = await repository.listProducts({ maxPrice: middle, limit: 100 });
+    assert.ok(cheap.items.length > 0 && cheap.items.every((item) => lowest(item) <= middle));
+    const dear = await repository.listProducts({ minPrice: middle, limit: 100 });
+    assert.ok(dear.items.length > 0 && dear.items.every((item) => lowest(item) >= middle));
+    assert.equal(
+      (cheap.total ?? 0) + (dear.total ?? 0) - prices.filter((price) => price === middle).length,
+      all.total,
+    );
+    assert.equal(
+      (await repository.listProducts({ minPrice: middle + 1, maxPrice: middle - 1 })).total,
+      0,
+    );
     for (const query of ['%', '_', "' OR true --", '\\']) {
       assert.equal((await repository.listProducts({ query })).items.length, 0);
     }
@@ -514,7 +538,11 @@ describe('PostgreSQL seller catalog', () => {
       repository.submitProduct(sellerId, revisionInput, context()),
     ]);
     assert.equal(draft.id, retried.id);
-    assert.deepEqual(draft.previous, { title: before.title, description: before.description });
+    assert.deepEqual(draft.previous, {
+      title: before.title,
+      description: before.description,
+      specs: before.specs ?? [],
+    });
     assert.equal(draft.productId, null);
     assert.equal(draft.canRevise, false);
     assert.equal(await repository.getProductSubmission(otherSeller, draft.id), null);

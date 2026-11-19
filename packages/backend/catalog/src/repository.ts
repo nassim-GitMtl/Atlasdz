@@ -85,6 +85,7 @@ const PUBLIC_PRODUCTS = `
       'promotionEndsAt', CASE WHEN o.promo_active THEN ${utcIso('o.promo_ends_at')} END
     ) ORDER BY o.effective_price, o.id) AS items,
       min(o.effective_price + o.delivery_fee_minor) AS best_total,
+      min(o.effective_price) AS best_price,
       min(o.handling_days) AS fastest_days,
       bool_or(o.available_quantity > 0) AS in_stock
     FROM (
@@ -628,16 +629,21 @@ export class PostgresCatalogRepository {
       fastest: 'public_offers.fastest_days ASC, public_offers.best_total ASC, p.slug',
       newest: 'p.created_at DESC, p.slug',
     }[parsed.sort ?? 'recommended'];
-    const filter = parsed.available ? 'AND public_offers.in_stock' : '';
+    // $4/$5: price range of the lowest current offer price (null: no bound).
+    const filter = `${parsed.available ? 'AND public_offers.in_stock' : ''}
+      AND ($4::bigint IS NULL OR public_offers.best_price >= $4)
+      AND ($5::bigint IS NULL OR public_offers.best_price <= $5)`;
     const values = [
       parsed.query ? `%${escapeCatalogSearch(parsed.query)}%` : null,
       parsed.category ?? null,
       parsed.seller ?? null,
+      parsed.minPrice ?? null,
+      parsed.maxPrice ?? null,
     ];
     const result = await this.pool.query<{ product: unknown; total: string }>(
       `
       SELECT ${PRODUCT_JSON}, count(*) OVER () AS total ${PUBLIC_PRODUCTS} ${filter}
-      ORDER BY ${order}, p.id LIMIT $4 OFFSET $5
+      ORDER BY ${order}, p.id LIMIT $6 OFFSET $7
     `,
       [...values, pageSize, (page - 1) * pageSize],
     );

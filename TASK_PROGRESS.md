@@ -21,5 +21,7 @@
   shop + app display. mobile-seller 12/12, e2e 15/15, mobile-app 20/20.
 - English product texts (000036): optional title/description, reviewed; English pages and search.
 - Rehearsal 2026-11-18: migrations 34–36 applied on existing data; deployed-journey 23/23.
+- 11-19: price range filter (API, shop, app panel with stock toggle); schema.org Product data
+  (real ratings only) + sitemap with categories/stores/fr-ar-en; app language radios a11y fix.
 - Remaining: real server deploy (owner: VPS/domain/SMTP/legal), signed EAS build → Play,
   push notifications. See docs/implementation/REMAINING-RELEASE-WORK.md.

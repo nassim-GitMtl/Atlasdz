@@ -197,6 +197,9 @@ export const ListProductsInputSchema = z
     sort: CatalogSortSchema.optional(),
     /** Only products with at least one offer in stock. */
     available: z.boolean().optional(),
+    /** Price range (minor units) of the product's lowest current offer price. */
+    minPrice: MoneyMinorSchema.optional(),
+    maxPrice: MoneyMinorSchema.optional(),
   })
   .strict();
 

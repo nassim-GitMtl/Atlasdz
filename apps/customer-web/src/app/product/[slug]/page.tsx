@@ -1,4 +1,5 @@
 import { ProductGallery } from '@/components/product-gallery';
+import { jsonForScript, productJsonLd } from '@/lib/structured-data';
 import { notFound } from 'next/navigation';
 import { PRODUCT_SPEC_LABELS, type CatalogProduct } from '@atlas/contracts';
 import { Breadcrumbs } from '@/components/breadcrumbs';
@@ -28,7 +29,10 @@ export async function generateMetadata({
   return {
     title,
     description,
-    alternates: { canonical: `/product/${slug}`, languages: { ar: `/product/${slug}?lang=ar` } },
+    alternates: {
+      canonical: `/product/${slug}`,
+      languages: { fr: `/product/${slug}`, ar: `/product/${slug}?lang=ar`, en: `/product/${slug}?lang=en` },
+    },
     openGraph: { title, description, images: [{ url: product.imageUrl }] },
   };
 }
@@ -84,8 +88,19 @@ export default async function ProductPage({
   const facts = factCopy[locale];
   const t = copy[locale];
   const title = text(product.title, locale);
+  const structured = productJsonLd(
+    product,
+    reviews?.summary ?? null,
+    locale,
+    process.env['CUSTOMER_WEB_ORIGIN'] ?? '',
+  );
   return (
     <SiteChrome locale={locale} pathname={`/product/${slug}`} searchParams={query}>
+      <script
+        type="application/ld+json"
+        // Data only (never executed); `<` is escaped so seller text cannot close the tag.
+        dangerouslySetInnerHTML={{ __html: jsonForScript(structured) }}
+      />
       <div className="page-shell">
         <Breadcrumbs
           locale={locale}
