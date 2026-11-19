@@ -225,6 +225,8 @@ export const SellerOfferSchema = CreateOfferInputSchema.extend({
   rowVersion: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
   /** Why staff refused the offer; set only while status is REJECTED. */
   rejectionReason: z.string().max(300).nullish(),
+  /** Customers waiting for this product to be back in stock (a count only; seller lists). */
+  waitingCustomers: z.number().int().min(0).optional(),
 }).strict();
 /** Staff refusal of a pending offer; the reason is shown to the seller. */
 export const RejectOfferInputSchema = z

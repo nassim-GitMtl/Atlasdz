@@ -6,7 +6,7 @@ import { Text } from '@/components/text';
 import { Photo } from '@/components/photo';
 import { Badge, Button, Card, Empty, LoadState, Screen, Segmented, text } from '@/components/ui';
 import { imageUri } from '@/lib/config';
-import { formatMoney, localized } from '@/lib/format';
+import { fill, formatMoney, localized } from '@/lib/format';
 import { useI18n } from '@/lib/i18n';
 import { useSession } from '@/lib/session';
 import { colors, radius } from '@/lib/theme';
@@ -161,6 +161,11 @@ export default function SellerCatalogScreen() {
                       <Text style={text.muted}>
                         {t.catalog.stock} : {offer.availableQuantity}
                       </Text>
+                      {offer.waitingCustomers ? (
+                        <Text style={styles.waiting}>
+                          {fill(t.catalog.waiting, { n: offer.waitingCustomers })}
+                        </Text>
+                      ) : null}
                       <Badge
                         label={
                           offer.status === 'APPROVED' ? t.catalog.online : t.catalog[offer.status]
@@ -187,6 +192,7 @@ export default function SellerCatalogScreen() {
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 12 },
+  waiting: { color: colors.warning, fontWeight: '700' },
   grow: { flex: 1, gap: 4 },
   thumb: { width: 72, height: 72, borderRadius: radius, backgroundColor: colors.soft },
   thumbSmall: { width: 48, height: 48, borderRadius: 8, backgroundColor: colors.soft },

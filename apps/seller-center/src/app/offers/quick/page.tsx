@@ -68,11 +68,25 @@ export default async function QuickOffers({
                 version: offer.rowVersion,
                 price: dinars(offer.priceMinor),
                 stock: String(offer.availableQuantity),
-                note: offer.promotion
-                  ? `${lang(locale, 'Promotion', 'تخفيض', 'Sale')} : ${money(offer.promotion.priceMinor, locale)}`
-                  : offer.status === 'PENDING_REVIEW'
-                    ? lang(locale, 'En vérification', 'قيد المراجعة', 'Under review')
-                    : undefined,
+                note:
+                  [
+                    offer.promotion
+                      ? `${lang(locale, 'Promotion', 'تخفيض', 'Sale')} : ${money(offer.promotion.priceMinor, locale)}`
+                      : null,
+                    offer.status === 'PENDING_REVIEW'
+                      ? lang(locale, 'En vérification', 'قيد المراجعة', 'Under review')
+                      : null,
+                    offer.waitingCustomers
+                      ? lang(
+                          locale,
+                          `${offer.waitingCustomers} client(s) en attente du retour en stock`,
+                          `${offer.waitingCustomers} زبون ينتظر عودته إلى المخزون`,
+                          `${offer.waitingCustomers} customer(s) waiting for it to be back`,
+                        )
+                      : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ') || undefined,
               }))}
             />
           )}

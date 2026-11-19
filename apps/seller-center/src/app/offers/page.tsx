@@ -113,6 +113,16 @@ export default async function Offers({
                             {new Date(offer.promotion.endsAt).toLocaleDateString(intlLocale(locale), { timeZone: 'Africa/Algiers' })}
                           </small>
                         )}
+                        {offer.waitingCustomers ? (
+                          <small className="waiting-note">
+                            {lang(
+                              locale,
+                              `${offer.waitingCustomers} client(s) attendent son retour en stock`,
+                              `${offer.waitingCustomers} زبون ينتظر عودته إلى المخزون`,
+                              `${offer.waitingCustomers} customer(s) waiting for it to be back`,
+                            )}
+                          </small>
+                        ) : null}
                         {offer.status === 'REJECTED' && offer.rejectionReason && (
                           <small className="reject-reason">{offer.rejectionReason}</small>
                         )}

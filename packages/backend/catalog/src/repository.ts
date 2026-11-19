@@ -718,7 +718,10 @@ export class PostgresCatalogRepository {
   public async listSellerOffers(actorSellerId: string): Promise<readonly SellerOffer[]> {
     const result = await this.pool.query(
       `
-      SELECT ${OFFER_COLUMNS} FROM offers.offers WHERE seller_id = $1 ORDER BY created_at DESC, id LIMIT 100
+      SELECT ${OFFER_COLUMNS},
+        (SELECT count(*)::int FROM commerce.stock_alerts a
+         WHERE a.product_id = offers.product_id AND a.notified_at IS NULL) AS "waitingCustomers"
+      FROM offers.offers WHERE seller_id = $1 ORDER BY created_at DESC, id LIMIT 100
     `,
       [UuidSchema.parse(actorSellerId)],
     );

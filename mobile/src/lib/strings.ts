@@ -458,6 +458,7 @@ const fr = {
     productsEmpty: 'Aucun produit soumis.',
     offersEmpty: 'Aucune offre. Choisissez un produit du catalogue pour le vendre.',
     quickUpdate: 'Mise à jour rapide',
+    waiting: '{n} client(s) attendent son retour en stock',
     quickNote:
       'Prix et stock de plusieurs offres, enregistrés en une fois. Délai, précommande et promotion restent inchangés.',
     quickSave: 'Enregistrer les modifications',
@@ -1031,6 +1032,7 @@ const ar: Strings = {
     productsEmpty: 'لم ترسل أي منتج بعد.',
     offersEmpty: 'لا توجد عروض. اختر منتجًا من الكتالوج لبيعه.',
     quickUpdate: 'تحديث سريع',
+    waiting: '{n} زبون ينتظر عودته إلى المخزون',
     quickNote:
       'سعر ومخزون عدة عروض، يُحفظان دفعة واحدة. تبقى مدة التحضير والطلب المسبق والتخفيض كما هي.',
     quickSave: 'حفظ التعديلات',
@@ -1601,6 +1603,7 @@ const en: Strings = {
     productsEmpty: 'No products submitted.',
     offersEmpty: 'No offers. Choose a catalogue product to sell it.',
     quickUpdate: 'Quick update',
+    waiting: '{n} customer(s) waiting for it to be back',
     quickNote:
       'Price and stock of several offers, saved at once. Handling time, pre-order and sale stay as they are.',
     quickSave: 'Save changes',

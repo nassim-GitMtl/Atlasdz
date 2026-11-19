@@ -457,6 +457,12 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
     await http().post(alert).set(bearer(customer)).expect(201);
     await http().post(alert).set(bearer(customer)).expect(201);
     assert.equal((await http().get(alert).set(bearer(customer)).expect(200)).body.waiting, true);
+    // The seller sees how many customers wait (a count only).
+    const waitingFor = async () =>
+      (await http().get('/api/v1/seller/offers').set(bearer(seller)).expect(200)).body.items.find(
+        (item: { id: string }) => item.id === offer.body.id,
+      ).waitingCustomers as number;
+    assert.equal(await waitingFor(), 1);
     const waitingList = await http().get('/api/v1/stock-alerts').set(bearer(customer)).expect(200);
     assert.deepEqual(
       waitingList.body.items.map((item: { slug: string }) => item.slug),
@@ -474,6 +480,7 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
     assert.equal(backMails().length, 1);
     assert.match(backMails()[0]?.text ?? '', new RegExp(`/product/${productSlug}\\?lang=fr`));
     assert.equal((await http().get(alert).set(bearer(customer)).expect(200)).body.waiting, false);
+    assert.equal(await waitingFor(), 0);
     // Later changes do not repeat the email; a removed alert is gone.
     await restock(stockBefore);
     await flush();
