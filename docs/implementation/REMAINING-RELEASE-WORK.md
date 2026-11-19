@@ -63,6 +63,11 @@ entries are not a current feature inventory. Do not repeat completed redesign or
 - The rehearsal's secrets had to be regenerated (temporary folder cleaned by the OS); on a real
   server keep `/opt/atlas/secrets` backed up off the machine, as setup.sh says.
 
+## Rehearsal 2026-11-19
+
+- Migration 000037 applied; deployed-journey.mjs 24/24, now including the back-in-stock email
+  sent by the outbox dispatcher after a Seller Center quick update, received in Mailpit.
+
 ## Remaining implementation
 
 1. Native push: permission UX, device ownership/revocation, outbox integration, retries,

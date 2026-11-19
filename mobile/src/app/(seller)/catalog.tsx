@@ -132,6 +132,13 @@ export default function SellerCatalogScreen() {
           {offers.data && offers.data.items.length === 0 ? (
             <Empty icon="pricetags-outline" text={t.catalog.offersEmpty} />
           ) : null}
+          {offers.data && offers.data.items.length > 0 ? (
+            <Button
+              label={t.catalog.quickUpdate}
+              variant="secondary"
+              onPress={() => router.push('/seller/quick')}
+            />
+          ) : null}
           {offers.data?.items.map((offer) => {
             const product = entry(offer.productId);
             return (

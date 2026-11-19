@@ -376,6 +376,28 @@ await step('seller replies to the support request', sp, async () => {
   await sp.locator('form:has(#support-body) button:not([type=button])').click();
   await sp.getByText('Aspirez sans brosse').first().waitFor({ timeout: 15000 });
 });
+await step('sold out: buyer asks for a back-in-stock alert; the restock email arrives', sp, async () => {
+  // The seller empties the stock with the quick update page (one offer in this store).
+  await sp.goto(`${SELLER}/offers/quick?lang=fr`);
+  const stock = sp.locator('input[name^="stock-"]').first();
+  const before = await stock.inputValue();
+  await stock.fill('0');
+  await sp.getByRole('button', { name: 'Enregistrer les modifications' }).click();
+  await sp.getByText('Offres enregistrées : 1').waitFor({ timeout: 15000 });
+  // The signed-in buyer asks to be told when it is back.
+  await bp.goto(`${SHOP}/search?query=${encodeURIComponent(product.fr)}`);
+  await bp.getByRole('link', { name: product.fr }).first().click();
+  await bp.getByRole('button', { name: 'M’avertir du retour en stock' }).click({ timeout: 15000 });
+  await bp.getByText('Nous vous écrirons une fois').waitFor({ timeout: 15000 });
+  // Restocked: the outbox dispatcher emails the buyer once.
+  await sp.goto(`${SELLER}/offers/quick?lang=fr`);
+  await sp.locator('input[name^="stock-"]').first().fill(before === '0' ? '5' : before);
+  await sp.getByRole('button', { name: 'Enregistrer les modifications' }).click();
+  await sp.getByText('Offres enregistrées : 1').waitFor({ timeout: 15000 });
+  await mailLink(buyerEmail, '/product/p-');
+  if (!(await mailSubjects(buyerEmail)).some((subject) => /De retour en stock/.test(subject)))
+    throw new Error('no back-in-stock email');
+});
 await step('staff sees the indicators page', st, async () => {
   await st.goto(`${SELLER}/admin`);
   await st.getByRole('heading', { name: 'Indicateurs' }).waitFor({ timeout: 15000 });
