@@ -7,7 +7,8 @@ import { SiteChrome } from '@/components/site-chrome';
 import { getAccount, getPhone } from '@/lib/account-api';
 import { accountCopy } from '@/lib/account-copy';
 import { customerToken } from '@/lib/cart-api';
-import { localizedHref, type SearchParams, resolveLocale } from '@/lib/i18n';
+import { lang, localizedHref, type SearchParams, resolveLocale, text } from '@/lib/i18n';
+import { listStockAlerts } from '@/lib/stock-alerts-api';
 
 export const metadata: Metadata = { robots: { index: false } };
 
@@ -24,6 +25,8 @@ export default async function Account({
   const data = await Promise.all([getAccount(token), getPhone(token)]).catch(() => null);
   if (data === null) redirect(localizedHref('/login', locale));
   const [account, phone] = data;
+  // Products the customer waits for (optional: an outage hides the list, not the page).
+  const alerts = await listStockAlerts(token).catch(() => []);
   return (
     <SiteChrome locale={locale} pathname="/account" searchParams={params}>
       <section className="page-container auth-page">
@@ -52,6 +55,28 @@ export default async function Account({
               ) : (
                 <PhoneForm locale={locale} />
               )}
+            </div>
+          )}
+          {alerts.length > 0 && (
+            <div className="cart-empty">
+              <h2>{lang(locale, 'Alertes de retour en stock', 'تنبيهات العودة إلى المخزون', 'Back-in-stock alerts')}</h2>
+              <ul className="stock-alert-list">
+                {alerts.map((alert) => (
+                  <li key={alert.slug}>
+                    <Link href={localizedHref(`/product/${alert.slug}`, locale)}>
+                      {text(alert.title, locale)}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              <p>
+                {lang(
+                  locale,
+                  'Un e-mail par produit, dès son retour. Annulez depuis la page du produit.',
+                  'رسالة واحدة لكل منتج فور عودته. يمكنك الإلغاء من صفحة المنتج.',
+                  'One email per product, as soon as it is back. Cancel from the product page.',
+                )}
+              </p>
             </div>
           )}
           <div className="cart-empty">

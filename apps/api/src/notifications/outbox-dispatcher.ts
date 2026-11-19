@@ -1,4 +1,5 @@
 import type { CustomerOrder, SellerOrder } from '@atlas/contracts';
+import { PostgresStockAlertRepository } from '@atlas/commerce';
 import { PostgresOutboxQueue, type OutboxClaim } from '@atlas/database';
 import type { Pool } from 'pg';
 import type { Logger } from 'pino';
@@ -22,6 +23,7 @@ export const REMINDER_AFTER_HOURS = 6;
  */
 export class OutboxDispatcher {
   private readonly queue: PostgresOutboxQueue;
+  private readonly stockAlerts: PostgresStockAlertRepository;
   private timer: NodeJS.Timeout | undefined;
   private running: Promise<void> | undefined;
 
@@ -31,6 +33,7 @@ export class OutboxDispatcher {
     private readonly logger: Logger,
     private readonly orders: DispatcherOrders,
   ) {
+    this.stockAlerts = new PostgresStockAlertRepository(pool);
     this.queue = new PostgresOutboxQueue(pool, 'atlas-api-dispatcher', {
       maxAttempts: 8,
       leaseMs: 30_000,
@@ -55,11 +58,27 @@ export class OutboxDispatcher {
     await this.notifier.offerDecision(sellerId, offerId, row, refusal);
   }
 
+  /**
+   * An offer went live or changed: customers waiting for its product are emailed once it can
+   * be bought. Each alert is closed after its email, so a retry never repeats a sent one.
+   */
+  private async backInStock(claim: OutboxClaim): Promise<void> {
+    const { offerId } = claim.data;
+    if (this.notifier === null || typeof offerId !== 'string') return;
+    for (const alert of await this.stockAlerts.dueForOffer(offerId)) {
+      await this.notifier.backInStock(alert.customerId, alert);
+      await this.stockAlerts.markNotified(alert.id);
+    }
+  }
+
   private async handle(claim: OutboxClaim): Promise<void> {
+    if (claim.eventType === 'offer.activated' || claim.eventType === 'offer.updated')
+      await this.backInStock(claim);
     if (claim.eventType === 'offer.activated' || claim.eventType === 'offer.rejected') {
       await this.offerDecision(claim);
       return;
     }
+    if (claim.eventType === 'offer.updated') return;
     const { sellerOrderId, sellerId, orderId, status, dataClass } = claim.data;
     if (
       this.notifier === null ||

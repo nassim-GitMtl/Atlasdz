@@ -1,5 +1,8 @@
 import { ProductGallery } from '@/components/product-gallery';
 import { jsonForScript, productJsonLd } from '@/lib/structured-data';
+import { StockAlert } from '@/components/stock-alert';
+import { customerToken } from '@/lib/cart-api';
+import { stockAlertWaiting } from '@/lib/stock-alerts-api';
 import { notFound } from 'next/navigation';
 import { PRODUCT_SPEC_LABELS, type CatalogProduct } from '@atlas/contracts';
 import { Breadcrumbs } from '@/components/breadcrumbs';
@@ -85,6 +88,10 @@ export default async function ProductPage({
       .then((page) => page.items.filter((item) => item.slug !== slug).slice(0, 4))
       .catch(() => []),
   ]);
+  // Sold out at every seller: offer the back-in-stock alert instead of a dead end.
+  const soldOut = product.offers.every((offer) => offer.availableQuantity === 0);
+  const token = soldOut ? ((await customerToken()) ?? null) : null;
+  const waiting = token ? ((await stockAlertWaiting(token, slug)) ?? false) : false;
   const facts = factCopy[locale];
   const t = copy[locale];
   const title = text(product.title, locale);
@@ -123,6 +130,9 @@ export default async function ProductPage({
             <h1>{title}</h1>
             <p className="product-description">{text(product.description, locale)}</p>
             <OfferSelector offers={product.offers} productSlug={product.slug} locale={locale} />
+            {soldOut && (
+              <StockAlert slug={product.slug} locale={locale} signedIn={token !== null} waiting={waiting} />
+            )}
             <DeliveryEstimate
               locale={locale}
               sellers={[

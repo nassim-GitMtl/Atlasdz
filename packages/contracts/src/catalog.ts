@@ -358,3 +358,22 @@ export type CatalogEntry = z.infer<typeof CatalogEntrySchema>;
 export type SubmitProductInput = z.infer<typeof SubmitProductInputSchema>;
 export type ReviewProductInput = z.infer<typeof ReviewProductInputSchema>;
 export type ProductSubmission = z.infer<typeof ProductSubmissionSchema>;
+
+/** "Tell me when it is back" for a sold-out product (customers). */
+export const StockAlertStatusSchema = z.object({ waiting: z.boolean() }).strict();
+export const StockAlertListSchema = z
+  .object({
+    items: z
+      .array(
+        z
+          .object({
+            slug: CatalogSlugSchema,
+            title: CatalogLocalizedTextSchema,
+            createdAt: IsoTimestampSchema,
+          })
+          .strict(),
+      )
+      .max(50),
+  })
+  .strict();
+export type StockAlertList = z.infer<typeof StockAlertListSchema>;

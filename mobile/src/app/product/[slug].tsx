@@ -6,6 +6,7 @@ import { Text } from '@/components/text';
 
 import { FavoriteButton } from '@/components/favorite-button';
 import { PhotoGallery } from '@/components/photo-gallery';
+import { StockAlertCard } from '@/components/stock-alert';
 import { RatingLine, RatingSummary, ReviewItem } from '@/components/reviews';
 import { SummaryCard } from '@/components/product-card';
 import { Stepper } from '@/components/stepper';
@@ -195,6 +196,9 @@ export default function ProductScreen() {
               )}
             </Card>
           ))}
+          {buying && item.offers.every((offer) => offer.availableQuantity === 0) ? (
+            <StockAlertCard slug={slug} />
+          ) : null}
           <Text style={text.heading}>{t.product.description}</Text>
           <Text style={text.body}>{localized(item.description, locale)}</Text>
           {item.specs?.length ? (

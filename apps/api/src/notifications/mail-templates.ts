@@ -305,3 +305,29 @@ export function offerDecisionMail(
         text: `Bonjour,\n\nVotre offre « ${title} » n’a pas été validée.\nMotif : ${reason}\n\nModifiez-la puis enregistrez-la pour la renvoyer en validation :\n${link}\n\nAtlas DZ`,
       };
 }
+
+/** A product the customer waited for can be bought again (sent once per alert). */
+export function backInStockMail(
+  to: string,
+  locale: Locale,
+  title: string,
+  link: string,
+): MailMessage {
+  if (locale === 'en')
+    return {
+      to,
+      subject: `Atlas DZ — Back in stock: ${title}`,
+      text: `Hello,\n\n“${title}” is available again. Stock can run out quickly.\n${link}\n\nYou asked to be told once; this alert is now closed.\n\nAtlas DZ`,
+    };
+  return locale === 'ar'
+    ? {
+        to,
+        subject: `أطلس دي زد — عاد إلى المخزون: ${title}`,
+        text: `مرحبًا،\n\n«${title}» متوفر من جديد. قد ينفد المخزون بسرعة.\n${link}\n\nطلبت إشعارًا واحدًا؛ تم إغلاق هذا التنبيه الآن.\n\nأطلس دي زد`,
+      }
+    : {
+        to,
+        subject: `Atlas DZ — De retour en stock : ${title}`,
+        text: `Bonjour,\n\n« ${title} » est de nouveau disponible. Le stock peut partir vite.\n${link}\n\nVous aviez demandé à être prévenu une fois : cette alerte est maintenant close.\n\nAtlas DZ`,
+      };
+}

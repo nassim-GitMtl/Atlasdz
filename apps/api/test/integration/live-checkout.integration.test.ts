@@ -430,6 +430,56 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
         .send({ email: 'client@example.dz', password })
         .expect(200)
     ).body.accessToken as string;
+
+    // "Tell me when it is back": only for a sold-out product; one email when it is restocked.
+    const stockOf = async () =>
+      (await http().get(`/api/v1/seller/offers/${offer.body.id}`).set(bearer(seller)).expect(200))
+        .body as { rowVersion: number; availableQuantity: number; priceMinor: number; handlingDays: number };
+    const restock = async (availableQuantity: number) => {
+      const now = await stockOf();
+      await http()
+        .post(`/api/v1/seller/offers/${offer.body.id}`)
+        .set(bearer(seller))
+        .send({
+          priceMinor: now.priceMinor,
+          availableQuantity,
+          handlingDays: now.handlingDays,
+          expectedVersion: now.rowVersion,
+        })
+        .expect((response) => assert.ok([200, 201].includes(response.status)));
+    };
+    const alert = `/api/v1/stock-alerts/${productSlug}`;
+    await http().post(alert).set(bearer(customer)).expect(409);
+    const stockBefore = (await stockOf()).availableQuantity;
+    await restock(0);
+    await http().post(alert).set(bearer(seller)).expect(403);
+    await http().post('/api/v1/stock-alerts/no-such-product').set(bearer(customer)).expect(404);
+    await http().post(alert).set(bearer(customer)).expect(201);
+    await http().post(alert).set(bearer(customer)).expect(201);
+    assert.equal((await http().get(alert).set(bearer(customer)).expect(200)).body.waiting, true);
+    const waitingList = await http().get('/api/v1/stock-alerts').set(bearer(customer)).expect(200);
+    assert.deepEqual(
+      waitingList.body.items.map((item: { slug: string }) => item.slug),
+      [productSlug],
+    );
+    const backMails = () =>
+      mailer.sent.filter(
+        (mail) => mail.to === 'client@example.dz' && /De retour en stock/.test(mail.subject),
+      );
+    // A price change while still sold out sends nothing.
+    await flush();
+    assert.equal(backMails().length, 0);
+    await restock(stockBefore);
+    await flush();
+    assert.equal(backMails().length, 1);
+    assert.match(backMails()[0]?.text ?? '', new RegExp(`/product/${productSlug}\\?lang=fr`));
+    assert.equal((await http().get(alert).set(bearer(customer)).expect(200)).body.waiting, false);
+    // Later changes do not repeat the email; a removed alert is gone.
+    await restock(stockBefore);
+    await flush();
+    assert.equal(backMails().length, 1);
+    await http().delete(alert).set(bearer(customer)).expect(200);
+
     const cart = await http().get('/api/v1/cart').set(bearer(customer)).expect(200);
     const filled = await http()
       .put(`/api/v1/cart/items/${offer.body.id}`)

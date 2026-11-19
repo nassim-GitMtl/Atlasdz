@@ -1058,6 +1058,7 @@ export class PasswordIdentityRepository {
         userId,
       ]);
       await client.query('DELETE FROM commerce.cart_items WHERE customer_id = $1', [userId]);
+      await client.query('DELETE FROM commerce.stock_alerts WHERE customer_id = $1', [userId]);
       // Reviews are the customer's own words: they leave with the account.
       await client.query('DELETE FROM commerce.product_reviews WHERE customer_id = $1', [userId]);
       await client.query(

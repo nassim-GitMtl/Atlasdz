@@ -65,6 +65,11 @@ import { HealthController } from './health/health.controller.js';
 import { ReadinessState } from './health/readiness-state.js';
 import { PostgresIdentityInfrastructure } from './identity/postgres-identity-infrastructure.js';
 import { SharedDatabasePool } from './shared-database-pool.js';
+import {
+  STOCK_ALERTS,
+  StockAlertsController,
+  type StockAlertsPort,
+} from './commerce/stock-alerts.controller.js';
 import { createMailer, MAILER, type Mailer } from './notifications/mailer.js';
 import { MEDIA_SERVICE, ProductMediaService } from './media/media.js';
 import { COD_RISK, CodRiskService, type SmsSender } from './commerce/cod-risk.js';
@@ -150,6 +155,7 @@ export interface AppModuleOptions {
   readonly notifications?: NotificationRepositoryPort;
   readonly support?: SupportRepositoryPort;
   readonly reviews?: ReviewRepositoryPort;
+  readonly stockAlerts?: StockAlertsPort;
   readonly localCheckoutPolicy?: SyntheticCheckoutPolicy;
   /** Real cash-on-delivery checkout; requires password identity and excludes the fixture policy. */
   readonly liveCheckoutPolicy?: LiveCheckoutPolicy;
@@ -246,6 +252,7 @@ export class AppModule {
         DeliveryDestinationsController,
         SellerDeliveryController,
         OrderNotificationsController,
+        StockAlertsController,
         SupportController,
         AdminSupportController,
         CatalogReviewsController,
@@ -281,7 +288,8 @@ export class AppModule {
         ...(options.orders === undefined ||
         options.notifications === undefined ||
         options.support === undefined ||
-        options.reviews === undefined
+        options.reviews === undefined ||
+        options.stockAlerts === undefined
           ? [OrderInfrastructure]
           : []),
         options.reviews === undefined
@@ -298,6 +306,13 @@ export class AppModule {
               useFactory: (infra: OrderInfrastructure) => infra.support,
             }
           : { provide: ORDER_SUPPORT, useValue: options.support },
+        options.stockAlerts === undefined
+          ? {
+              provide: STOCK_ALERTS,
+              inject: [OrderInfrastructure],
+              useFactory: (infra: OrderInfrastructure) => infra.stockAlerts,
+            }
+          : { provide: STOCK_ALERTS, useValue: options.stockAlerts },
         options.notifications === undefined
           ? {
               provide: ORDER_NOTIFICATIONS,

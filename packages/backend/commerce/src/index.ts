@@ -5,6 +5,7 @@ export * from './delivery-repository.js';
 export * from './notification-repository.js';
 export * from './support-repository.js';
 export * from './review-repository.js';
+export * from './stock-alert-repository.js';
 export {
   seedReferenceDeliveryDestinations,
   REFERENCE_DELIVERY_DATASET_ID,

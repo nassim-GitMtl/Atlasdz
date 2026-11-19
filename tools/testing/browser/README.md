@@ -52,6 +52,11 @@ a new product submitted (with characteristics and an English title), approved th
 staff session, given a main and an extra photo from the file picker and an offer, then shown with
 its characteristics in French and English; a commune delivery rate; notifications; sign-out.
 
+`stock-alerts.mjs` (shop, app web, API): a sold-out product offers "tell me when it is back"
+to a registered customer, the account page lists it, the app shows it as waiting; with
+`ATLAS_DISPATCHER=1` (a stack running the outbox dispatcher, e.g. the rehearsal) the restock
+email closes it. The local API has no dispatcher: the API integration test covers that part.
+
 `quick-update.mjs` (Seller Center on 3002): the demo seller changes price and stock of several
 offers at once; pre-order terms are kept, a row edited elsewhere meanwhile is refused, an
 invalid value is reported. If a suite fails with 429 on `/api/v1/local/session`, the local

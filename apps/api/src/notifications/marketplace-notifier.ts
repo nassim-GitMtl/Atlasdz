@@ -15,6 +15,7 @@ import {
   verifyEmailMail,
   type NotifiedStatus,
   offerDecisionMail,
+  backInStockMail,
 } from './mail-templates.js';
 import { deliver, type Mailer } from './mailer.js';
 
@@ -193,6 +194,29 @@ export class MarketplaceNotifier {
   }
 
   /** The buyer's confirmation, listing every seller of the order. */
+  /** A product the customer waited for is back in stock. */
+  public async backInStock(
+    customerId: string,
+    product: { readonly slug: string; readonly title: { fr: string; ar: string; en?: string } },
+  ): Promise<void> {
+    const contact = await this.identity.emailForUser(customerId);
+    if (contact === null) return;
+    const title =
+      contact.locale === 'ar'
+        ? product.title.ar
+        : contact.locale === 'en'
+          ? (product.title.en ?? product.title.fr)
+          : product.title.fr;
+    await this.mailer.send(
+      backInStockMail(
+        contact.email,
+        contact.locale,
+        title,
+        this.shopLink(`/product/${product.slug}`, contact.locale),
+      ),
+    );
+  }
+
   public async customerOrderPlaced(order: CustomerOrder, customerId: string): Promise<void> {
     const contact = await this.identity.emailForUser(customerId);
     if (contact === null) return;

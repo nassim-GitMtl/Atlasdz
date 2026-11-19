@@ -3,6 +3,7 @@ import {
   PostgresOrderNotificationRepository,
   PostgresReviewRepository,
   PostgresSupportRepository,
+  PostgresStockAlertRepository,
   type CheckoutPolicy,
 } from '@atlas/commerce';
 import { Inject, Injectable } from '@nestjs/common';
@@ -33,6 +34,7 @@ export class OrderInfrastructure {
   readonly notifications: PostgresOrderNotificationRepository;
   readonly support: PostgresSupportRepository;
   readonly reviews: PostgresReviewRepository;
+  readonly stockAlerts: PostgresStockAlertRepository;
   constructor(
     @Inject(SharedDatabasePool) database: SharedDatabasePool,
     @Inject(LOCAL_CHECKOUT_POLICY) policy: CheckoutPolicy | null,
@@ -42,5 +44,6 @@ export class OrderInfrastructure {
     this.notifications = new PostgresOrderNotificationRepository(pool);
     this.support = new PostgresSupportRepository(pool);
     this.reviews = new PostgresReviewRepository(pool);
+    this.stockAlerts = new PostgresStockAlertRepository(pool);
   }
 }

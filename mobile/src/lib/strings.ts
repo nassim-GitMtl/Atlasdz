@@ -67,6 +67,14 @@ const fr = {
     warranty: 'Garantie',
     origin: 'Pays de fabrication',
   },
+  stockAlert: {
+    soldOut: 'Épuisé chez tous les vendeurs.',
+    waiting: 'Nous vous écrirons une fois, dès qu’il sera de nouveau disponible.',
+    start: 'M’avertir du retour en stock',
+    stop: 'Ne plus m’avertir',
+    signIn: 'Se connecter pour être averti',
+    backNow: 'Il est de nouveau en stock : actualisez la page.',
+  },
   product: {
     photos: 'Photos du produit',
     similar: 'Produits similaires',
@@ -633,6 +641,14 @@ const ar: Strings = {
     warranty: 'الضمان',
     origin: 'بلد الصنع',
   },
+  stockAlert: {
+    soldOut: 'نفد لدى جميع البائعين.',
+    waiting: 'سنراسلك مرة واحدة فور توفره من جديد.',
+    start: 'أعلمني عند عودته',
+    stop: 'إلغاء الإشعار',
+    signIn: 'سجّل الدخول ليصلك الإشعار',
+    backNow: 'عاد إلى المخزون: حدّث الصفحة.',
+  },
   product: {
     photos: 'صور المنتج',
     similar: 'منتجات مشابهة',
@@ -1181,6 +1197,14 @@ const en: Strings = {
     power: 'Power',
     warranty: 'Warranty',
     origin: 'Country of manufacture',
+  },
+  stockAlert: {
+    soldOut: 'Sold out at every seller.',
+    waiting: 'We will email you once, as soon as it is available again.',
+    start: 'Tell me when it is back',
+    stop: 'Stop the alert',
+    signIn: 'Sign in to be told',
+    backNow: 'It is back in stock: refresh the page.',
   },
   product: {
     photos: 'Product photos',

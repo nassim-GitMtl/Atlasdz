@@ -2,7 +2,7 @@
 
 - State: redesign A–E done. Deployed-mode verified on a local production rehearsal (release
   images + vps/compose.vps.yml + TLS via Caddy on shop.localhost / vendeur.localhost + Mailpit,
-  live COD on): tools/testing/browser/deployed-journey.mjs 23/23. Migrations 000001–000036.
+  live COD on): tools/testing/browser/deployed-journey.mjs 23/23. Migrations 000001–000037.
 - Added today: offer refusal with reason + seller emails (000030); delivery fee per seller for a
   commune before checkout (GET /api/v1/delivery/fees); seller promotions (000031); staff account
   powers: vendor/customer accounts, remove offers/products/reviews, close accounts (000032,
@@ -24,5 +24,7 @@
 - 11-19: price range filter (API, shop, app panel with stock toggle); schema.org Product data
   (real ratings only) + sitemap with categories/stores/fr-ar-en; app language radios a11y fix.
 - Seller Center quick update (/offers/quick): price + stock of many offers, version-checked.
+- Back-in-stock alerts (000037): shop/app subscribe on sold-out products, one email via the
+  outbox on restock; account page list; deleted with the account. Shop disabled-button style.
 - Remaining: real server deploy (owner: VPS/domain/SMTP/legal), signed EAS build → Play,
   push notifications. See docs/implementation/REMAINING-RELEASE-WORK.md.
