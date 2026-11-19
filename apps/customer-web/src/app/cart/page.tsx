@@ -15,7 +15,7 @@ import { CartQuantityForm, CustomerSessionForm } from '@/components/cart-forms';
 import { CartApiError, customerToken, getCart } from '@/lib/cart-api';
 import { cartCopy } from '@/lib/cart-copy';
 import { formatMoney } from '@/lib/catalog-view';
-import { localizedHref, type SearchParams, resolveLocale, contentLocale } from '@/lib/i18n';
+import { localizedHref, type SearchParams, resolveLocale, contentLocale, lang } from '@/lib/i18n';
 
 type CartLine = NonNullable<Awaited<ReturnType<typeof getCart>>>['items'][number];
 
@@ -68,6 +68,16 @@ export default async function CartPage({
           <h1>{t.title}</h1>
           {token && <CustomerSessionForm locale={locale} logout />}
         </div>
+        {typeof params.reordered === 'string' && /^\d{1,3}$/.test(params.reordered) && (
+          <p className="notice success" role="status">
+            {lang(
+              locale,
+              `${params.reordered} article(s) de votre commande remis dans le panier, aux prix et stocks d’aujourd’hui.`,
+              `أُعيد ${params.reordered} منتج من طلبك إلى السلة بأسعار ومخزون اليوم.`,
+              `${params.reordered} item(s) from your order put back in the cart, at today's prices and stock.`,
+            )}
+          </p>
+        )}
         {result.cart ? (
           <>
             <p className="cart-notice">{t.note}</p>

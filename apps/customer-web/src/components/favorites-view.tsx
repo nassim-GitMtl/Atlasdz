@@ -36,7 +36,7 @@ export function FavoritesView({ locale }: { readonly locale: Locale }) {
   }, []);
   if (state.error)
     return (
-      <p className="notice" role="alert">
+      <p className="notice error" role="alert">
         {lang(locale, 'La liste n’a pas pu être chargée. Réessayez.', 'تعذر تحميل القائمة. حاول مجددًا.', 'The list could not be loaded. Try again.')}
       </p>
     );

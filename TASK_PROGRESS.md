@@ -31,5 +31,6 @@
 - Shop /favorites: device favorites + recently viewed, header heart link. axe on new pages: 0.
 - Search (000038): accent/case/Arabic-spelling tolerant (unaccent + catalog.search_text), NFKC query.
 - Sellers see waiting-customer counts (offers, quick update, app). Rehearsal: 000038 ok, 24/24.
+- Shop: "Commander à nouveau" on order pages (like the app); styled notices.
 - Remaining: real server deploy (owner: VPS/domain/SMTP/legal), signed EAS build → Play,
   push notifications. See docs/implementation/REMAINING-RELEASE-WORK.md.

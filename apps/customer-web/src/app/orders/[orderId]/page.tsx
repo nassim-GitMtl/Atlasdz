@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { UuidSchema } from '@atlas/contracts';
 import { SiteChrome } from '@/components/site-chrome';
+import { ReorderForm } from '@/components/reorder-form';
 import { OrderForm } from '@/components/order-forms';
 import { ReviewForm } from '@/components/review-form';
 import { reviewCopy } from '@/lib/review-copy';
@@ -65,6 +66,7 @@ export default async function OrderDetail({
               </strong>
             </p>
             <p role="status">{t[orderProgress(result.order.sellerOrders)]}</p>
+            <ReorderForm orderId={orderId} locale={locale} />
             <div className="order-groups">
               <DeliveryContactSummary
                 contact={result.order.quote.deliveryContact}

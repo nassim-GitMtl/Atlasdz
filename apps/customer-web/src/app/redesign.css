@@ -309,3 +309,8 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 .favorites-page h1 { margin: 0; }
 .favorites-page h2 { font-size: 18px; margin: 8px 0 12px; }
 .favorites-page .muted { color: var(--muted); margin: 0; }
+.reorder-form { display: grid; gap: 8px; justify-items: start; margin-block: 8px 4px; }
+/* Status messages (contrast ≥ 4.5:1). */
+.notice { margin: 0; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); font-size: 14px; }
+.notice.success { background: #ecfdf3; border-color: #abefc6; color: #067647; }
+.notice.error { background: #fef3f2; border-color: #fecdca; color: #b42318; }

@@ -17,6 +17,7 @@ import { customerLocalEnabled, customerTrustedOrigin } from '@/lib/customer-secu
 import { readGuestCart, withLine, writeGuestCart } from '@/lib/guest-cart';
 import { CatalogSlugSchema } from '@atlas/contracts';
 import { localizedHref, resolveLocale } from '@/lib/i18n';
+import { getOrder } from '@/lib/orders-api';
 
 export interface CartActionState {
   readonly error?:
@@ -137,4 +138,44 @@ export async function customerLogoutAction(
   }
   (await cookies()).delete(CUSTOMER_COOKIE);
   redirect(localizedHref('/cart', locale(form)));
+}
+
+export interface ReorderState {
+  readonly error?: 'auth' | 'csrf' | 'none' | 'unavailable';
+}
+
+/**
+ * Puts an earlier order's items back in the account cart (same quantities, at most 99 each).
+ * Items no longer on sale are skipped; the cart then shows current prices and stock.
+ */
+export async function reorderAction(_state: ReorderState, form: FormData): Promise<ReorderState> {
+  if (!(await trusted())) return { error: 'csrf' };
+  const token = await customerToken();
+  if (!token) return { error: 'auth' };
+  const orderId = UuidSchema.safeParse(form.get('orderId'));
+  if (!orderId.success) return { error: 'unavailable' };
+  let order;
+  try {
+    order = await getOrder(token, orderId.data);
+  } catch {
+    return { error: 'unavailable' };
+  }
+  let added = 0;
+  for (const item of order.sellerOrders.flatMap((sellerOrder) => sellerOrder.snapshot.items)) {
+    // One retry when the cart changed in between (version conflict).
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        const cart = await getCart(token);
+        const current = cart.items.find((line) => line.offerId === item.offerId)?.quantity ?? 0;
+        await setCartItem(token, item.offerId, Math.min(99, current + item.quantity), cart.version);
+        added += 1;
+        break;
+      } catch (error) {
+        if (!(error instanceof CartApiError) || error.code !== 'conflict') break;
+      }
+    }
+  }
+  if (added === 0) return { error: 'none' };
+  revalidatePath('/cart');
+  redirect(localizedHref('/cart', locale(form), { reordered: String(added) }));
 }
