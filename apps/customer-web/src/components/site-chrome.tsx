@@ -6,6 +6,7 @@ import {
   Money,
   Receipt,
   ShoppingCart,
+  Heart,
   Storefront,
   Truck,
   UserCircle,
@@ -36,6 +37,7 @@ import { readGuestCart } from '@/lib/guest-cart';
 const navCopy = {
   fr: {
     account: 'Mon compte',
+    favorites: 'Favoris',
     cart: 'Panier',
     orders: 'Commandes',
     notifications: 'Notifications',
@@ -52,6 +54,7 @@ const navCopy = {
   },
   en: {
     account: 'My account',
+    favorites: 'Favourites',
     cart: 'Cart',
     orders: 'Orders',
     notifications: 'Notifications',
@@ -68,6 +71,7 @@ const navCopy = {
   },
   ar: {
     account: 'حسابي',
+    favorites: 'المفضلة',
     cart: 'السلة',
     orders: 'طلباتي',
     notifications: 'الإشعارات',
@@ -205,6 +209,10 @@ export function SiteChrome({
                 ))}
               </ul>
             </details>
+            <Link href={localizedHref('/favorites', locale)} aria-current={current('/favorites')}>
+              <Heart aria-hidden="true" size={22} />
+              <span className="action-label">{nav.favorites}</span>
+            </Link>
             <Link href={localizedHref('/account', locale)} aria-current={current('/account')}>
               <UserCircle aria-hidden="true" size={22} />
               <span className="action-label">{nav.account}</span>

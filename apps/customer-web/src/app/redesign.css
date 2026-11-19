@@ -304,3 +304,8 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 .stock-alert-list { margin: 0 0 10px; padding-inline-start: 18px; display: grid; gap: 6px; }
 /* Disabled buttons look unavailable (sold-out offer, form being sent). */
 .button:disabled, button.button[disabled] { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+/* Favorites and recently viewed (saved on this device). */
+.favorites-page { display: grid; gap: 18px; padding-block: 20px 40px; }
+.favorites-page h1 { margin: 0; }
+.favorites-page h2 { font-size: 18px; margin: 8px 0 12px; }
+.favorites-page .muted { color: var(--muted); margin: 0; }

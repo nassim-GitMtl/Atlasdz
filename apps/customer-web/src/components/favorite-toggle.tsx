@@ -4,13 +4,8 @@ import { Heart } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import type { Locale } from '@/lib/i18n';
 
-const KEY = 'atlas.favorite-products';
-function saved(): string[] {
-  try {
-    const value: unknown = JSON.parse(localStorage.getItem(KEY) ?? '[]');
-    return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string').slice(0, 200) : [];
-  } catch { return []; }
-}
+import { FAVORITES_KEY as KEY, readList } from '@/lib/device-lists';
+const saved = () => readList(KEY);
 /** Device-only favorites, never sent as customer account data. */
 export function FavoriteToggle({ slug, title, locale }: { readonly slug: string; readonly title: string; readonly locale: Locale }) {
   const [active, setActive] = useState(false);

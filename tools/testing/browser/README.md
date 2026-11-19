@@ -52,6 +52,8 @@ a new product submitted (with characteristics and an English title), approved th
 staff session, given a main and an extra photo from the file picker and an offer, then shown with
 its characteristics in French and English; a commune delivery rate; notifications; sign-out.
 
+`favorites.mjs` (shop): favorites and recently viewed on /favorites (device-only), header width.
+
 `audit-log.mjs` (Seller Center): a staff account made with `create-staff` opens the audit log,
 filters by area and pages to older events.
 

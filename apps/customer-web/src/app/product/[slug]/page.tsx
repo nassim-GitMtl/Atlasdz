@@ -1,6 +1,7 @@
 import { ProductGallery } from '@/components/product-gallery';
 import { jsonForScript, productJsonLd } from '@/lib/structured-data';
 import { StockAlert } from '@/components/stock-alert';
+import { RememberViewed } from '@/components/recently-viewed';
 import { customerToken } from '@/lib/cart-api';
 import { stockAlertWaiting } from '@/lib/stock-alerts-api';
 import { notFound } from 'next/navigation';
@@ -108,6 +109,7 @@ export default async function ProductPage({
         // Data only (never executed); `<` is escaped so seller text cannot close the tag.
         dangerouslySetInnerHTML={{ __html: jsonForScript(structured) }}
       />
+      <RememberViewed slug={product.slug} />
       <div className="page-shell">
         <Breadcrumbs
           locale={locale}

@@ -28,5 +28,6 @@
   outbox on restock; account page list; deleted with the account. Shop disabled-button style.
 - App seller quick update (/seller/quick). Rehearsal 11-19: deployed-journey 24/24.
 - Staff audit log (/admin/audit, account.manage): who did what, filters, paging.
+- Shop /favorites: device favorites + recently viewed, header heart link. axe on new pages: 0.
 - Remaining: real server deploy (owner: VPS/domain/SMTP/legal), signed EAS build → Play,
   push notifications. See docs/implementation/REMAINING-RELEASE-WORK.md.
