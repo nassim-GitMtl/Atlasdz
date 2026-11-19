@@ -170,3 +170,15 @@ body { background: var(--surface); }
 .spec-fields { display: grid; gap: 10px; margin: 0; padding: 14px; border: 1px solid var(--line); border-radius: 12px; }
 .spec-fields legend { padding: 0 6px; font-weight: 700; }
 .spec-fields p { margin: 0; color: var(--muted); font-size: 13px; }
+/* Quick update of many offers' price and stock. */
+.heading-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.quick-edit { display: grid; gap: 14px; }
+.quick-edit__table { display: grid; gap: 8px; }
+.quick-edit__row { display: grid; grid-template-columns: minmax(0, 1fr) 150px 110px; gap: 12px; align-items: end; padding: 12px 14px; background: #fff; border: 1px solid var(--line); border-radius: 12px; }
+.quick-edit__row.is-failed { border-color: #d92d20; }
+.quick-edit__product { display: grid; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
+.quick-edit__product small { color: var(--muted); }
+.quick-edit__row label { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
+.quick-edit__row input { min-height: 40px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font: inherit; color: inherit; width: 100%; }
+@media (max-width: 640px) { .quick-edit__row { grid-template-columns: 1fr 1fr; } .quick-edit__product { grid-column: 1 / -1; } }
+.quick-edit .button[type=submit] { justify-self: start; }

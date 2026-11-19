@@ -52,6 +52,11 @@ a new product submitted (with characteristics and an English title), approved th
 staff session, given a main and an extra photo from the file picker and an offer, then shown with
 its characteristics in French and English; a commune delivery rate; notifications; sign-out.
 
+`quick-update.mjs` (Seller Center on 3002): the demo seller changes price and stock of several
+offers at once; pre-order terms are kept, a row edited elsewhere meanwhile is refused, an
+invalid value is reported. If a suite fails with 429 on `/api/v1/local/session`, the local
+test login's rate limit was reached by back-to-back runs: restart the local API.
+
 `gallery.mjs` (same stack, plus Seller Center on 3002): a seller adds extra photos in Seller
 Center, makes one the main photo and removes another; shop and app thumbnails switch the large
 photo; a staff account made with `create-staff` takes down an extra photo by its address.

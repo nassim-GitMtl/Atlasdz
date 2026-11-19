@@ -23,5 +23,6 @@
 - Rehearsal 2026-11-18: migrations 34–36 applied on existing data; deployed-journey 23/23.
 - 11-19: price range filter (API, shop, app panel with stock toggle); schema.org Product data
   (real ratings only) + sitemap with categories/stores/fr-ar-en; app language radios a11y fix.
+- Seller Center quick update (/offers/quick): price + stock of many offers, version-checked.
 - Remaining: real server deploy (owner: VPS/domain/SMTP/legal), signed EAS build → Play,
   push notifications. See docs/implementation/REMAINING-RELEASE-WORK.md.

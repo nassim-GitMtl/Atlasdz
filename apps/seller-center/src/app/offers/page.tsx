@@ -38,10 +38,17 @@ export default async function Offers({
               <h1>{t.offerTitle}</h1>
               <p>{t.offerBody}</p>
             </div>
-            <Link className="button" href={href('/offers/new', locale)}>
-              <span aria-hidden="true">＋</span>
-              {t.newOffer}
-            </Link>
+            <div className="heading-actions">
+              {result.offers.length > 0 && (
+                <Link className="button secondary" href={href('/offers/quick', locale)}>
+                  {lang(locale, 'Mise à jour rapide', 'تحديث سريع', 'Quick update')}
+                </Link>
+              )}
+              <Link className="button" href={href('/offers/new', locale)}>
+                <span aria-hidden="true">＋</span>
+                {t.newOffer}
+              </Link>
+            </div>
           </div>
           {params.created === '1' && (
             <p role="status" className="notice success">

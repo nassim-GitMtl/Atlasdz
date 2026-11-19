@@ -11,6 +11,7 @@ import {
   createLocalSession,
   createOffer,
   updateOffer,
+  getOffer,
   revokeSellerSession,
   SellerApiError,
 } from '@/lib/api';
@@ -21,6 +22,7 @@ import {
   emptyOfferValues,
   type OfferValues,
 } from '@/lib/offer-input';
+import { changedRows } from '@/lib/quick-edit';
 import { localAccountsEnabled, trustedMutationOrigin } from '@/lib/security';
 import { accessToken, KIND_COOKIE, SESSION_COOKIE } from '@/lib/session';
 
@@ -181,4 +183,60 @@ export async function replyReviewAction(_state: ActionState, form: FormData): Pr
   }
   revalidatePath('/reviews');
   return {};
+}
+
+export interface QuickEditState {
+  readonly error?: 'csrf' | 'unauthorized';
+  /** Offers saved by the last submission. */
+  readonly saved?: number;
+  /** Offers not saved, with the reason (others were saved). */
+  readonly failed?: readonly { readonly id: string; readonly reason: 'invalid' | 'conflict' | 'unavailable' }[];
+}
+
+/**
+ * Saves the price and stock of every changed row. Delivery time and pre-order terms are sent
+ * back unchanged and a running promotion is kept; a row edited elsewhere since the page was
+ * loaded is refused (version check) instead of being overwritten.
+ */
+export async function quickUpdateOffersAction(
+  _state: QuickEditState,
+  form: FormData,
+): Promise<QuickEditState> {
+  if (!(await validOrigin())) return { error: 'csrf' };
+  const token = await accessToken();
+  if (!token) return { error: 'unauthorized' };
+  const { rows, invalid } = changedRows(form);
+  const failed: { id: string; reason: 'invalid' | 'conflict' | 'unavailable' }[] = invalid.map(
+    (id) => ({ id, reason: 'invalid' as const }),
+  );
+  let saved = 0;
+  for (const row of rows) {
+    try {
+      const current = await getOffer(token, row.id);
+      if (current.rowVersion !== row.version) {
+        failed.push({ id: row.id, reason: 'conflict' });
+        continue;
+      }
+      await updateOffer(token, row.id, {
+        priceMinor: row.priceMinor,
+        availableQuantity: row.availableQuantity,
+        handlingDays: current.handlingDays,
+        preorder: current.preorder ?? null,
+        expectedVersion: row.version,
+      });
+      saved += 1;
+    } catch (error) {
+      const code = error instanceof SellerApiError ? error.code : 'unavailable';
+      failed.push({
+        id: row.id,
+        reason: code === 'conflict' ? 'conflict' : code === 'invalid' ? 'invalid' : 'unavailable',
+      });
+    }
+  }
+  if (saved > 0) {
+    revalidatePath('/offers');
+    revalidatePath('/offers/quick');
+    revalidatePath('/dashboard');
+  }
+  return { saved, failed };
 }
