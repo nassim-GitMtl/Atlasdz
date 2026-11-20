@@ -1,13 +1,13 @@
 # Atlas DZ checkpoint — 2026-11-19
 
-- State: redesign done; FR/AR/EN everywhere. Migrations 000001–000038 (checksum-locked).
+- State: redesign done; FR/AR/EN everywhere. Migrations 000001–000039 (checksum-locked).
 - Deployed mode: local production rehearsal (release images, vps compose, Caddy TLS on
   shop.localhost / vendeur.localhost, Mailpit, live COD): deployed-journey.mjs 24/24 on 11-19.
 - Added 11-17…11-19: app cart delivery estimates; photo galleries (034); product
   characteristics (035); English product texts (036); back-in-stock alerts (037) with seller
   waiting counts; accent/Arabic-tolerant search (038); price filter; schema.org product data;
   sitemap; Seller Center + app quick price/stock update; staff audit log; shop favorites page;
-  web "order again".
+  web "order again"; seller holiday mode (039).
 - Tests: API 74 unit + 22 integration; catalog 15, commerce 42, database 17 integration;
   e2e 15/15; mobile-app 20/20; mobile-seller 12/12; gallery 7/7; app 51 unit.
   Restart the local API if a suite hits 429 on /api/v1/local/session.

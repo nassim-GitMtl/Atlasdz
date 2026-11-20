@@ -4,9 +4,9 @@ import { Text } from '@/components/text';
 
 import { ProductCard } from '@/components/product-card';
 import { RatingLine, ReviewItem } from '@/components/reviews';
-import { Button, Card, Empty, LoadState, text } from '@/components/ui';
+import { Button, Card, Empty, LoadState, Notice, text } from '@/components/ui';
 import { api } from '@/lib/api';
-import { fill, localized } from '@/lib/format';
+import { fill, formatDate, localized } from '@/lib/format';
 import { useI18n } from '@/lib/i18n';
 import { colors, gap } from '@/lib/theme';
 import type { CatalogProductList, CatalogSeller, ReviewPage } from '@/lib/types';
@@ -59,6 +59,11 @@ export default function StoreScreen() {
               {reviews.data ? <RatingLine summary={reviews.data.summary} /> : null}
               <Text style={text.muted}>{t.store.about}</Text>
               <Text style={text.body}>{localized(seller.data.description, locale)}</Text>
+              {seller.data.holidayUntil ? (
+                <Notice tone="info">
+                  {fill(t.store.holiday, { date: formatDate(seller.data.holidayUntil, locale) })}
+                </Notice>
+              ) : null}
             </Card>
           ) : null}
           {reviews.data && reviews.data.summary.count > 0 ? (

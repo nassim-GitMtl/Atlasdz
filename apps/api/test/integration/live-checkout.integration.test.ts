@@ -487,6 +487,34 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
     assert.equal(backMails().length, 1);
     await http().delete(alert).set(bearer(customer)).expect(200);
 
+    // Holiday mode: the seller's offers disappear until the date, then come back on their own.
+    const sellerSlug = (await http().get(`/api/v1/catalog/products/${productSlug}`).expect(200))
+      .body.offers[0].seller.slug as string;
+    const holiday = (until: string | null, token = seller) =>
+      http().post('/api/v1/seller/account/holiday').set(bearer(token)).send({ until });
+    const inDays = (days: number) => new Date(Date.now() + days * 86_400_000).toISOString();
+    await holiday(inDays(2), staff).expect(403);
+    await holiday(new Date(Date.now() - 60_000).toISOString()).expect(422);
+    await holiday(inDays(61)).expect(422);
+    await holiday(inDays(2)).expect(200);
+    const away = await http().get('/api/v1/seller/account').set(bearer(seller)).expect(200);
+    assert.ok(away.body.holidayUntil);
+    await http().get(`/api/v1/catalog/products/${productSlug}`).expect(404);
+    const store = await http().get(`/api/v1/catalog/sellers/${sellerSlug}`).expect(200);
+    assert.ok(store.body.holidayUntil);
+    const emptyCart = await http().get('/api/v1/cart').set(bearer(customer)).expect(200);
+    const awayCart = await http()
+      .put(`/api/v1/cart/items/${offer.body.id}`)
+      .set(bearer(customer))
+      .send({ quantity: 1, expectedVersion: emptyCart.body.version });
+    assert.ok([404, 409, 422].includes(awayCart.status), `cart refused (${awayCart.status})`);
+    await holiday(null).expect(200);
+    await http().get(`/api/v1/catalog/products/${productSlug}`).expect(200);
+    assert.equal(
+      (await http().get('/api/v1/seller/account').set(bearer(seller)).expect(200)).body.holidayUntil,
+      null,
+    );
+
     const cart = await http().get('/api/v1/cart').set(bearer(customer)).expect(200);
     const filled = await http()
       .put(`/api/v1/cart/items/${offer.body.id}`)

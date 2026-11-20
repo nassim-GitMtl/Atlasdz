@@ -24,6 +24,8 @@ export const CatalogSellerSchema = z
     slug: CatalogSlugSchema,
     name: z.string().trim().min(1).max(160),
     description: CatalogLocalizedTextSchema,
+    /** Set while the seller is on holiday: offers come back after this time. */
+    holidayUntil: IsoTimestampSchema.nullish(),
   })
   .strict();
 
@@ -379,3 +381,6 @@ export const StockAlertListSchema = z
   })
   .strict();
 export type StockAlertList = z.infer<typeof StockAlertListSchema>;
+
+/** Seller holiday mode: hide every offer until a time (null: reopen now). */
+export const SellerHolidayInputSchema = z.object({ until: IsoTimestampSchema.nullable() }).strict();

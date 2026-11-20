@@ -99,6 +99,7 @@ const fr = {
     empty: 'Aucun favori pour le moment. Touchez le cœur d’un produit pour le retrouver ici.',
   },
   store: {
+    holiday: 'Boutique en congé jusqu’au {date}. Ses offres reviendront ensuite.',
     about: 'À propos de la boutique',
     products: 'Produits de la boutique',
     empty: 'Cette boutique n’a pas encore de produit disponible.',
@@ -386,6 +387,13 @@ const fr = {
     submit: 'Créer ma boutique',
   },
   seller: {
+    holidayTitle: 'Mode congé',
+    holidayNote:
+      'Absent quelques jours ? Masquez toutes vos offres ; elles reviennent seules à la date choisie.',
+    holidayOn:
+      'En congé jusqu’au {date} : vos offres sont masquées. Les commandes déjà reçues restent à traiter.',
+    holidayDays: '{n} jours',
+    holidayReopen: 'Rouvrir maintenant',
     lowStock: 'Stock faible',
     lowStockItem: '{title} : {n} en stock',
     search: 'Rechercher (nom, téléphone, n° de commande)',
@@ -683,6 +691,7 @@ const ar: Strings = {
     empty: 'لا توجد منتجات مفضلة بعد. اضغط على قلب المنتج لتجده هنا.',
   },
   store: {
+    holiday: 'المتجر في عطلة حتى {date}. ستعود عروضه بعد ذلك.',
     about: 'عن المتجر',
     products: 'منتجات المتجر',
     empty: 'لا يملك هذا المتجر منتجات متاحة بعد.',
@@ -961,6 +970,11 @@ const ar: Strings = {
     submit: 'إنشاء متجري',
   },
   seller: {
+    holidayTitle: 'وضع العطلة',
+    holidayNote: 'غائب لبضعة أيام؟ أخفِ كل عروضك؛ وستعود تلقائيًا في التاريخ المختار.',
+    holidayOn: 'في عطلة حتى {date}: عروضك مخفية. الطلبات المستلمة سابقًا يجب معالجتها.',
+    holidayDays: '{n} أيام',
+    holidayReopen: 'إعادة الفتح الآن',
     lowStock: 'مخزون منخفض',
     lowStockItem: '{title}: {n} في المخزون',
     search: 'بحث (الاسم، الهاتف، رقم الطلب)',
@@ -1250,6 +1264,7 @@ const en: Strings = {
     empty: 'No favourites yet. Tap a product’s heart to find it here.',
   },
   store: {
+    holiday: 'Shop on holiday until {date}. Its offers will be back after that.',
     about: 'About the shop',
     products: 'Shop products',
     empty: 'This shop has no product available yet.',
@@ -1531,6 +1546,13 @@ const en: Strings = {
     submit: 'Create my shop',
   },
   seller: {
+    holidayTitle: 'Holiday mode',
+    holidayNote:
+      'Away for a few days? Hide all your offers; they come back on their own on the chosen date.',
+    holidayOn:
+      'On holiday until {date}: your offers are hidden. Orders already received still need handling.',
+    holidayDays: '{n} days',
+    holidayReopen: 'Reopen now',
     lowStock: 'Low stock',
     lowStockItem: '{title}: {n} in stock',
     search: 'Search (name, phone, order number)',

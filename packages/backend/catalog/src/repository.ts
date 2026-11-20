@@ -102,6 +102,8 @@ const PUBLIC_PRODUCTS = `
       FROM offers.offers offer
       JOIN sellers.sellers s ON s.id = offer.seller_id
       WHERE offer.product_id = p.id AND offer.status = 'APPROVED' AND s.status = 'APPROVED'
+        -- A seller on holiday (migration 000039) is hidden until it ends.
+        AND (s.holiday_until IS NULL OR s.holiday_until <= now())
         AND ($3::text IS NULL OR s.slug = $3)
       ORDER BY effective_price, offer.id LIMIT 50
     ) o
@@ -707,7 +709,8 @@ export class PostgresCatalogRepository {
     const result = await this.pool.query<{ seller: unknown }>(
       `
       SELECT jsonb_build_object('id', id, 'slug', slug, 'name', name,
-        'description', jsonb_build_object('fr', description_fr, 'ar', description_ar)) AS seller
+        'description', jsonb_build_object('fr', description_fr, 'ar', description_ar),
+        'holidayUntil', CASE WHEN holiday_until > now() THEN ${utcIso('holiday_until')} END) AS seller
       FROM sellers.sellers WHERE slug = $1 AND status = 'APPROVED'
     `,
       [CatalogSlugSchema.parse(slug)],

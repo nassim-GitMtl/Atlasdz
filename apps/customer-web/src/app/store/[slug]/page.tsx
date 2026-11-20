@@ -7,7 +7,7 @@ import { SiteChrome } from '@/components/site-chrome';
 import { ReviewsSection } from '@/components/reviews-section';
 import { EmptyState } from '@/components/states';
 import { CatalogNotFoundError, getProductPage, getReviews, getSeller } from '@/lib/catalog-api';
-import { copy, resolveLocale, text, type SearchParams } from '@/lib/i18n';
+import { copy, intlLocale, lang, resolveLocale, text, type SearchParams } from '@/lib/i18n';
 import type { Metadata } from 'next';
 
 export async function generateMetadata({
@@ -65,6 +65,23 @@ export default async function StorePage({
             <p className="eyebrow">{t.sellerStore}</p>
             <h1>{seller.name}</h1>
             <p>{text(seller.description, locale)}</p>
+            {seller.holidayUntil && (
+              <p className="notice" role="status">
+                {lang(locale, 'Boutique en congé jusqu’au ', 'المتجر في عطلة حتى ', 'Shop on holiday until ')}
+                <strong>
+                  {new Date(seller.holidayUntil).toLocaleDateString(intlLocale(locale), {
+                    dateStyle: 'long',
+                    timeZone: 'Africa/Algiers',
+                  })}
+                </strong>
+                {lang(
+                  locale,
+                  '. Ses offres reviendront ensuite.',
+                  '. ستعود عروضه بعد ذلك.',
+                  '. Its offers will be back after that.',
+                )}
+              </p>
+            )}
           </div>
         </section>
         <div className="section-heading">

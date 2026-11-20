@@ -20,6 +20,7 @@ export class CartWriteError extends Error {
 const PROMO = `(o.promo_price_minor IS NOT NULL AND now() >= o.promo_starts_at AND now() < o.promo_ends_at)`;
 const EFFECTIVE = `(CASE WHEN ${PROMO} THEN o.promo_price_minor ELSE o.price_minor END)`;
 const PUBLIC = `o.status = 'APPROVED' AND s.status = 'APPROVED'
+  AND (s.holiday_until IS NULL OR s.holiday_until <= now())
   AND p.status = 'ACTIVE' AND p.moderation_status = 'APPROVED'
   AND c.status = 'ACTIVE' AND c.moderation_status = 'APPROVED'
   AND c.restriction_class = 'STANDARD'`;

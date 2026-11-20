@@ -66,6 +66,8 @@ export interface Account {
 export interface SellerAccount {
   readonly sellerId: string;
   readonly status: 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
+  /** End of the holiday while the shop is closed; null when open. */
+  readonly holidayUntil?: string | null;
 }
 
 export interface PhoneStatus {

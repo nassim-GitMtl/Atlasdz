@@ -127,9 +127,17 @@ export const sellerAccount = (token: string) =>
     z.object({
       sellerId: z.uuid(),
       status: z.enum(['PENDING_REVIEW', 'APPROVED', 'REJECTED', 'SUSPENDED']),
+      /** End of the holiday while the shop is closed; null when open. */
+      holidayUntil: z.string().nullable().optional(),
     }),
     { token },
   );
+/** Holiday mode: hide every offer until `until` (ISO), or reopen now with null. */
+export const setSellerHoliday = (token: string, until: string | null) =>
+  call('/api/v1/seller/account/holiday', z.object({ holidayUntil: z.string().nullable() }), {
+    token,
+    body: { until },
+  });
 
 export const listSellerApplications = (token: string) =>
   call(

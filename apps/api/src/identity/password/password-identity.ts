@@ -689,6 +689,48 @@ export class PasswordIdentityRepository {
     return result.rows[0]?.status ?? null;
   }
 
+  /** End of the seller's holiday, or null when the shop is open (a past date counts as open). */
+  public async sellerHoliday(sellerId: string): Promise<string | null> {
+    const result = await this.pool.query<{ until: Date | null }>(
+      `SELECT CASE WHEN holiday_until > now() THEN holiday_until END AS until
+       FROM sellers.sellers WHERE id = $1`,
+      [sellerId],
+    );
+    return result.rows[0]?.until?.toISOString() ?? null;
+  }
+
+  /** Starts (until a time) or ends (null) the seller's holiday; audited. */
+  public async setSellerHoliday(
+    sellerId: string,
+    until: string | null,
+    context: { actorUserId: string; correlationId: string },
+  ): Promise<void> {
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('UPDATE sellers.sellers SET holiday_until = $2 WHERE id = $1', [
+        sellerId,
+        until,
+      ]);
+      await audit(client, {
+        actorType: 'seller_user',
+        actorId: context.actorUserId,
+        action: 'seller.holiday_set',
+        outcome: 'SUCCEEDED',
+        entityType: 'seller',
+        entityId: sellerId,
+        correlationId: context.correlationId,
+        after: { holidayUntil: until },
+      });
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => undefined);
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
   /** Owner email/locale/name for seller notifications (approval, new orders). */
   public async sellerContacts(
     sellerIds: readonly string[],

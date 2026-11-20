@@ -1,4 +1,4 @@
-import { SafeApplicationError, UuidSchema } from '@atlas/contracts';
+import { SafeApplicationError, SellerHolidayInputSchema, UuidSchema } from '@atlas/contracts';
 import type { RuntimeConfig } from '@atlas/platform';
 import { Body, Controller, Get, HttpCode, Inject, Param, Post, Query, Req } from '@nestjs/common';
 
@@ -293,7 +293,41 @@ export class SellerAccountController {
     }
     const status = await this.identity.sellerStatus(principal.scope.id);
     if (status === null) throw new SafeApplicationError('RESOURCE_NOT_FOUND');
-    return { sellerId: principal.scope.id, status };
+    return {
+      sellerId: principal.scope.id,
+      status,
+      holidayUntil: await this.identity.sellerHoliday(principal.scope.id),
+    };
+  }
+
+  /**
+   * Holiday mode: `{ until }` (at most 60 days ahead) hides every offer until then; `null`
+   * reopens now. Orders already received stay to be handled.
+   */
+  @Post('holiday')
+  @HttpCode(200)
+  @RequirePermission('offer.update', { minimumAssurance: 'MFA' })
+  @RateLimited('authenticated', 'seller.account.holiday')
+  public async holiday(
+    @Req() request: AuthenticatedRequest & CorrelatedRequest,
+    @Body() body: unknown,
+  ) {
+    const principal = getRequestPrincipal(request);
+    if (principal.actorType !== 'seller_user' || principal.scope.type !== 'SELLER') {
+      throw new SafeApplicationError('FORBIDDEN');
+    }
+    const parsed = SellerHolidayInputSchema.safeParse(body);
+    if (!parsed.success) invalid('until', 'INVALID');
+    const until = parsed.data.until;
+    if (until !== null) {
+      const at = Date.parse(until);
+      if (!(at > Date.now() + 60_000) || at > Date.now() + 60 * 86_400_000) invalid('until', 'RANGE');
+    }
+    await this.identity.setSellerHoliday(principal.scope.id, until, {
+      actorUserId: principal.userId,
+      correlationId: request.correlationId,
+    });
+    return { holidayUntil: until };
   }
 }
 

@@ -31,10 +31,12 @@ const PUBLIC_PRODUCT = `
   AND EXISTS (SELECT 1 FROM catalog.categories c WHERE c.id = p.category_id
     AND c.status = 'ACTIVE' AND c.moderation_status = 'APPROVED' AND c.restriction_class = 'STANDARD')
   AND EXISTS (SELECT 1 FROM offers.offers o JOIN sellers.sellers s ON s.id = o.seller_id
-    WHERE o.product_id = p.id AND o.status = 'APPROVED' AND s.status = 'APPROVED')`;
+    WHERE o.product_id = p.id AND o.status = 'APPROVED' AND s.status = 'APPROVED'
+      AND (s.holiday_until IS NULL OR s.holiday_until <= now()))`;
 /** At least one live offer can be bought now (pre-orders included). */
 const IN_STOCK = `EXISTS (SELECT 1 FROM offers.offers o JOIN sellers.sellers s ON s.id = o.seller_id
     WHERE o.product_id = p.id AND o.status = 'APPROVED' AND s.status = 'APPROVED'
+      AND (s.holiday_until IS NULL OR s.holiday_until <= now())
       AND o.available_quantity > 0)`;
 const TITLE = `jsonb_strip_nulls(jsonb_build_object('fr', p.title_fr, 'ar', p.title_ar, 'en', p.title_en))`;
 

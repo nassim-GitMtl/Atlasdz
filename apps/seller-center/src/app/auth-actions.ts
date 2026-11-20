@@ -14,6 +14,7 @@ import {
   reviewSeller,
   removeProductPhoto,
   changeGalleryPhoto,
+  setSellerHoliday,
   uploadProductPhoto,
 } from '@/lib/auth';
 import type { AuthError } from '@/lib/auth-copy';
@@ -238,4 +239,33 @@ export async function removePhotoAction(_state: PhotoState, form: FormData): Pro
   if (!(await removeProductPhoto(token, productId.data))) return { error: 'forbidden' };
   revalidatePath('/products');
   return { done: true };
+}
+
+export interface HolidayState {
+  readonly error?: 'invalid' | 'csrf' | 'unauthorized' | 'unavailable';
+}
+
+/**
+ * Starts holiday mode until the end of the chosen day (Algiers time, at most 60 days ahead), or
+ * reopens the shop now (`reopen`).
+ */
+export async function holidayAction(_state: HolidayState, form: FormData): Promise<HolidayState> {
+  if (!(await validOrigin())) return { error: 'csrf' };
+  const token = await accessToken();
+  if (!token) return { error: 'unauthorized' };
+  let until: string | null = null;
+  if (form.get('reopen') !== '1') {
+    const day = String(form.get('until') ?? '');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return { error: 'invalid' };
+    until = new Date(`${day}T23:59:00+01:00`).toISOString();
+    if (Number.isNaN(Date.parse(until))) return { error: 'invalid' };
+  }
+  try {
+    await setSellerHoliday(token, until);
+  } catch {
+    return { error: until === null ? 'unavailable' : 'invalid' };
+  }
+  revalidatePath('/account');
+  revalidatePath('/offers');
+  return {};
 }

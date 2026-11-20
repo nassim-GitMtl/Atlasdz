@@ -3,6 +3,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
+import { HolidayCard } from '@/components/holiday-card';
 import { Badge, Button, Card, ListRow, Screen, text } from '@/components/ui';
 import { webPage } from '@/lib/config';
 import { useI18n } from '@/lib/i18n';
@@ -33,6 +34,7 @@ export default function SellerAccountScreen() {
           ) : null}
         </Card>
       ) : null}
+      <HolidayCard />
       <Card>
         <ListRow
           icon="car-outline"
