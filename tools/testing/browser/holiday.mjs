@@ -51,6 +51,9 @@ try {
     await page.getByRole('button', { name: 'Activer le mode congé' }).click();
     await page.getByText('Boutique en congé jusqu’au').waitFor({ timeout: 15000 });
     if ((await products()) !== 0) throw new Error('offers still listed');
+    // The offers page reminds the seller.
+    await page.goto(`${SC}/offers?lang=fr`);
+    await page.getByText('Mode congé : vos offres sont masquées jusqu’au').waitFor({ timeout: 15000 });
   });
   await check('shop and app store pages show the holiday date', async () => {
     const page = await (await browser.newContext({ viewport: { width: 390, height: 844 } })).newPage();
@@ -68,6 +71,8 @@ try {
       localStorage.setItem('atlas.locale', 'fr');
       localStorage.setItem('atlas.session', JSON.stringify({ token: value, actor: 'seller' }));
     }, token);
+    await page.goto(`${APP}/dashboard`);
+    await page.getByText(/En congé jusqu’au/).first().waitFor({ timeout: 15000 });
     await page.goto(`${APP}/seller-account`);
     await page.getByText(/En congé jusqu’au/).waitFor({ timeout: 15000 });
     await page.getByRole('button', { name: 'Rouvrir maintenant' }).click();

@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { Shell } from '@/components/shell';
 import { ServiceState } from '@/components/states';
 import { listOffers, listOfferProducts } from '@/lib/api';
+import { sellerAccount } from '@/lib/auth';
 import { copy, href, localeFrom, money, type SearchParams, localized, lang, intlLocale } from '@/lib/i18n';
 import { localAccountsEnabled } from '@/lib/security';
 import { accessToken } from '@/lib/session';
@@ -19,6 +20,10 @@ export default async function Offers({
   const token = await accessToken();
   if (!token) redirect(href('/', locale));
   const local = localAccountsEnabled(process.env, (await headers()).get('host'));
+  // A shop on holiday is reminded here (optional: an outage only hides the reminder).
+  const holidayUntil = await sellerAccount(token)
+    .then((account) => account.holidayUntil ?? null)
+    .catch(() => null);
   const result = await Promise.all([listOffers(token), listOfferProducts(token)])
     .then(([offers, products]) => ({
       offers: offers.items,
@@ -50,6 +55,15 @@ export default async function Offers({
               </Link>
             </div>
           </div>
+          {holidayUntil && (
+            <p role="status" className="notice">
+              {lang(locale, 'Mode congé : vos offres sont masquées jusqu’au ', 'وضع العطلة: عروضك مخفية حتى ', 'Holiday mode: your offers are hidden until ')}
+              {new Date(holidayUntil).toLocaleDateString(intlLocale(locale), { dateStyle: 'long', timeZone: 'Africa/Algiers' })}.{' '}
+              <Link href={href('/account', locale)}>
+                {lang(locale, 'Rouvrir', 'إعادة الفتح', 'Reopen')}
+              </Link>
+            </p>
+          )}
           {params.created === '1' && (
             <p role="status" className="notice success">
               {t.submitted}

@@ -8,7 +8,7 @@ import { RatingLine } from '@/components/reviews';
 import { SalesChart } from '@/components/sales-chart';
 import { Badge, Card, ListRow, Notice, Screen, text } from '@/components/ui';
 import { sellerSummary } from '@/lib/collections';
-import { fill, formatMoney, formatTime, localized } from '@/lib/format';
+import { fill, formatDate, formatMoney, formatTime, localized } from '@/lib/format';
 import { useI18n } from '@/lib/i18n';
 import { dailySales, deliveredSince, earliestDeadline, lowStock } from '@/lib/seller-tools';
 import { useSession } from '@/lib/session';
@@ -118,7 +118,12 @@ export default function DashboardScreen() {
       key: 'stock',
       icon: 'alert-circle-outline',
       label: t.seller.lowStock,
-      detail: first ? fill(t.seller.lowStockItem, { title: titleOf(first.productId), n: first.availableQuantity }) : '',
+      detail: first
+        ? fill(t.seller.lowStockItem, {
+            title: titleOf(first.productId),
+            n: first.availableQuantity,
+          })
+        : '',
       count: String(running.length),
       warn: true,
       go: () => (first ? router.push(`/seller/offer/${first.id}`) : router.navigate('/catalog')),
@@ -136,15 +141,28 @@ export default function DashboardScreen() {
             tone={status === 'APPROVED' ? 'good' : status === 'PENDING_REVIEW' ? 'wait' : 'bad'}
           />
         ) : null}
-        {status === 'PENDING_REVIEW' ? <Text style={text.muted}>{t.seller.pendingNote}</Text> : null}
+        {status === 'PENDING_REVIEW' ? (
+          <Text style={text.muted}>{t.seller.pendingNote}</Text>
+        ) : null}
         {status === 'SUSPENDED' || status === 'REJECTED' ? (
           <Notice tone="error">{t.seller.suspendedNote}</Notice>
+        ) : null}
+        {session.seller?.holidayUntil ? (
+          <Pressable accessibilityRole="link" onPress={() => router.push('/seller-account')}>
+            <Notice tone="info">
+              {fill(t.seller.holidayOn, {
+                date: formatDate(session.seller.holidayUntil, locale),
+              })}
+            </Notice>
+          </Pressable>
         ) : null}
       </View>
       {summary.toAccept > 0 ? (
         <View style={styles.priority}>
           <Text style={styles.priorityEyebrow}>{t.seller.acceptNow}</Text>
-          <Text style={styles.priorityValue}>{fill(t.seller.ordersCount, { n: summary.toAccept })}</Text>
+          <Text style={styles.priorityValue}>
+            {fill(t.seller.ordersCount, { n: summary.toAccept })}
+          </Text>
           {deadline ? (
             <Text style={styles.priorityText}>
               {fill(t.seller.acceptBefore, { time: formatTime(deadline, locale) })}
@@ -174,10 +192,18 @@ export default function DashboardScreen() {
             accessibilityRole="button"
             accessibilityLabel={`${item.label}: ${item.count}. ${item.detail}`}
             onPress={item.go}
-            style={({ pressed }) => [styles.todo, index > 0 && styles.todoBorder, pressed && { opacity: 0.85 }]}
+            style={({ pressed }) => [
+              styles.todo,
+              index > 0 && styles.todoBorder,
+              pressed && { opacity: 0.85 },
+            ]}
           >
             <View style={[styles.todoIcon, item.warn && styles.todoIconWarn]}>
-              <Ionicons name={item.icon} size={20} color={item.warn ? colors.warning : colors.primaryDark} />
+              <Ionicons
+                name={item.icon}
+                size={20}
+                color={item.warn ? colors.warning : colors.primaryDark}
+              />
             </View>
             <View style={styles.todoBody}>
               <Text style={styles.todoLabel}>{item.label}</Text>
@@ -235,7 +261,13 @@ export default function DashboardScreen() {
 
 const styles = StyleSheet.create({
   head: { gap: 6 },
-  eyebrow: { fontSize: 12, fontWeight: '800', color: colors.muted, letterSpacing: 1, textTransform: 'uppercase' },
+  eyebrow: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: colors.muted,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
   store: { fontSize: 24, fontWeight: '800', color: colors.ink },
   sub: { fontSize: 14, color: colors.muted },
   priority: { backgroundColor: colors.primary, borderRadius: 18, padding: 18, gap: 10 },
@@ -258,9 +290,23 @@ const styles = StyleSheet.create({
     borderColor: colors.line,
     overflow: 'hidden',
   },
-  todo: { minHeight: 64, paddingHorizontal: 14, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  todo: {
+    minHeight: 64,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
   todoBorder: { borderTopWidth: 1, borderTopColor: colors.line },
-  todoIcon: { width: 38, height: 38, borderRadius: 10, backgroundColor: colors.soft, alignItems: 'center', justifyContent: 'center' },
+  todoIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: colors.soft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   todoIconWarn: { backgroundColor: colors.warningSoft },
   todoBody: { flex: 1, gap: 1 },
   todoLabel: { fontSize: 15, fontWeight: '800', color: colors.ink },
