@@ -1,5 +1,5 @@
 'use client';
-import { useActionState, useState } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import type { DeliveryContact, DeliveryDestination } from '@atlas/contracts';
 import {
   cancelAction,
@@ -49,6 +49,7 @@ export function OrderForm({
   guest = false,
   preorder = null,
   sellers = [],
+  initial = null,
 }: {
   readonly kind: 'quote' | 'place' | 'cancel' | 'receipt';
   readonly id?: string;
@@ -62,13 +63,16 @@ export function OrderForm({
   readonly preorder?: { readonly min: number; readonly max: number } | null;
   /** Sellers in the cart: their delivery fee to the chosen commune is shown before review. */
   readonly sellers?: readonly { readonly id: string; readonly name: string }[];
+  /** Details of the customer's last order, offered again (always editable). */
+  readonly initial?: {
+    readonly contact: DeliveryContact;
+    readonly destinationId: string;
+    readonly wilayaId: string;
+  } | null;
 }) {
-  const [contact, setContact] = useState<DeliveryContact>({
-    recipientName: '',
-    phone: '',
-    addressLine: '',
-    city: '',
-  });
+  const [contact, setContact] = useState<DeliveryContact>(
+    initial?.contact ?? { recipientName: '', phone: '', addressLine: '', city: '' },
+  );
   const [state, action, pending] = useActionState(
     kind === 'quote'
       ? quoteAction
@@ -80,9 +84,26 @@ export function OrderForm({
     {},
   );
   const t = orderText(locale, live);
-  const [wilayaId, setWilayaId] = useState('');
-  const [destinationId, setDestinationId] = useState('');
-  const [fees, setFees] = useState<readonly Fee[] | 'loading' | 'error' | null>(null);
+  const [wilayaId, setWilayaId] = useState(initial?.wilayaId ?? '');
+  const [destinationId, setDestinationId] = useState(initial?.destinationId ?? '');
+  const [fees, setFees] = useState<readonly Fee[] | 'loading' | 'error' | null>(
+    initial && sellers.length > 0 ? 'loading' : null,
+  );
+  // A commune carried over from the last order: show its fees without a change event.
+  const firstDestination = initial?.destinationId ?? '';
+  const sellerKey = sellers.map((s) => s.id).join(',');
+  useEffect(() => {
+    if (!firstDestination || !sellerKey) return;
+    let alive = true;
+    const query = new URLSearchParams({ destinationId: firstDestination, sellerIds: sellerKey });
+    fetch(`/delivery-fees?${query.toString()}`)
+      .then((response) => (response.ok ? response.json() : Promise.reject(new Error('fees'))))
+      .then((data: { items: Fee[] }) => alive && setFees(data.items))
+      .catch(() => alive && setFees('error'));
+    return () => {
+      alive = false;
+    };
+  }, [firstDestination, sellerKey]);
   const c = feeCopy[locale];
   const loadFees = (id: string) => {
     if (!id || sellers.length === 0) return setFees(null);
@@ -107,6 +128,15 @@ export function OrderForm({
       <input type="hidden" name="lang" value={locale} />
       <input type="hidden" name="version" value={version} />
       <input type="hidden" name={kind === 'place' ? 'quoteId' : 'sellerOrderId'} value={id} />
+      {kind === 'quote' && initial && (
+        <p className="cart-notice">
+          {locale === 'ar'
+            ? 'معلومات طلبك الأخير، يمكنك تعديلها.'
+            : locale === 'en'
+              ? 'Details from your last order; change them if needed.'
+              : 'Coordonnées de votre dernière commande, modifiables si besoin.'}
+        </p>
+      )}
       {kind === 'quote' && (
         <>
           {wilayas.length > 0 && (

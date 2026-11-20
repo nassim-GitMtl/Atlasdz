@@ -11,6 +11,7 @@ import { preorderCopy, preorderSpan, preorderText } from '@/lib/preorder';
 import { customerCheckoutEnabled } from '@/lib/customer-security';
 import { liveCheckoutEnabled, orderText } from '@/lib/orders-copy';
 import { SiteChrome } from '@/components/site-chrome';
+import { listOrders } from '@/lib/orders-api';
 import { CartQuantityForm, CustomerSessionForm } from '@/components/cart-forms';
 import { CartApiError, customerToken, getCart } from '@/lib/cart-api';
 import { cartCopy } from '@/lib/cart-copy';
@@ -54,6 +55,11 @@ export default async function CartPage({
     : await guestCart(await readGuestCart())
         .then((cart) => ({ cart, error: undefined }))
         .catch((error: unknown) => ({ cart: undefined, error }));
+  // Signed-in repeat buyers: the last order's delivery details are offered again.
+  const previous =
+    token && checkout && result.cart?.items.length
+      ? await lastDelivery(token).catch(() => null)
+      : null;
   const destinations =
     checkout && result.cart?.items.length
       ? await getDestinations()
@@ -186,6 +192,12 @@ export default async function CartPage({
                         locale={locale}
                         destinations={destinations.items}
                         guest={!token}
+                        initial={
+                          previous &&
+                          destinations.items.some((item) => item.id === previous.destinationId)
+                            ? previous
+                            : null
+                        }
                         sellers={sellerGroups(result.cart.items).flatMap((group) =>
                           group.seller ? [{ id: group.seller.id, name: group.seller.name }] : [],
                         )}
@@ -221,4 +233,15 @@ export default async function CartPage({
       </section>
     </SiteChrome>
   );
+}
+
+/** Contact and commune of the customer's most recent order that has them. */
+async function lastDelivery(token: string) {
+  // Orders come newest first.
+  const recent = (await listOrders(token)).items[0];
+  if (!recent) return null;
+  const contact = recent.quote.deliveryContact;
+  const destination = recent.quote.destination;
+  if (!contact || !destination) return null;
+  return { contact, destinationId: destination.id, wilayaId: destination.wilaya?.id ?? 'test' };
 }
