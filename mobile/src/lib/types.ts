@@ -9,6 +9,7 @@ export type {
   CatalogSeller,
   ProductSpecKey,
   ProductSubmission,
+  StockAlertList,
   SellerOffer,
 } from '../../../packages/contracts/src/catalog';
 export type { CartLine, CustomerCart } from '../../../packages/contracts/src/cart';

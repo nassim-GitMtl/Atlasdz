@@ -46,6 +46,7 @@ function Navigator() {
           <Stack.Screen name="order/[orderId]" options={{ title: t.order.title }} />
           <Stack.Screen name="rate/[sellerOrderId]" options={{ title: t.reviews.rateTitle }} />
           <Stack.Screen name="addresses" options={{ title: t.addresses.title }} />
+          <Stack.Screen name="alerts" options={{ title: t.account.stockAlerts }} />
           <Stack.Screen name="phone" options={{ title: t.phone.title }} />
           <Stack.Screen name="delete-account" options={{ title: t.deleteAccount.title }} />
           <Stack.Screen name="seller-register" options={{ title: t.register.title }} />

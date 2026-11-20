@@ -10,6 +10,7 @@ const fr = {
     catalog: 'Catalogue',
   },
   common: {
+    view: 'Voir',
     retry: 'Réessayer',
     loading: 'Chargement…',
     signIn: 'Se connecter',
@@ -68,6 +69,8 @@ const fr = {
     origin: 'Pays de fabrication',
   },
   stockAlert: {
+    empty: 'Aucune alerte. Sur un produit épuisé, touchez « M’avertir du retour en stock ».',
+    note: 'Un e-mail par produit, dès son retour.',
     soldOut: 'Épuisé chez tous les vendeurs.',
     waiting: 'Nous vous écrirons une fois, dès qu’il sera de nouveau disponible.',
     start: 'M’avertir du retour en stock',
@@ -333,6 +336,7 @@ const fr = {
     phoneVerify: 'Confirmer mon numéro',
     notifications: 'Notifications',
     addresses: 'Mes adresses',
+    stockAlerts: 'Alertes de retour en stock',
     help: 'Aide et retours',
     devices: 'Appareils connectés',
     sell: 'Vendre sur atlas dz',
@@ -602,6 +606,7 @@ const ar: Strings = {
     catalog: 'المنتجات',
   },
   common: {
+    view: 'عرض',
     retry: 'إعادة المحاولة',
     loading: 'جارٍ التحميل…',
     signIn: 'تسجيل الدخول',
@@ -660,6 +665,8 @@ const ar: Strings = {
     origin: 'بلد الصنع',
   },
   stockAlert: {
+    empty: 'لا توجد تنبيهات. على منتج نافد، المس «أعلمني عند عودته».',
+    note: 'رسالة واحدة لكل منتج فور عودته.',
     soldOut: 'نفد لدى جميع البائعين.',
     waiting: 'سنراسلك مرة واحدة فور توفره من جديد.',
     start: 'أعلمني عند عودته',
@@ -919,6 +926,7 @@ const ar: Strings = {
     phoneVerify: 'تأكيد رقمي',
     notifications: 'الإشعارات',
     addresses: 'عناويني',
+    stockAlerts: 'تنبيهات العودة إلى المخزون',
     help: 'المساعدة والإرجاع',
     devices: 'الأجهزة المتصلة',
     sell: 'البيع على atlas dz',
@@ -1175,6 +1183,7 @@ const en: Strings = {
     catalog: 'Catalogue',
   },
   common: {
+    view: 'View',
     retry: 'Try again',
     loading: 'Loading…',
     signIn: 'Sign in',
@@ -1233,6 +1242,8 @@ const en: Strings = {
     origin: 'Country of manufacture',
   },
   stockAlert: {
+    empty: 'No alerts. On a sold-out product, tap “Tell me when it is back”.',
+    note: 'One email per product, as soon as it is back.',
     soldOut: 'Sold out at every seller.',
     waiting: 'We will email you once, as soon as it is available again.',
     start: 'Tell me when it is back',
@@ -1495,6 +1506,7 @@ const en: Strings = {
     phoneVerify: 'Confirm my number',
     notifications: 'Notifications',
     addresses: 'My addresses',
+    stockAlerts: 'Back-in-stock alerts',
     help: 'Help and returns',
     devices: 'Signed-in devices',
     sell: 'Sell on atlas dz',

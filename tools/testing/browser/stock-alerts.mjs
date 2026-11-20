@@ -96,7 +96,7 @@ try {
     await page.goto(`${SHOP}/account`);
     await page.locator('.stock-alert-list').getByRole('link', { name: title }).waitFor({ timeout: 15000 });
   });
-  await check('app: the same alert shows as waiting for the signed-in customer', async () => {
+  await check('app: the alert shows on the product and in the account list', async () => {
     const page = await (await browser.newContext({ viewport: { width: 390, height: 844 } })).newPage();
     await page.goto(APP);
     await page.evaluate((token) => {
@@ -106,6 +106,9 @@ try {
     await page.goto(`${APP}/product/${product.slug}`);
     await page.getByRole('button', { name: 'Ne plus m’avertir' }).waitFor({ timeout: 15000 });
     await page.getByText('Nous vous écrirons une fois').waitFor();
+    // The account's alert list (Compte → Alertes de retour en stock).
+    await page.goto(`${APP}/alerts`);
+    await page.getByText(title).first().waitFor({ timeout: 15000 });
   });
   if (process.env.ATLAS_DISPATCHER === '1') await check('restock: one email, then the alert is closed', async () => {
     await setStock(Math.max(before, 5));

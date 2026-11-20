@@ -112,6 +112,11 @@ export default function AccountScreen() {
             onPress={() => router.push('/addresses')}
           />
           <ListRow
+            icon="alarm-outline"
+            label={t.account.stockAlerts}
+            onPress={() => router.push('/alerts')}
+          />
+          <ListRow
             icon="chatbubbles-outline"
             label={t.account.help}
             onPress={() => router.push('/support')}
