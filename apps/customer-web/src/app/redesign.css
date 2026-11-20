@@ -327,3 +327,15 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 /* Share a product page. */
 .share-button { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 6px 12px; margin-bottom: 10px; border: 1px solid var(--line); border-radius: 999px; background: #fff; color: var(--ink); font: inherit; font-size: 14px; cursor: pointer; }
 .share-copied { margin-inline-start: 8px; color: #067647; font-size: 13px; }
+/* Questions before buying. */
+.product-questions { display: grid; gap: 12px; padding-block: 8px 24px; }
+.product-questions h2 { margin: 0; font-size: 20px; }
+.product-questions ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+.product-questions li { display: grid; gap: 4px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: #fff; overflow-wrap: anywhere; }
+.product-questions .question, .product-questions .answer { margin: 0; font-size: 14px; }
+.product-questions small { color: var(--muted); }
+.product-questions .answer { padding-inline-start: 12px; border-inline-start: 3px solid var(--blue); }
+.product-questions .answer.pending { border-color: var(--line); color: var(--muted); }
+.ask-question { display: grid; gap: 8px; max-width: 560px; }
+.ask-question textarea { padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; font: inherit; }
+.ask-question .button { justify-self: start; }

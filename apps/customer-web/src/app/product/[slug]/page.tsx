@@ -15,7 +15,8 @@ import type { Metadata } from 'next';
 import { ReviewsSection } from '@/components/reviews-section';
 import { Money, Truck } from '@phosphor-icons/react/dist/ssr';
 import { ProductGrid } from '@/components/product-card';
-import { CatalogNotFoundError, getProduct, getProductPage, getReviews } from '@/lib/catalog-api';
+import { CatalogNotFoundError, getProduct, getProductPage, getQuestions, getReviews } from '@/lib/catalog-api';
+import { ProductQuestions } from '@/components/product-questions';
 import { copy, localizedHref, resolveLocale, text, type SearchParams, lang } from '@/lib/i18n';
 
 export async function generateMetadata({
@@ -83,12 +84,15 @@ export default async function ProductPage({
     throw error;
   }
   // Reviews are optional on the page: an outage there must not hide the product.
-  const [reviews, related] = await Promise.all([
+  const [reviews, related, questions, viewerToken] = await Promise.all([
     getReviews('products', slug).catch(() => null),
     // Real products from the same category; nothing is shown when there are none.
     getProductPage({ category: product.category.slug, limit: 5 })
       .then((page) => page.items.filter((item) => item.slug !== slug).slice(0, 4))
       .catch(() => []),
+    // Questions are optional too: an outage hides the section.
+    getQuestions(slug).catch(() => null),
+    customerToken(),
   ]);
   // Sold out at every seller: offer the back-in-stock alert instead of a dead end.
   const soldOut = product.offers.every((offer) => offer.availableQuantity === 0);
@@ -208,6 +212,14 @@ export default async function ProductPage({
           </p>
         </section>
         {reviews && <ReviewsSection page={reviews} locale={locale} />}
+        {questions && (
+          <ProductQuestions
+            slug={product.slug}
+            questions={questions.items}
+            locale={locale}
+            signedIn={Boolean(viewerToken)}
+          />
+        )}
         </div>
         {related.length > 0 && (
           <section className="related-products" aria-labelledby="related-title">

@@ -12,6 +12,8 @@ import {
   createOffer,
   updateOffer,
   getOffer,
+  answerQuestion,
+  hideQuestion,
   revokeSellerSession,
   SellerApiError,
 } from '@/lib/api';
@@ -239,4 +241,48 @@ export async function quickUpdateOffersAction(
     revalidatePath('/dashboard');
   }
   return { saved, failed };
+}
+
+export interface QuestionAnswerState {
+  readonly error?: 'invalid' | 'csrf' | 'unauthorized' | 'unavailable';
+  readonly done?: boolean;
+}
+
+/** A seller answers (or corrects its answer to) a customer's question. */
+export async function answerQuestionAction(
+  _state: QuestionAnswerState,
+  form: FormData,
+): Promise<QuestionAnswerState> {
+  if (!(await validOrigin())) return { error: 'csrf' };
+  const token = await accessToken();
+  if (!token) return { error: 'unauthorized' };
+  const id = UuidSchema.safeParse(form.get('questionId'));
+  const body = String(form.get('body') ?? '').trim();
+  if (!id.success || body.length < 2 || body.length > 1000) return { error: 'invalid' };
+  try {
+    await answerQuestion(token, id.data, body);
+  } catch {
+    return { error: 'unavailable' };
+  }
+  revalidatePath('/questions');
+  return { done: true };
+}
+
+/** Staff hide a customer question. */
+export async function hideQuestionAction(
+  _state: QuestionAnswerState,
+  form: FormData,
+): Promise<QuestionAnswerState> {
+  if (!(await validOrigin())) return { error: 'csrf' };
+  const token = await accessToken();
+  if (!token) return { error: 'unauthorized' };
+  const id = UuidSchema.safeParse(form.get('questionId'));
+  if (!id.success) return { error: 'invalid' };
+  try {
+    await hideQuestion(token, id.data);
+  } catch {
+    return { error: 'unavailable' };
+  }
+  revalidatePath('/admin/questions');
+  return { done: true };
 }

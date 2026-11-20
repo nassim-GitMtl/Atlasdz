@@ -7,6 +7,7 @@ export type {
   CatalogProduct,
   CatalogProductList,
   CatalogSeller,
+  ProductQuestionList,
   ProductSpecKey,
   ProductSubmission,
   StockAlertList,

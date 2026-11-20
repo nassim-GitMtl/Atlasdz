@@ -7,6 +7,7 @@ import { Text } from '@/components/text';
 import { FavoriteButton } from '@/components/favorite-button';
 import { PhotoGallery } from '@/components/photo-gallery';
 import { StockAlertCard } from '@/components/stock-alert';
+import { ProductQuestions } from '@/components/product-questions';
 import { RatingLine, RatingSummary, ReviewItem } from '@/components/reviews';
 import { SummaryCard } from '@/components/product-card';
 import { Stepper } from '@/components/stepper';
@@ -215,6 +216,7 @@ export default function ProductScreen() {
               </Card>
             </>
           ) : null}
+          <ProductQuestions slug={slug} />
           <Text style={text.heading}>{t.reviews.title}</Text>
           {reviews.data ? (
             <>

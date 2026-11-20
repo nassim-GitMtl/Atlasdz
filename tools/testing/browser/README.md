@@ -52,6 +52,9 @@ a new product submitted (with characteristics and an English title), approved th
 staff session, given a main and an extra photo from the file picker and an offer, then shown with
 its characteristics in French and English; a commune delivery rate; notifications; sign-out.
 
+`questions.mjs` (shop, Seller Center, app): a customer asks on a product page, the demo seller
+answers in Seller Center, the shop and the app show it, staff hide the question.
+
 `deployed-shop.mjs` (production rehearsal, https://shop.localhost): search suggestions, favorites,
 product schema.org data and the live sitemap under the production CSP, with no CSP violations.
 

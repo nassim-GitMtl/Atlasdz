@@ -196,3 +196,12 @@ body { background: var(--surface); }
 .holiday-panel h2 { margin: 0; font-size: 18px; }
 .holiday-panel form, .holiday-form { display: grid; gap: 8px; }
 .holiday-form input[type=date] { min-height: 42px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font: inherit; max-width: 240px; }
+/* Customer questions (seller answers). */
+.question-list { display: grid; gap: 12px; }
+.question-card { display: grid; gap: 6px; padding: 14px 16px; background: #fff; border: 1px solid var(--line); border-radius: 12px; overflow-wrap: anywhere; }
+.question-card h2 { margin: 0; font-size: 15px; }
+.question-body { margin: 0; }
+.question-card small { color: var(--muted); }
+.answer-form { display: grid; gap: 6px; }
+.answer-form textarea { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font: inherit; }
+.answer-form .button { justify-self: start; }

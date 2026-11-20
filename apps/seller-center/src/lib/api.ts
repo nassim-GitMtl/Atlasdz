@@ -23,6 +23,7 @@ import {
   type SupportActionInput,
   type ProcessSellerOrderInput,
   type SellerRejectionReason,
+  SellerQuestionListSchema,
 } from '@atlas/contracts';
 import { z } from 'zod';
 import { apiOrigin } from './security.ts';
@@ -228,3 +229,32 @@ export const replyToReview = (token: string, id: string, body: string, expectedV
     body,
     expectedVersion,
   });
+
+/** Questions on the seller's products (unanswered first) and answering them. */
+export const listSellerQuestions = (token: string) =>
+  request('/api/v1/seller/questions', SellerQuestionListSchema, token);
+export const answerQuestion = (token: string, id: string, body: string) =>
+  request(
+    `/api/v1/seller/questions/${encodeURIComponent(id)}/answer`,
+    z.object({ status: z.literal('ANSWERED') }),
+    token,
+    { body },
+  );
+const StaffQuestion = z.object({
+  id: z.uuid(),
+  body: z.string(),
+  status: z.enum(['PUBLISHED', 'HIDDEN']),
+  createdAt: z.string(),
+  productSlug: z.string(),
+  customerId: z.uuid(),
+});
+export type StaffQuestion = z.infer<typeof StaffQuestion>;
+export const listStaffQuestions = (token: string) =>
+  request('/api/v1/admin/questions', z.object({ items: StaffQuestion.array() }), token);
+export const hideQuestion = (token: string, id: string) =>
+  request(
+    `/api/v1/admin/questions/${encodeURIComponent(id)}/hide`,
+    z.object({ status: z.literal('HIDDEN') }),
+    token,
+    {},
+  );

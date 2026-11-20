@@ -9,6 +9,8 @@ import {
   type CatalogProduct,
   type CatalogSeller,
   type ReviewPage,
+  ProductQuestionListSchema,
+  type ProductQuestionList,
 } from '@atlas/contracts';
 import { z } from 'zod';
 
@@ -114,6 +116,15 @@ export function getSeller(slug: string): Promise<CatalogSeller> {
 }
 
 /** Published reviews of a product or of a seller's shop (newest first, with the averages). */
+/** Public questions about a product, with the sellers' answers. */
+export function getQuestions(slug: string): Promise<ProductQuestionList> {
+  return requestJson(
+    `/api/v1/catalog/products/${encodeURIComponent(slug)}/questions`,
+    ProductQuestionListSchema,
+    'questions',
+  );
+}
+
 export function getReviews(kind: 'products' | 'sellers', slug: string): Promise<ReviewPage> {
   return requestJson(
     `/api/v1/catalog/${kind}/${encodeURIComponent(slug)}/reviews`,
