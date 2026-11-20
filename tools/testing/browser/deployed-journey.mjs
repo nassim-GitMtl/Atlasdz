@@ -398,6 +398,21 @@ await step('sold out: buyer asks for a back-in-stock alert; the restock email ar
   if (!(await mailSubjects(buyerEmail)).some((subject) => /De retour en stock/.test(subject)))
     throw new Error('no back-in-stock email');
 });
+await step('holiday mode: the store closes until a date, then reopens', sp, async () => {
+  await sp.goto(`${SELLER}/account?lang=fr`);
+  const day = new Date(Date.now() + 3 * 86_400_000).toISOString().slice(0, 10);
+  await sp.fill('#holiday-until', day);
+  await sp.getByRole('button', { name: 'Activer le mode congé' }).click();
+  await sp.getByText('Boutique en congé jusqu’au').waitFor({ timeout: 15000 });
+  await bp.goto(`${SHOP}/search?query=${encodeURIComponent(product.fr)}`);
+  await bp.locator('.result-count strong').waitFor({ timeout: 15000 });
+  if ((await bp.locator('.result-count strong').innerText()).trim() !== '0')
+    throw new Error('product still listed during the holiday');
+  await sp.getByRole('button', { name: 'Rouvrir maintenant' }).click();
+  await sp.getByRole('button', { name: 'Activer le mode congé' }).waitFor({ timeout: 15000 });
+  await bp.goto(`${SHOP}/search?query=${encodeURIComponent(product.fr)}`);
+  await bp.getByRole('link', { name: product.fr }).first().waitFor({ timeout: 15000 });
+});
 await step('staff sees the indicators page', st, async () => {
   await st.goto(`${SELLER}/admin`);
   await st.getByRole('heading', { name: 'Indicateurs' }).waitFor({ timeout: 15000 });
