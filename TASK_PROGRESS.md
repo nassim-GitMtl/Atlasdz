@@ -2,7 +2,7 @@
 
 - State: redesign done; FR/AR/EN everywhere. Migrations 000001–000040 (checksum-locked).
 - Deployed mode: local production rehearsal (release images, vps compose, Caddy TLS on
-  shop.localhost / vendeur.localhost, Mailpit, live COD): deployed-journey.mjs 25/25 on 11-20.
+  shop.localhost / vendeur.localhost, Mailpit, live COD): deployed-journey.mjs 26/26 + deployed-shop.mjs 5/5 on 11-20.
 - Added 11-17…11-19: app cart delivery estimates; photo galleries (034); product
   characteristics (035); English product texts (036); back-in-stock alerts (037) with seller
   waiting counts; accent/Arabic-tolerant search (038); price filter; schema.org product data;

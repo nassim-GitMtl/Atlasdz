@@ -398,6 +398,22 @@ await step('sold out: buyer asks for a back-in-stock alert; the restock email ar
   if (!(await mailSubjects(buyerEmail)).some((subject) => /De retour en stock/.test(subject)))
     throw new Error('no back-in-stock email');
 });
+await step('buyer asks about the product; the seller answers publicly', bp, async () => {
+  await bp.goto(`${SHOP}/search?query=${encodeURIComponent(product.fr)}`);
+  await bp.getByRole('link', { name: product.fr }).first().click();
+  const question = `Les couleurs passent-elles au lavage ? ${tag}`;
+  await bp.getByLabel('Votre question').fill(question);
+  await bp.getByRole('button', { name: 'Envoyer la question' }).click();
+  await bp.getByText('Question envoyée').waitFor({ timeout: 15000 });
+  const productUrl = bp.url();
+  await sp.goto(`${SELLER}/questions?lang=fr`);
+  const card = sp.locator('article', { hasText: question });
+  await card.locator('textarea').fill('Non, couleurs naturelles grand teint.');
+  await card.getByRole('button', { name: 'Répondre' }).click();
+  await card.getByText('Réponse publiée.').waitFor({ timeout: 15000 });
+  await bp.goto(productUrl);
+  await bp.getByText('Non, couleurs naturelles grand teint.').waitFor({ timeout: 15000 });
+});
 await step('holiday mode: the store closes until a date, then reopens', sp, async () => {
   await sp.goto(`${SELLER}/account?lang=fr`);
   const day = new Date(Date.now() + 3 * 86_400_000).toISOString().slice(0, 10);
