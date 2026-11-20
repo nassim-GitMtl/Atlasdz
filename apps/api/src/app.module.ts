@@ -66,6 +66,13 @@ import { ReadinessState } from './health/readiness-state.js';
 import { PostgresIdentityInfrastructure } from './identity/postgres-identity-infrastructure.js';
 import { SharedDatabasePool } from './shared-database-pool.js';
 import {
+  AdminQuestionsController,
+  PRODUCT_QUESTIONS,
+  ProductQuestionsController,
+  SellerQuestionsController,
+  type QuestionsPort,
+} from './commerce/questions.controller.js';
+import {
   STOCK_ALERTS,
   StockAlertsController,
   type StockAlertsPort,
@@ -156,6 +163,7 @@ export interface AppModuleOptions {
   readonly support?: SupportRepositoryPort;
   readonly reviews?: ReviewRepositoryPort;
   readonly stockAlerts?: StockAlertsPort;
+  readonly questions?: QuestionsPort;
   readonly localCheckoutPolicy?: SyntheticCheckoutPolicy;
   /** Real cash-on-delivery checkout; requires password identity and excludes the fixture policy. */
   readonly liveCheckoutPolicy?: LiveCheckoutPolicy;
@@ -253,6 +261,9 @@ export class AppModule {
         SellerDeliveryController,
         OrderNotificationsController,
         StockAlertsController,
+        ProductQuestionsController,
+        SellerQuestionsController,
+        AdminQuestionsController,
         SupportController,
         AdminSupportController,
         CatalogReviewsController,
@@ -289,7 +300,8 @@ export class AppModule {
         options.notifications === undefined ||
         options.support === undefined ||
         options.reviews === undefined ||
-        options.stockAlerts === undefined
+        options.stockAlerts === undefined ||
+        options.questions === undefined
           ? [OrderInfrastructure]
           : []),
         options.reviews === undefined
@@ -306,6 +318,13 @@ export class AppModule {
               useFactory: (infra: OrderInfrastructure) => infra.support,
             }
           : { provide: ORDER_SUPPORT, useValue: options.support },
+        options.questions === undefined
+          ? {
+              provide: PRODUCT_QUESTIONS,
+              inject: [OrderInfrastructure],
+              useFactory: (infra: OrderInfrastructure) => infra.questions,
+            }
+          : { provide: PRODUCT_QUESTIONS, useValue: options.questions },
         options.stockAlerts === undefined
           ? {
               provide: STOCK_ALERTS,

@@ -386,3 +386,44 @@ export type StockAlertList = z.infer<typeof StockAlertListSchema>;
 
 /** Seller holiday mode: hide every offer until a time (null: reopen now). */
 export const SellerHolidayInputSchema = z.object({ until: IsoTimestampSchema.nullable() }).strict();
+
+/** Questions before buying (public, anonymous) and the sellers' answers. */
+export const ProductQuestionSchema = z
+  .object({
+    id: UuidSchema,
+    body: z.string(),
+    createdAt: IsoTimestampSchema,
+    answers: z
+      .array(
+        z
+          .object({ sellerName: z.string(), body: z.string(), createdAt: IsoTimestampSchema })
+          .strict(),
+      )
+      .max(50),
+  })
+  .strict();
+export const ProductQuestionListSchema = z
+  .object({ items: z.array(ProductQuestionSchema).max(50) })
+  .strict();
+export const AskQuestionInputSchema = z
+  .object({ body: z.string().trim().min(5).max(500) })
+  .strict();
+export const AnswerQuestionInputSchema = z
+  .object({ body: z.string().trim().min(2).max(1000) })
+  .strict();
+/** A question as the seller sees it (its product, and whether this seller answered). */
+export const SellerQuestionSchema = z
+  .object({
+    id: UuidSchema,
+    body: z.string(),
+    createdAt: IsoTimestampSchema,
+    product: z.object({ slug: CatalogSlugSchema, title: CatalogLocalizedTextSchema }).strict(),
+    answer: z.string().nullable(),
+  })
+  .strict();
+export const SellerQuestionListSchema = z
+  .object({ items: z.array(SellerQuestionSchema).max(100) })
+  .strict();
+export type ProductQuestion = z.infer<typeof ProductQuestionSchema>;
+export type ProductQuestionList = z.infer<typeof ProductQuestionListSchema>;
+export type SellerQuestion = z.infer<typeof SellerQuestionSchema>;

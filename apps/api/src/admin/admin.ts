@@ -512,6 +512,7 @@ export class AccountAdminService {
     await db.query('DELETE FROM identity.phone_verification_codes WHERE user_id = $1', [userId]);
     await db.query('DELETE FROM commerce.cart_items WHERE customer_id = $1', [userId]);
     await db.query('DELETE FROM commerce.stock_alerts WHERE customer_id = $1', [userId]);
+    await db.query('DELETE FROM catalog.product_questions WHERE customer_id = $1', [userId]);
     await db.query(
       `UPDATE identity.users
        SET status = 'DISABLED', disabled_at = clock_timestamp(), pseudonymized_at = clock_timestamp(),

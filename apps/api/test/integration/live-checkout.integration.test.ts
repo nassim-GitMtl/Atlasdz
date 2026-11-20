@@ -515,6 +515,39 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
       null,
     );
 
+    // Questions before buying: asked anonymously, answered by the seller, hidden by staff.
+    const questions = `/api/v1/catalog/products/${productSlug}/questions`;
+    assert.deepEqual((await http().get(questions).expect(200)).body.items, []);
+    await http().post(questions).set(bearer(seller)).send({ body: 'Disponible en rouge ?' }).expect(403);
+    await http().post(questions).set(bearer(customer)).send({ body: 'ok' }).expect(422);
+    const asked = await http()
+      .post(questions)
+      .set(bearer(customer))
+      .send({ body: 'Est-il disponible en rouge ?' })
+      .expect(201);
+    const publicQuestions = (await http().get(questions).expect(200)).body.items;
+    assert.equal(publicQuestions.length, 1);
+    assert.deepEqual(Object.keys(publicQuestions[0]).sort(), ['answers', 'body', 'createdAt', 'id']);
+    const inbox = await http().get('/api/v1/seller/questions').set(bearer(seller)).expect(200);
+    assert.equal(inbox.body.items[0].id, asked.body.id);
+    assert.equal(inbox.body.items[0].answer, null);
+    await http()
+      .post(`/api/v1/seller/questions/${asked.body.id}/answer`)
+      .set(bearer(seller))
+      .send({ body: 'Seulement en cuivre naturel.' })
+      .expect(200);
+    const answered = (await http().get(questions).expect(200)).body.items[0];
+    assert.equal(answered.answers[0].body, 'Seulement en cuivre naturel.');
+    assert.equal(answered.answers[0].sellerName, 'Boutique Tlemcen');
+    await http().post(`/api/v1/admin/questions/${asked.body.id}/hide`).set(bearer(seller)).expect(403);
+    await http().post(`/api/v1/admin/questions/${asked.body.id}/hide`).set(bearer(staff)).expect(200);
+    assert.deepEqual((await http().get(questions).expect(200)).body.items, []);
+    await http()
+      .post(`/api/v1/seller/questions/${asked.body.id}/answer`)
+      .set(bearer(seller))
+      .send({ body: 'Encore une réponse.' })
+      .expect(404);
+
     const cart = await http().get('/api/v1/cart').set(bearer(customer)).expect(200);
     const filled = await http()
       .put(`/api/v1/cart/items/${offer.body.id}`)
