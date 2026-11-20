@@ -2,6 +2,7 @@ import { ArrowRight } from '@phosphor-icons/react/dist/ssr';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ProductGrid } from '@/components/product-card';
+import { RecentStrip } from '@/components/recent-strip';
 import { SiteChrome } from '@/components/site-chrome';
 import { EmptyState } from '@/components/states';
 import { categoryImage } from '@/lib/catalog-view';
@@ -53,6 +54,7 @@ export default async function HomePage({ searchParams }: { readonly searchParams
             ))}
           </div>
         </section>
+        <RecentStrip locale={locale} />
         <section className="home-section home-section--products" aria-labelledby="catalog-title">
           <div className="section-heading">
             <h2 id="catalog-title">{c.all} <span className="result-count">· {page.total}</span></h2>

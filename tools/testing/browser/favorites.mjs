@@ -27,6 +27,27 @@ await check('favorite from search, recently viewed from a product page', async (
   await fav.getByRole('button', { name: /Enregistrer sur cet appareil/ }).first().click();
   await p.getByText('Touchez le cœur d’un produit pour le retrouver ici.').waitFor({ timeout: 15000 });
 });
+await check('home shows recently viewed; product share copies the link', async () => {
+  const ctx2 = await b.newContext({ viewport: { width: 390, height: 844 } });
+  await ctx2.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: SHOP });
+  const q = await ctx2.newPage();
+  await q.addInitScript(() => {
+    // Desktop Chromium has no share sheet: the button falls back to copying the link.
+    Object.defineProperty(navigator, 'share', { value: undefined });
+  });
+  await q.goto(`${SHOP}/product/${second.slug}?lang=fr`);
+  await q.getByRole('button', { name: 'Partager' }).click();
+  await q.getByText('Lien copié.').waitFor({ timeout: 15000 });
+  const copied = await q.evaluate(() => navigator.clipboard.readText());
+  if (!copied.includes(`/product/${second.slug}`)) throw new Error(`copied ${copied}`);
+  await q.goto(`${SHOP}/?lang=fr`);
+  await q
+    .locator('section[aria-labelledby=recent-home-title]')
+    .getByText(second.title.fr)
+    .first()
+    .waitFor({ timeout: 15000 });
+  await ctx2.close();
+});
 await check('header fits at 360 px in fr/ar/en', async () => {
   for (const locale of ['fr', 'ar', 'en']) {
     const q = await (await b.newContext({ viewport: { width: 360, height: 800 } })).newPage();

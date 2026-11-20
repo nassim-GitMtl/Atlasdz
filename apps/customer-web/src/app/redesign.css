@@ -324,3 +324,6 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 .search-suggest__list li[aria-selected="true"], .search-suggest__list li:hover { background: var(--surface); }
 .search-suggest__list li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .search-suggest__list li bdi { color: var(--blue); font-weight: 700; white-space: nowrap; }
+/* Share a product page. */
+.share-button { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 6px 12px; margin-bottom: 10px; border: 1px solid var(--line); border-radius: 999px; background: #fff; color: var(--ink); font: inherit; font-size: 14px; cursor: pointer; }
+.share-copied { margin-inline-start: 8px; color: #067647; font-size: 13px; }

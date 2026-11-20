@@ -2,6 +2,7 @@ import { ProductGallery } from '@/components/product-gallery';
 import { jsonForScript, productJsonLd } from '@/lib/structured-data';
 import { StockAlert } from '@/components/stock-alert';
 import { RememberViewed } from '@/components/recently-viewed';
+import { ShareButton } from '@/components/share-button';
 import { customerToken } from '@/lib/cart-api';
 import { stockAlertWaiting } from '@/lib/stock-alerts-api';
 import { notFound } from 'next/navigation';
@@ -130,6 +131,7 @@ export default async function ProductPage({
           <div className="product-detail__content">
             <p className="eyebrow">{text(product.category.title, locale)}</p>
             <h1>{title}</h1>
+            <ShareButton title={title} locale={locale} />
             <p className="product-description">{text(product.description, locale)}</p>
             <OfferSelector offers={product.offers} productSlug={product.slug} locale={locale} />
             {soldOut && (
