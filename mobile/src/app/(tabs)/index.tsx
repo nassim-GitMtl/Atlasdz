@@ -16,6 +16,7 @@ import { Photo } from '@/components/photo';
 import { ProductCard, SummaryCard } from '@/components/product-card';
 import { Button, Checkbox, Empty, Field, LoadState, Segmented } from '@/components/ui';
 import { filterParams, parsePriceBound } from '@/lib/price-filter';
+import { SearchSuggestions } from '@/components/search-suggestions';
 import { api } from '@/lib/api';
 import { categoryImage, type SortMode } from '@/lib/collections';
 import { imageUri } from '@/lib/config';
@@ -149,6 +150,7 @@ export default function HomeScreen() {
           </Pressable>
         ) : null}
       </View>
+      <SearchSuggestions text={draft} visible={draft.trim() !== query} />
       {categories.length > 0 ? (
         <>
           <ScrollView
