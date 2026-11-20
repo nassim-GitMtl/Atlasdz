@@ -1,12 +1,7 @@
 import { NextResponse } from 'next/server';
 import { listSellerOrders } from '@/lib/api';
+import { cell } from '@/lib/csv';
 import { accessToken } from '@/lib/session';
-
-const cell = (value: string | number) => {
-  const text = String(value);
-  // Quote every cell; a leading formula character is neutralised for spreadsheets.
-  return `"${(/^[=+\-@]/.test(text) ? `'${text}` : text).replace(/"/g, '""')}"`;
-};
 
 /** The seller's orders as CSV (Excel/LibreOffice), for bookkeeping. */
 export async function GET() {

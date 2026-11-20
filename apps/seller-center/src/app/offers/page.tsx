@@ -49,6 +49,11 @@ export default async function Offers({
                   {lang(locale, 'Mise à jour rapide', 'تحديث سريع', 'Quick update')}
                 </Link>
               )}
+              {result.offers.length > 0 && (
+                <a className="button secondary" href="/offers/export" download>
+                  {lang(locale, 'Exporter (CSV)', 'تصدير (CSV)', 'Export (CSV)')}
+                </a>
+              )}
               <Link className="button" href={href('/offers/new', locale)}>
                 <span aria-hidden="true">＋</span>
                 {t.newOffer}
