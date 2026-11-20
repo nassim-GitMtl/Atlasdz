@@ -197,6 +197,12 @@ describe('PostgreSQL seller catalog', () => {
       (await repository.listProducts({ minPrice: middle + 1, maxPrice: middle - 1 })).total,
       0,
     );
+    // A list of slugs (device favorites) in one query; unknown slugs are simply absent.
+    const picked = await repository.listProducts({
+      slugs: ['air-fryer-5l', 'earbuds-wireless', 'no-such-product'],
+      limit: 60,
+    });
+    assert.deepEqual(picked.items.map((item) => item.slug).sort(), ['air-fryer-5l', 'earbuds-wireless']);
     for (const query of ['%', '_', "' OR true --", '\\']) {
       assert.equal((await repository.listProducts({ query })).items.length, 0);
     }

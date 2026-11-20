@@ -67,6 +67,9 @@ export class CatalogController {
       ...number('page'),
       ...number('minPrice'),
       ...number('maxPrice'),
+      ...(typeof query['slugs'] === 'string'
+        ? { slugs: query['slugs'].split(',').filter(Boolean) }
+        : {}),
       ...(query['available'] === undefined ? {} : { available: query['available'] === 'true' }),
     });
     if (!parsed.success) throw new SafeApplicationError('VALIDATION_FAILED');

@@ -202,6 +202,8 @@ export const ListProductsInputSchema = z
     /** Price range (minor units) of the product's lowest current offer price. */
     minPrice: MoneyMinorSchema.optional(),
     maxPrice: MoneyMinorSchema.optional(),
+    /** Only these products (device favorites, recently viewed). */
+    slugs: z.array(CatalogSlugSchema).min(1).max(60).optional(),
   })
   .strict();
 

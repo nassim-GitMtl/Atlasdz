@@ -641,7 +641,8 @@ export class PostgresCatalogRepository {
     // $4/$5: price range of the lowest current offer price (null: no bound).
     const filter = `${parsed.available ? 'AND public_offers.in_stock' : ''}
       AND ($4::bigint IS NULL OR public_offers.best_price >= $4)
-      AND ($5::bigint IS NULL OR public_offers.best_price <= $5)`;
+      AND ($5::bigint IS NULL OR public_offers.best_price <= $5)
+      AND ($6::text[] IS NULL OR p.slug = ANY($6::text[]))`;
     const values = [
       // NFKC turns Arabic presentation forms, full-width letters and ligatures into plain text.
       parsed.query ? `%${escapeCatalogSearch(parsed.query.normalize('NFKC'))}%` : null,
@@ -649,11 +650,12 @@ export class PostgresCatalogRepository {
       parsed.seller ?? null,
       parsed.minPrice ?? null,
       parsed.maxPrice ?? null,
+      parsed.slugs ?? null,
     ];
     const result = await this.pool.query<{ product: unknown; total: string }>(
       `
       SELECT ${PRODUCT_JSON}, count(*) OVER () AS total ${PUBLIC_PRODUCTS} ${filter}
-      ORDER BY ${order}, p.id LIMIT $6 OFFSET $7
+      ORDER BY ${order}, p.id LIMIT $7 OFFSET $8
     `,
       [...values, pageSize, (page - 1) * pageSize],
     );
