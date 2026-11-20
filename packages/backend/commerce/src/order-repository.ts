@@ -503,6 +503,15 @@ export class PostgresOrderRepository {
   async getCustomerOrder(customerId: string, id: string) {
     return readOrder(this.pool, UuidSchema.parse(customerId), UuidSchema.parse(id));
   }
+  /** Whether this customer already placed an order from the quote (retry detection). */
+  async hasOrderForQuote(customerId: string, quoteId: string): Promise<boolean> {
+    const result = await this.pool.query(
+      'SELECT 1 FROM commerce.orders WHERE customer_id=$1 AND quote_id=$2',
+      [UuidSchema.parse(customerId), UuidSchema.parse(quoteId)],
+    );
+    return result.rowCount === 1;
+  }
+
   /** Newest first; `limit` (1–50) keeps light callers from reading every order. */
   async listCustomerOrders(customerId: string, limit = 50): Promise<CustomerOrder[]> {
     const ids = await this.pool.query<{ id: string }>(

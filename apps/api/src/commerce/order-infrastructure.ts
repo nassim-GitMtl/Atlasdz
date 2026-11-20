@@ -16,6 +16,7 @@ export type OrderRepositoryPort = Pick<
   | 'getQuote'
   | 'place'
   | 'listCustomerOrders'
+  | 'hasOrderForQuote'
   | 'getCustomerOrder'
   | 'listSellerOrders'
   | 'getSellerOrder'

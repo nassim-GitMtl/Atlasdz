@@ -130,8 +130,7 @@ export class CheckoutController {
     // Retries of an already-placed quote return the existing order without re-checking limits
     // or sending the order emails again.
     const placed =
-      this.policy?.environment === 'live' &&
-      (await this.orders.listCustomerOrders(owner)).some((existing) => existing.quote.id === quote);
+      this.policy?.environment === 'live' && (await this.orders.hasOrderForQuote(owner, quote));
     if (this.policy?.environment === 'live' && this.risk !== null) {
       const pending = await this.orders.getQuote(owner, quote);
       if (pending !== null && !placed) {
