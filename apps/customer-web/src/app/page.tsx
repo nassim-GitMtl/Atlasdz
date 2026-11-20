@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ProductGrid } from '@/components/product-card';
 import { RecentStrip } from '@/components/recent-strip';
+import { jsonForScript, websiteJsonLd } from '@/lib/structured-data';
 import { SiteChrome } from '@/components/site-chrome';
 import { EmptyState } from '@/components/states';
 import { categoryImage } from '@/lib/catalog-view';
@@ -54,6 +55,12 @@ export default async function HomePage({ searchParams }: { readonly searchParams
             ))}
           </div>
         </section>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: jsonForScript(websiteJsonLd(process.env['CUSTOMER_WEB_ORIGIN'] ?? '', 'atlas dz')),
+          }}
+        />
         <RecentStrip locale={locale} />
         <section className="home-section home-section--products" aria-labelledby="catalog-title">
           <div className="section-heading">

@@ -39,8 +39,11 @@ await check('search suggestions work under the production CSP', async () => {
 });
 await check('product page carries schema.org data', async () => {
   const raw = await page.locator('script[type="application/ld+json"]').first().textContent();
-  const data = JSON.parse(raw ?? '{}');
-  if (data['@type'] !== 'Product' || !String(data.url).startsWith('https://shop.localhost/'))
+  const parsed = JSON.parse(raw ?? '{}');
+  const list = Array.isArray(parsed) ? parsed : [parsed];
+  const data = list.find((item) => item['@type'] === 'Product') ?? {};
+  const trail = list.find((item) => item['@type'] === 'BreadcrumbList');
+  if (!String(data.url).startsWith('https://shop.localhost/') || !trail)
     throw new Error(`ld+json ${raw?.slice(0, 80)}`);
 });
 await check('favorites page lists a hearted product', async () => {

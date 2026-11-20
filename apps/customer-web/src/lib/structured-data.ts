@@ -64,6 +64,38 @@ export function productJsonLd(
   };
 }
 
+/** schema.org WebSite with the catalogue search, for the home page. */
+export function websiteJsonLd(origin: string, name: string): Record<string, unknown> {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name,
+    url: `${origin}/`,
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: { '@type': 'EntryPoint', urlTemplate: `${origin}/search?query={search_term_string}` },
+      'query-input': 'required name=search_term_string',
+    },
+  };
+}
+
+/** schema.org BreadcrumbList: home, category, product. */
+export function breadcrumbJsonLd(
+  origin: string,
+  items: readonly { readonly name: string; readonly path: string }[],
+): Record<string, unknown> {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      item: `${origin}${item.path}`,
+    })),
+  };
+}
+
 /** JSON for an inline data script: `<` is escaped so seller text cannot close the tag. */
 export const jsonForScript = (value: unknown) =>
   JSON.stringify(value)

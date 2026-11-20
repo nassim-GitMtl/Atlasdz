@@ -1,5 +1,5 @@
 import { ProductGallery } from '@/components/product-gallery';
-import { jsonForScript, productJsonLd } from '@/lib/structured-data';
+import { breadcrumbJsonLd, jsonForScript, productJsonLd } from '@/lib/structured-data';
 import { StockAlert } from '@/components/stock-alert';
 import { RememberViewed } from '@/components/recently-viewed';
 import { ShareButton } from '@/components/share-button';
@@ -108,7 +108,19 @@ export default async function ProductPage({
       <script
         type="application/ld+json"
         // Data only (never executed); `<` is escaped so seller text cannot close the tag.
-        dangerouslySetInnerHTML={{ __html: jsonForScript(structured) }}
+        dangerouslySetInnerHTML={{
+          __html: jsonForScript([
+            structured,
+            breadcrumbJsonLd(process.env['CUSTOMER_WEB_ORIGIN'] ?? '', [
+              { name: 'atlas dz', path: '/' },
+              {
+                name: text(product.category.title, locale),
+                path: `/category/${product.category.slug}`,
+              },
+              { name: title, path: `/product/${product.slug}` },
+            ]),
+          ]),
+        }}
       />
       <RememberViewed slug={product.slug} />
       <div className="page-shell">

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { CatalogProduct } from '@atlas/contracts';
-import { jsonForScript, productJsonLd } from './structured-data.ts';
+import { breadcrumbJsonLd, jsonForScript, productJsonLd, websiteJsonLd } from './structured-data.ts';
 
 const offer = (id: string, priceMinor: number, availableQuantity: number, preorder = false) => ({
   id,
@@ -60,4 +60,23 @@ test('seller text cannot close the script tag', () => {
   const json = jsonForScript(productJsonLd(product, null, 'fr', ''));
   assert.ok(!json.includes('</script>'));
   assert.equal((JSON.parse(json) as { name: string }).name, product.title.fr);
+});
+
+test('site search and breadcrumbs use absolute URLs', () => {
+  const site = websiteJsonLd('https://shop.example', 'atlas dz');
+  assert.equal(
+    (site.potentialAction as { target: { urlTemplate: string } }).target.urlTemplate,
+    'https://shop.example/search?query={search_term_string}',
+  );
+  const trail = breadcrumbJsonLd('https://shop.example', [
+    { name: 'atlas dz', path: '/' },
+    { name: 'Cuisine', path: '/category/cuisine' },
+  ]);
+  assert.deepEqual(
+    (trail.itemListElement as { position: number; item: string }[]).map((i) => [i.position, i.item]),
+    [
+      [1, 'https://shop.example/'],
+      [2, 'https://shop.example/category/cuisine'],
+    ],
+  );
 });
