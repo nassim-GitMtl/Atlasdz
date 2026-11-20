@@ -1,9 +1,9 @@
 import { Plus, Warning } from '@phosphor-icons/react/dist/ssr';
 import Link from 'next/link';
 import type { SellerOrder } from '@atlas/contracts';
-import { listOfferProducts, listOffers, listSellerOrders, listSupport } from '@/lib/api';
+import { listOfferProducts, listOffers, listSellerOrders, listSellerQuestions, listSupport } from '@/lib/api';
 import { dashboardCopy, fill } from '@/lib/dashboard-copy';
-import { href, money, type Locale, localized, intlLocale } from '@/lib/i18n';
+import { href, money, type Locale, localized, intlLocale, lang } from '@/lib/i18n';
 
 const LOW_STOCK = 3;
 const time = (value: string, locale: Locale) =>
@@ -35,11 +35,13 @@ function deliveredSince(orders: readonly SellerOrder[], days = 30) {
 export async function SellerDashboard({ token, locale }: { readonly token: string; readonly locale: Locale }) {
   const t = dashboardCopy[locale];
   // Each block degrades on its own: one failing call never hides the others.
-  const [orders, offers, products, support] = await Promise.all([
+  const [orders, offers, products, support, questions] = await Promise.all([
     listSellerOrders(token).then((r) => r.items).catch(() => null),
     listOffers(token).then((r) => r.items).catch(() => null),
     listOfferProducts(token).then((r) => r.items).catch(() => []),
     listSupport(token, false).catch(() => null),
+    // Optional: an outage only hides the question count.
+    listSellerQuestions(token).catch(() => null),
   ]);
   const all = orders ?? [];
   const count = (...statuses: SellerOrder['status'][]) => all.filter((o) => statuses.includes(o.status)).length;
@@ -173,6 +175,15 @@ export async function SellerDashboard({ token, locale }: { readonly token: strin
               <strong>{cases.filter((c) => c.status === 'WAITING_CUSTOMER').length}{more}</strong>
             </p>
             <Link href={href('/support', locale)}>{t.answer}</Link>
+            {questions && (
+              <>
+                <p className="kv">
+                  <span>{lang(locale, 'Questions produits sans réponse', 'أسئلة منتجات دون رد', 'Unanswered product questions')}</span>
+                  <strong>{questions.items.filter((item) => item.answer === null).length}</strong>
+                </p>
+                <Link href={href('/questions', locale)}>{lang(locale, 'Répondre aux questions', 'الرد على الأسئلة', 'Answer questions')}</Link>
+              </>
+            )}
           </section>
           <section className="panel panel--dark" aria-labelledby="sales-title">
             <h2 id="sales-title">{t.delivered}</h2>

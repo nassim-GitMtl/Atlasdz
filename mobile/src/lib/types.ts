@@ -10,6 +10,7 @@ export type {
   ProductQuestionList,
   ProductSpecKey,
   ProductSubmission,
+  SellerQuestion,
   StockAlertList,
   SellerOffer,
 } from '../../../packages/contracts/src/catalog';

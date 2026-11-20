@@ -58,6 +58,7 @@ function Navigator() {
           <Stack.Screen name="seller/product/[id]" options={{ title: t.catalog.products }} />
           <Stack.Screen name="seller/offer/[id]" options={{ title: t.catalog.offers }} />
           <Stack.Screen name="seller/quick" options={{ title: t.catalog.quickUpdate }} />
+          <Stack.Screen name="seller/questions" options={{ title: t.seller.questions }} />
           <Stack.Screen name="seller/delivery" options={{ title: t.seller.delivery }} />
           <Stack.Screen name="seller/reviews" options={{ title: t.reviews.title }} />
         </Stack.Protected>

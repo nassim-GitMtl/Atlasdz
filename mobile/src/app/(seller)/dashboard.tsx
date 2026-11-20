@@ -41,6 +41,9 @@ export default function DashboardScreen() {
   const reviews = useRequest('seller-reviews', () =>
     session.request<SellerReviewPage>('/api/v1/seller/reviews'),
   );
+  const questions = useRequest('seller-questions', () =>
+    session.request<{ items: { answer: string | null }[] }>('/api/v1/seller/questions'),
+  );
   const support = useRequest('seller-support', () =>
     session.request<{ items: SupportCase[]; nextCursor?: string | null }>('/api/v1/support'),
   );
@@ -50,14 +53,24 @@ export default function DashboardScreen() {
   const reloadOffers = offers.reload;
   const reloadReviews = reviews.reload;
   const reloadSupport = support.reload;
+  const reloadQuestions = questions.reload;
   const reload = useCallback(() => {
     void reloadSupport();
+    void reloadQuestions();
     void refreshAccount();
     void reloadOrders();
     void reloadProducts();
     void reloadOffers();
     void reloadReviews();
-  }, [refreshAccount, reloadOrders, reloadProducts, reloadOffers, reloadReviews, reloadSupport]);
+  }, [
+    refreshAccount,
+    reloadOrders,
+    reloadProducts,
+    reloadOffers,
+    reloadReviews,
+    reloadSupport,
+    reloadQuestions,
+  ]);
   useFocusEffect(reload);
 
   const summary = sellerSummary(orders.data?.items ?? []);
@@ -112,6 +125,17 @@ export default function DashboardScreen() {
       go: () => router.push('/seller/reviews'),
     },
   ];
+  const openQuestions = (questions.data?.items ?? []).filter((item) => item.answer === null).length;
+  if (openQuestions > 0)
+    todo.push({
+      key: 'questions',
+      icon: 'help-circle-outline',
+      label: t.seller.questions,
+      detail: t.seller.questionsDetail,
+      count: String(openQuestions),
+      warn: true,
+      go: () => router.push('/seller/questions'),
+    });
   if (running.length > 0) {
     const first = running[0];
     todo.push({

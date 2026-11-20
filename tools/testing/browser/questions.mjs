@@ -96,6 +96,57 @@ await check('shop and app show the answer', async () => {
   await page.goto(`${APP}/product/${SLUG}`);
   await page.getByText(answer).waitFor({ timeout: 15000 });
 });
+await check('dashboards count the open question; the app answers it', async () => {
+  const sellerToken = (
+    await (
+      await fetch(`${API}/api/v1/local/session`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ account: 'seller' }),
+      })
+    ).json()
+  ).accessToken;
+  // A second question, still unanswered.
+  const second = `Quelle est la garantie ? ${tag}`;
+  await fetch(`${API}/api/v1/catalog/products/${SLUG}/questions`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${customerToken}` },
+    body: JSON.stringify({ body: second }),
+  });
+  const web = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
+  await web.goto(`${SC}/local-login`);
+  await web
+    .locator('form:has(input[value=seller]) button[type=submit], button[value=seller]')
+    .first()
+    .click();
+  await web.waitForTimeout(2000);
+  await web.goto(`${SC}/?lang=fr`);
+  await web.getByText('Questions produits sans réponse').waitFor({ timeout: 15000 });
+  const app = await (await browser.newContext({ viewport: { width: 390, height: 844 } })).newPage();
+  await app.goto(APP);
+  await app.evaluate((token) => {
+    localStorage.setItem('atlas.locale', 'fr');
+    localStorage.setItem('atlas.session', JSON.stringify({ token, actor: 'seller' }));
+  }, sellerToken);
+  await app.goto(`${APP}/dashboard`);
+  await app.getByText('Questions produits').first().click({ timeout: 15000 });
+  await app.waitForURL(/\/seller\/questions/, { timeout: 15000 });
+  await app.getByText(second).waitFor({ timeout: 15000 });
+  const field = app.getByLabel('Votre réponse (publique)');
+  const count = await field.count();
+  for (let index = 0; index < count; index += 1) {
+    const box = field.nth(index);
+    if ((await box.inputValue()) === '') {
+      await box.fill(`Deux ans. ${tag}`);
+      break;
+    }
+  }
+  await app.getByRole('button', { name: 'Répondre' }).first().click();
+  await app.getByText('Réponse publiée.').first().waitFor({ timeout: 15000 });
+  const list = await (await fetch(`${API}/api/v1/catalog/products/${SLUG}/questions`)).json();
+  const answered = list.items.find((item) => item.body === second);
+  if (!answered?.answers.some((a) => a.body === `Deux ans. ${tag}`)) throw new Error('answer missing');
+});
 await check('staff hide the question', async () => {
   const staffEmail = `staff-q-${tag}@example.dz`;
   execFileSync('node', ['--env-file=../../.env.local', 'dist/create-staff.js', staffEmail], {

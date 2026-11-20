@@ -404,6 +404,13 @@ const fr = {
   },
   seller: {
     holidayTitle: 'Mode congé',
+    questions: 'Questions produits',
+    questionsDetail: 'Questions de clients sans réponse',
+    answerLabel: 'Votre réponse (publique)',
+    answer: 'Répondre',
+    answerUpdate: 'Modifier la réponse',
+    answered: 'Réponse publiée.',
+    noQuestions: 'Aucune question pour l’instant.',
     holidayNote:
       'Absent quelques jours ? Masquez toutes vos offres ; elles reviennent seules à la date choisie.',
     holidayOn:
@@ -1003,6 +1010,13 @@ const ar: Strings = {
   },
   seller: {
     holidayTitle: 'وضع العطلة',
+    questions: 'أسئلة المنتجات',
+    questionsDetail: 'أسئلة زبائن دون رد',
+    answerLabel: 'ردّك (علني)',
+    answer: 'الرد',
+    answerUpdate: 'تعديل الرد',
+    answered: 'تم نشر الرد.',
+    noQuestions: 'لا توجد أسئلة حتى الآن.',
     holidayNote: 'غائب لبضعة أيام؟ أخفِ كل عروضك؛ وستعود تلقائيًا في التاريخ المختار.',
     holidayOn: 'في عطلة حتى {date}: عروضك مخفية. الطلبات المستلمة سابقًا يجب معالجتها.',
     holidayDays: '{n} أيام',
@@ -1595,6 +1609,13 @@ const en: Strings = {
   },
   seller: {
     holidayTitle: 'Holiday mode',
+    questions: 'Product questions',
+    questionsDetail: 'Customer questions without an answer',
+    answerLabel: 'Your answer (public)',
+    answer: 'Answer',
+    answerUpdate: 'Update the answer',
+    answered: 'Answer published.',
+    noQuestions: 'No questions yet.',
     holidayNote:
       'Away for a few days? Hide all your offers; they come back on their own on the chosen date.',
     holidayOn:
