@@ -128,9 +128,9 @@ export const placeOrder = (token: string, id: string) =>
     {},
     id,
   );
-export const listOrders = (token: string) =>
+export const listOrders = (token: string, limit?: number) =>
   request(
-    '/api/v1/orders',
+    limit === undefined ? '/api/v1/orders' : `/api/v1/orders?limit=${limit}`,
     z.object({ items: CustomerOrderSchema.array().max(50) }).strict(),
     token,
   );

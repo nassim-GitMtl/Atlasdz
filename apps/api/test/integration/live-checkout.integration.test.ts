@@ -650,6 +650,11 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
       .send({})
       .expect(409);
     assert.equal(limited.body.code, 'COD_LIMIT_REACHED');
+    // A light caller can ask only for the newest order.
+    const newest = await http().get('/api/v1/orders?limit=1').set(bearer(customer)).expect(200);
+    assert.equal(newest.body.items.length, 1);
+    await http().get('/api/v1/orders?limit=0').set(bearer(customer)).expect(422);
+    await http().get('/api/v1/orders?limit=51').set(bearer(customer)).expect(422);
     // Retrying the already-placed first quote still returns the same order.
     await http()
       .post(`/api/v1/checkout/quotes/${quote.body.id}/place`)

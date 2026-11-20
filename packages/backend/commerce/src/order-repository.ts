@@ -503,10 +503,11 @@ export class PostgresOrderRepository {
   async getCustomerOrder(customerId: string, id: string) {
     return readOrder(this.pool, UuidSchema.parse(customerId), UuidSchema.parse(id));
   }
-  async listCustomerOrders(customerId: string): Promise<CustomerOrder[]> {
+  /** Newest first; `limit` (1–50) keeps light callers from reading every order. */
+  async listCustomerOrders(customerId: string, limit = 50): Promise<CustomerOrder[]> {
     const ids = await this.pool.query<{ id: string }>(
-      'SELECT id FROM commerce.orders WHERE customer_id=$1 ORDER BY created_at DESC,id LIMIT 50',
-      [UuidSchema.parse(customerId)],
+      'SELECT id FROM commerce.orders WHERE customer_id=$1 ORDER BY created_at DESC,id LIMIT $2',
+      [UuidSchema.parse(customerId), Math.min(50, Math.max(1, Math.trunc(limit)))],
     );
     const orders = await Promise.all(
       ids.rows.map((row) => readOrder(this.pool, customerId, row.id)),

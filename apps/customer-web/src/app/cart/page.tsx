@@ -238,7 +238,7 @@ export default async function CartPage({
 /** Contact and commune of the customer's most recent order that has them. */
 async function lastDelivery(token: string) {
   // Orders come newest first.
-  const recent = (await listOrders(token)).items[0];
+  const recent = (await listOrders(token, 1)).items[0];
   if (!recent) return null;
   const contact = recent.quote.deliveryContact;
   const destination = recent.quote.destination;

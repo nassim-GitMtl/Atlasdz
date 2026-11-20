@@ -21,6 +21,7 @@ import {
   Optional,
   Param,
   Post,
+  Query,
   Req,
 } from '@nestjs/common';
 import {
@@ -175,9 +176,14 @@ export class CustomerOrdersController {
   @Get()
   @RequirePermission('order.read')
   @RateLimited('authenticated', 'commerce.orders.read')
-  async list(@Req() req: OrderRequest) {
+  async list(@Req() req: OrderRequest, @Query('limit') limit?: string) {
+    const count = limit === undefined ? 50 : Number(limit);
+    if (!Number.isInteger(count) || count < 1 || count > 50)
+      throw new SafeApplicationError('VALIDATION_FAILED');
     return {
-      items: CustomerOrderSchema.array().parse(await this.orders.listCustomerOrders(customer(req))),
+      items: CustomerOrderSchema.array().parse(
+        await this.orders.listCustomerOrders(customer(req), count),
+      ),
     };
   }
   @Get(':orderId')
