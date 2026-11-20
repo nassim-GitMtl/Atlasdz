@@ -28,6 +28,7 @@ import {
 } from '@/lib/i18n';
 
 import { DocumentLocale } from './document-locale';
+import { SearchSuggest } from './search-suggest';
 import { InstallApp } from './pwa';
 import { LEGAL_PAGES, legalTitles } from '@/lib/legal-content';
 import { getCart, customerToken } from '@/lib/cart-api';
@@ -177,13 +178,10 @@ export function SiteChrome({
             <label className="sr-only" htmlFor="catalog-search">
               {t.searchLabel}
             </label>
-            <input
-              id="catalog-search"
-              name="query"
-              type="search"
+            <SearchSuggest
+              locale={locale}
               defaultValue={searchValue}
               placeholder={t.searchPlaceholder}
-              maxLength={120}
             />
             <input name="lang" type="hidden" value={locale} />
             <button type="submit">{t.searchAction}</button>

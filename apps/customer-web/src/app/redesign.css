@@ -314,3 +314,13 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 .notice { margin: 0; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); font-size: 14px; }
 .notice.success { background: #ecfdf3; border-color: #abefc6; color: #067647; }
 .notice.error { background: #fef3f2; border-color: #fecdca; color: #b42318; }
+/* Header search suggestions. */
+.header-search { position: relative; }
+.search-suggest { flex: 1; min-width: 0; display: flex; }
+.search-suggest input { flex: 1; min-width: 0; }
+.search-suggest__list { position: absolute; inset-inline: 0; top: calc(100% + 6px); z-index: 30; margin: 0; padding: 6px; list-style: none; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 12px 30px rgba(16, 24, 40, 0.12); }
+.search-suggest__list[hidden] { display: none; }
+.search-suggest__list li { display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+.search-suggest__list li[aria-selected="true"], .search-suggest__list li:hover { background: var(--surface); }
+.search-suggest__list li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.search-suggest__list li bdi { color: var(--blue); font-weight: 700; white-space: nowrap; }

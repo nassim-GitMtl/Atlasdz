@@ -52,6 +52,8 @@ a new product submitted (with characteristics and an English title), approved th
 staff session, given a main and an extra photo from the file picker and an offer, then shown with
 its characteristics in French and English; a commune delivery rate; notifications; sign-out.
 
+`search-suggest.mjs` (shop): header suggestions while typing (combobox, keyboard, axe, RTL).
+
 `holiday.mjs` (Seller Center, shop, app): the demo seller starts holiday mode from the account
 page; offers leave the catalogue, store pages show the date, the app's seller account reopens.
 

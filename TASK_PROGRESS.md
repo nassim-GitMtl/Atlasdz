@@ -7,7 +7,8 @@
   characteristics (035); English product texts (036); back-in-stock alerts (037) with seller
   waiting counts; accent/Arabic-tolerant search (038); price filter; schema.org product data;
   sitemap; Seller Center + app quick price/stock update; staff audit log; shop favorites page;
-  web "order again"; seller holiday mode (039); checkout pre-filled from the last order.
+  web "order again"; seller holiday mode (039); checkout pre-filled from the last order;
+  search suggestions; offers CSV export; staff metrics for holidays/alerts.
 - Tests: API 74 unit + 22 integration; catalog 15, commerce 42, database 17 integration;
   e2e 15/15; mobile-app 20/20; mobile-seller 12/12; gallery 7/7; app 51 unit.
   Restart the local API if a suite hits 429 on /api/v1/local/session.
