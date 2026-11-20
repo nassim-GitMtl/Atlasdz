@@ -228,6 +228,8 @@ export class AdminService {
         (SELECT count(*) FROM commerce.seller_orders so JOIN commerce.orders o ON o.id = so.order_id
           WHERE o.payment_state = 'CASH_ON_DELIVERY' AND so.status = 'EXPIRED'
             AND so.closed_at > clock_timestamp() - interval '30 days') AS expired_orders_30d,
+        (SELECT count(*) FROM sellers.sellers WHERE holiday_until > now()) AS sellers_on_holiday,
+        (SELECT count(*) FROM commerce.stock_alerts WHERE notified_at IS NULL) AS waiting_stock_alerts,
         (SELECT count(*) FROM platform.outbox_events WHERE delivery_state = 'FAILED'
           OR (delivery_state = 'PENDING' AND occurred_at < clock_timestamp() - interval '30 minutes'))
           AS stuck_notifications,

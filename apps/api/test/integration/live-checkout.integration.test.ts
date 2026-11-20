@@ -731,6 +731,8 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
     assert.equal(dashboard.body.orders24h, 1);
     assert.equal(dashboard.body.deliveredValue30dMinor, 2 * 450000 + 60000);
     assert.equal(dashboard.body.activeSellers, 1);
+    assert.equal(dashboard.body.sellersOnHoliday, 0);
+    assert.equal(typeof dashboard.body.waitingStockAlerts, 'number');
     await http().get('/api/v1/admin/dashboard').set(bearer(seller)).expect(403);
     await http()
       .post('/api/v1/admin/categories')
