@@ -97,6 +97,9 @@ open orders but not the shop settings or the team; the owner removes the member.
 `order-filter.mjs` (Seller Center, read-only): the order inbox tabs (to handle / shipped / closed /
 all) add up, and the search finds an order by its number.
 
+`order-notes.mjs` (Seller Center, app): the demo seller records a confirmed call with a note on
+an order; the app's seller order screen shows it; the customer's order view never contains it.
+
 `deployed-shop.mjs` (production rehearsal, https://shop.localhost): search suggestions, favorites,
 product schema.org data and the live sitemap under the production CSP, with no CSP violations.
 

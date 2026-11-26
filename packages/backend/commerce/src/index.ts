@@ -8,6 +8,7 @@ export * from './review-repository.js';
 export * from './stock-alert-repository.js';
 export * from './question-repository.js';
 export * from './report-repository.js';
+export * from './order-note-repository.js';
 export {
   seedReferenceDeliveryDestinations,
   REFERENCE_DELIVERY_DATASET_ID,

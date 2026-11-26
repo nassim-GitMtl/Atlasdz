@@ -251,3 +251,30 @@ export type SellerOrder = z.infer<typeof SellerOrderSchema>;
 export type SellerOrderSnapshot = z.infer<typeof SellerOrderSnapshotSchema>;
 export type ProcessSellerOrderInput = z.infer<typeof ProcessSellerOrderInputSchema>;
 export type SellerRejectionReason = z.infer<typeof SellerRejectionReasonSchema>;
+
+/** Private notes of the seller's team on one order (never shown to the customer). */
+export const SELLER_ORDER_NOTE_KINDS = ['NOTE', 'CALL_NO_ANSWER', 'CALL_CONFIRMED', 'CALL_CALLBACK'] as const;
+export const AddSellerOrderNoteInputSchema = z
+  .object({
+    kind: z.enum(SELLER_ORDER_NOTE_KINDS),
+    body: z
+      .string()
+      .trim()
+      .min(1)
+      .max(500)
+      .regex(/^[^\p{Cc}\p{Cf}]+$/u)
+      .optional(),
+  })
+  .strict()
+  .refine((value) => value.kind !== 'NOTE' || value.body !== undefined, 'A note needs a text');
+export const SellerOrderNoteSchema = z
+  .object({
+    id: UuidSchema,
+    kind: z.enum(SELLER_ORDER_NOTE_KINDS),
+    body: z.string().nullable(),
+    author: z.string().nullable(),
+    createdAt: IsoTimestampSchema,
+  })
+  .strict();
+export type SellerOrderNote = z.infer<typeof SellerOrderNoteSchema>;
+export type AddSellerOrderNoteInput = z.infer<typeof AddSellerOrderNoteInputSchema>;

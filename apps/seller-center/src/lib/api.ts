@@ -23,6 +23,8 @@ import {
   type SupportActionInput,
   type ProcessSellerOrderInput,
   type SellerRejectionReason,
+  SellerOrderNoteSchema,
+  type AddSellerOrderNoteInput,
   SellerQuestionListSchema,
   REPORT_REASONS,
 } from '@atlas/contracts';
@@ -176,6 +178,14 @@ export const listSellerOrders = (token: string) =>
   );
 export const getSellerOrder = (token: string, id: string) =>
   request(`/api/v1/seller/orders/${encodeURIComponent(id)}`, SellerOrderSchema, token);
+export const listOrderNotes = (token: string, id: string) =>
+  request(
+    `/api/v1/seller/orders/${encodeURIComponent(id)}/notes`,
+    z.object({ items: SellerOrderNoteSchema.array() }),
+    token,
+  );
+export const addOrderNote = (token: string, id: string, input: AddSellerOrderNoteInput) =>
+  request(`/api/v1/seller/orders/${encodeURIComponent(id)}/notes`, SellerOrderNoteSchema, token, input);
 export const listSupport = (token: string, staff: boolean, cursor?: string) =>
   request(
     `/api/v1/${staff ? 'admin/' : ''}support${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`,

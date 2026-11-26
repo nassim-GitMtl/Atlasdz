@@ -145,6 +145,8 @@ describe('route access inventory', () => {
       'SellerOffersController.get:permission-protected',
       'SellerOffersController.list:permission-protected',
       'SellerOffersController.update:permission-protected',
+      'SellerOrderNotesController.add:permission-protected',
+      'SellerOrderNotesController.list:permission-protected',
       'SellerOrdersController.get:permission-protected',
       'SellerOrdersController.list:permission-protected',
       'SellerOrdersController.process:permission-protected',

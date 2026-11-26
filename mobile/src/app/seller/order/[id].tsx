@@ -31,6 +31,7 @@ import { colors } from '@/lib/theme';
 import type { CustomerSignal, SellerOrder } from '@/lib/types';
 import { useRequest } from '@/lib/use-request';
 import { PreorderNote } from '@/components/preorder-note';
+import { OrderNotes } from '@/components/order-notes';
 
 type Reason = 'OUT_OF_STOCK' | 'DELIVERY_UNAVAILABLE' | 'UNABLE_TO_FULFILL';
 type Pending = SellerAction | 'REPORT_DELIVERY_FAILED' | 'REJECT';
@@ -280,6 +281,7 @@ export default function SellerOrderScreen() {
               ) : null}
             </>
           )}
+          <OrderNotes sellerOrderId={data.id} />
         </>
       ) : null}
     </Screen>

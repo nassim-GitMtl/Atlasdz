@@ -26,6 +26,7 @@ export type {
   CustomerOrder,
   DeliveryContact,
   SellerOrder,
+  SellerOrderNote,
 } from '../../../packages/contracts/src/orders';
 export type {
   NotificationPage,

@@ -248,3 +248,11 @@ body { background: var(--surface); }
 .order-filters .category-chips a { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 6px 14px; border: 1px solid var(--line); border-radius: 999px; background: #fff; color: var(--ink); text-decoration: none; font-weight: 600; font-size: 14px; }
 .order-filters .category-chips a.is-selected { border-color: var(--olive); background: #eef2ff; color: var(--olive); }
 .order-filters .chip-count { font-weight: 500; color: var(--muted); font-size: 12px; }
+
+.order-notes { display: grid; gap: 8px; margin: 16px 0; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+.order-notes h2 { margin: 0; font-size: 17px; }
+.order-notes .muted { margin: 0; color: var(--muted); font-size: 13px; }
+.order-notes__list { margin: 0; padding-inline-start: 18px; display: grid; gap: 6px; font-size: 14px; }
+.order-notes__list small { display: block; color: var(--muted); font-size: 12px; }
+.order-notes__form { display: grid; gap: 8px; }
+.order-notes__form textarea { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font: inherit; }

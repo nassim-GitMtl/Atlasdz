@@ -781,6 +781,32 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
       .set(bearer(seller))
       .expect(200);
     assert.equal(sellerView.body.deliveryContact.note, 'En face de la pharmacie, 2e étage');
+    // Private team notes on the order: call outcomes and free text, never shown to the customer.
+    const notes = `/api/v1/seller/orders/${sellerOrder.id}/notes`;
+    assert.deepEqual((await http().get(notes).set(bearer(seller)).expect(200)).body.items, []);
+    await http().post(notes).set(bearer(seller)).send({ kind: 'NOTE' }).expect(422);
+    await http().post(notes).set(bearer(customer)).send({ kind: 'CALL_NO_ANSWER' }).expect(403);
+    await http().post(notes).set(bearer(seller)).send({ kind: 'CALL_NO_ANSWER' }).expect(201);
+    const confirmedCall = await http()
+      .post(notes)
+      .set(bearer(seller))
+      .send({ kind: 'CALL_CONFIRMED', body: 'Livraison après 17 h' })
+      .expect(201);
+    assert.equal(confirmedCall.body.author, 'boutique@example.dz');
+    const noteList = (await http().get(notes).set(bearer(seller)).expect(200)).body.items;
+    assert.deepEqual(
+      noteList.map((note: { kind: string; body: string | null }) => [note.kind, note.body]),
+      [
+        ['CALL_NO_ANSWER', null],
+        ['CALL_CONFIRMED', 'Livraison après 17 h'],
+      ],
+    );
+    const customerView = await http().get(`/api/v1/orders/${order.body.id}`).set(bearer(customer)).expect(200);
+    assert.ok(!JSON.stringify(customerView.body).includes('Livraison après 17 h'));
+    await http()
+      .get('/api/v1/seller/orders/00000000-0000-4000-8000-000000000000/notes')
+      .set(bearer(seller))
+      .expect(404);
 
     // Team: the owner invites a member who handles orders but cannot change offers or the team.
     await http()

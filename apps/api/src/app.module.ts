@@ -66,6 +66,11 @@ import { ReadinessState } from './health/readiness-state.js';
 import { PostgresIdentityInfrastructure } from './identity/postgres-identity-infrastructure.js';
 import { SharedDatabasePool } from './shared-database-pool.js';
 import {
+  ORDER_NOTES,
+  SellerOrderNotesController,
+  type OrderNotesPort,
+} from './commerce/order-notes.controller.js';
+import {
   AdminReportsController,
   PRODUCT_REPORTS,
   ProductReportsController,
@@ -174,6 +179,7 @@ export interface AppModuleOptions {
   readonly stockAlerts?: StockAlertsPort;
   readonly questions?: QuestionsPort;
   readonly reports?: ReportsPort;
+  readonly notes?: OrderNotesPort;
   readonly localCheckoutPolicy?: SyntheticCheckoutPolicy;
   /** Real cash-on-delivery checkout; requires password identity and excludes the fixture policy. */
   readonly liveCheckoutPolicy?: LiveCheckoutPolicy;
@@ -276,6 +282,7 @@ export class AppModule {
         AdminQuestionsController,
         ProductReportsController,
         AdminReportsController,
+        SellerOrderNotesController,
         SupportController,
         AdminSupportController,
         CatalogReviewsController,
@@ -317,7 +324,8 @@ export class AppModule {
         options.reviews === undefined ||
         options.stockAlerts === undefined ||
         options.questions === undefined ||
-        options.reports === undefined
+        options.reports === undefined ||
+        options.notes === undefined
           ? [OrderInfrastructure]
           : []),
         options.reviews === undefined
@@ -334,6 +342,13 @@ export class AppModule {
               useFactory: (infra: OrderInfrastructure) => infra.support,
             }
           : { provide: ORDER_SUPPORT, useValue: options.support },
+        options.notes === undefined
+          ? {
+              provide: ORDER_NOTES,
+              inject: [OrderInfrastructure],
+              useFactory: (infra: OrderInfrastructure) => infra.notes,
+            }
+          : { provide: ORDER_NOTES, useValue: options.notes },
         options.reports === undefined
           ? {
               provide: PRODUCT_REPORTS,

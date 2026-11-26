@@ -8,8 +8,9 @@ import { ServiceState } from '@/components/states';
 import { RejectOrderForm } from '@/components/reject-order-form';
 import { ProcessOrderForm } from '@/components/process-order-form';
 import { CustomerSignalPanel } from '@/components/customer-signal';
+import { OrderNotes } from '@/components/order-notes';
 import { customerSignal } from '@/lib/auth';
-import { getSellerOrder } from '@/lib/api';
+import { getSellerOrder, listOrderNotes } from '@/lib/api';
 import { href, localeFrom, money, type SearchParams, localized, lang } from '@/lib/i18n';
 import { liveCheckoutEnabled, orderDate, orderText } from '@/lib/orders-copy';
 import { localAccountsEnabled } from '@/lib/security';
@@ -30,11 +31,15 @@ export default async function OrderDetail({
   const token = await accessToken();
   if (!token) redirect(href('/', locale));
   const local = localAccountsEnabled(process.env, (await headers()).get('host'));
-  const [result, signal] = await Promise.all([
+  const [result, signal, notes] = await Promise.all([
     getSellerOrder(token, sellerOrderId)
       .then((order) => ({ order, error: undefined }))
       .catch((error: unknown) => ({ order: undefined, error })),
     customerSignal(token, sellerOrderId),
+    // Optional: an outage hides the follow-up, not the order.
+    listOrderNotes(token, sellerOrderId)
+      .then((data) => data.items)
+      .catch(() => null),
   ]);
   return (
     <Shell locale={locale} currentPath={path} signedIn local={local}>
@@ -81,6 +86,7 @@ export default async function OrderDetail({
               </p>
             </div>
           )}
+          {notes && <OrderNotes sellerOrderId={sellerOrderId} notes={notes} locale={locale} />}
           <section className="delivery-contact-summary">
             <h2>{t.deliveryContact}</h2>
             <p>{t.contactHint}</p>

@@ -1,6 +1,6 @@
 'use server';
 
-import { UuidSchema } from '@atlas/contracts';
+import { AddSellerOrderNoteInputSchema, UuidSchema } from '@atlas/contracts';
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
@@ -12,6 +12,7 @@ import {
   createOffer,
   updateOffer,
   getOffer,
+  addOrderNote,
   answerQuestion,
   hideQuestion,
   resolveProductReports,
@@ -243,6 +244,33 @@ export async function quickUpdateOffersAction(
     revalidatePath('/dashboard');
   }
   return { saved, failed };
+}
+
+export interface NoteState {
+  readonly error?: 'invalid' | 'csrf' | 'unauthorized' | 'forbidden' | 'unavailable';
+  readonly done?: number;
+}
+
+/** Adds a private team note (call outcome or text) to one seller order. */
+export async function addOrderNoteAction(state: NoteState, form: FormData): Promise<NoteState> {
+  if (!(await validOrigin())) return { error: 'csrf' };
+  const token = await accessToken();
+  if (!token) return { error: 'unauthorized' };
+  const id = UuidSchema.safeParse(form.get('sellerOrderId'));
+  const body = String(form.get('body') ?? '').trim();
+  const input = AddSellerOrderNoteInputSchema.safeParse({
+    kind: form.get('kind'),
+    ...(body ? { body } : {}),
+  });
+  if (!id.success || !input.success) return { error: 'invalid' };
+  try {
+    await addOrderNote(token, id.data, input.data);
+  } catch (error) {
+    const code = error instanceof SellerApiError ? error.code : 'unavailable';
+    return { error: code === 'forbidden' || code === 'unauthorized' ? code : code === 'invalid' ? 'invalid' : 'unavailable' };
+  }
+  revalidatePath(`/orders/${id.data}`);
+  return { done: (state.done ?? 0) + 1 };
 }
 
 export interface ImportState {

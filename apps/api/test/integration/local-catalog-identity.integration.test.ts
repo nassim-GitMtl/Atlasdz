@@ -171,6 +171,7 @@ describe('LOCAL/TEST synthetic identity with PostgreSQL and catalog HTTP', () =>
         'order.reject',
         'product.submit',
         'review.reply',
+        'seller.team.manage',
         'support.manage',
       ],
     );
