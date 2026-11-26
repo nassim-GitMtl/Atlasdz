@@ -75,6 +75,9 @@ destination; the shop delivery estimate and the app checkout show it next to the
 the shop order page opens the printable summary (seller legal identity recorded at order time,
 lines, totals, no site chrome) and the seller opens its parcel copy. Cancels the order at the end.
 
+`logo.mjs` (Seller Center, shop, app): the demo seller uploads a store logo from its account
+page; the shop and app store pages show it; removing it deletes the file (404 afterwards).
+
 `deployed-shop.mjs` (production rehearsal, https://shop.localhost): search suggestions, favorites,
 product schema.org data and the live sitemap under the production CSP, with no CSP violations.
 

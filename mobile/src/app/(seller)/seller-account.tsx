@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
 import { HolidayCard } from '@/components/holiday-card';
+import { LogoCard } from '@/components/logo-card';
 import { Badge, Button, Card, ListRow, Screen, text } from '@/components/ui';
 import { webPage } from '@/lib/config';
 import { useI18n } from '@/lib/i18n';
@@ -35,6 +36,7 @@ export default function SellerAccountScreen() {
         </Card>
       ) : null}
       <HolidayCard />
+      {session.seller?.status === 'APPROVED' ? <LogoCard /> : null}
       <Card>
         <ListRow
           icon="car-outline"

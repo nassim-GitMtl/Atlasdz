@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { HolidayForm } from '@/components/holiday-form';
 import { LegalForm } from '@/components/legal-form';
+import { LogoForm } from '@/components/logo-form';
 import { PasswordForm } from '@/components/password-form';
 import { Shell } from '@/components/shell';
 import { ServiceState } from '@/components/states';
@@ -48,6 +49,7 @@ export default async function Account({
           {account.status === 'APPROVED' && (
             <HolidayForm locale={locale} holidayUntil={account.holidayUntil} />
           )}
+          {account.status === 'APPROVED' && <LogoForm locale={locale} logoUrl={account.logoUrl} />}
           <LegalForm locale={locale} legal={account.legal} />
           <PasswordForm locale={locale} />
         </section>

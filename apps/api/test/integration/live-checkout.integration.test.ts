@@ -559,6 +559,45 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
       null,
     );
 
+    // Store logo: re-encoded square WebP, shown on the store, replaced and removed by the seller.
+    await http()
+      .post('/api/v1/seller/logo')
+      .set(bearer(seller))
+      .set('Content-Type', 'image/png')
+      .send(Buffer.from('<svg onload=alert(1)>'))
+      .expect(415);
+    await http().post('/api/v1/seller/logo').set(bearer(customer)).set('Content-Type', 'image/png').send(png).expect(403);
+    const logo = await http()
+      .post('/api/v1/seller/logo')
+      .set(bearer(seller))
+      .set('Content-Type', 'image/png')
+      .send(png)
+      .expect(201);
+    assert.match(logo.body.logoUrl, /^\/media\/[0-9a-f-]{36}\.webp$/);
+    await http().get(logo.body.logoUrl).expect(200).expect('content-type', 'image/webp');
+    assert.equal(
+      (await http().get(`/api/v1/catalog/sellers/${sellerSlug}`).expect(200)).body.logoUrl,
+      logo.body.logoUrl,
+    );
+    const newer = await http()
+      .post('/api/v1/seller/logo')
+      .set(bearer(seller))
+      .set('Content-Type', 'image/png')
+      .send(png)
+      .expect(201);
+    await http().get(logo.body.logoUrl).expect(404);
+    assert.equal(
+      (await http().get('/api/v1/seller/account').set(bearer(seller)).expect(200)).body.logoUrl,
+      newer.body.logoUrl,
+    );
+    await http().post('/api/v1/seller/logo/remove').set(bearer(seller)).send({}).expect(200);
+    await http().post('/api/v1/seller/logo/remove').set(bearer(seller)).send({}).expect(404);
+    await http().get(newer.body.logoUrl).expect(404);
+    assert.equal(
+      (await http().get(`/api/v1/catalog/sellers/${sellerSlug}`).expect(200)).body.logoUrl,
+      null,
+    );
+
     // Questions before buying: asked anonymously, answered by the seller, hidden by staff.
     const questions = `/api/v1/catalog/products/${productSlug}/questions`;
     assert.deepEqual((await http().get(questions).expect(200)).body.items, []);

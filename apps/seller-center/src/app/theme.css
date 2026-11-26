@@ -237,3 +237,5 @@ body { background: var(--surface); }
   body { background: #fff !important; }
   .print-page { padding: 0; max-width: none; }
 }
+
+.store-logo-preview { width: 96px; height: 96px; border-radius: 16px; border: 1px solid var(--line); object-fit: cover; background: #fff; }

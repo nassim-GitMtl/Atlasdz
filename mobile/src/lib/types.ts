@@ -72,6 +72,8 @@ export interface SellerAccount {
   readonly status: 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
   /** End of the holiday while the shop is closed; null when open. */
   readonly holidayUntil?: string | null;
+  /** Square store logo (`/media/<id>.webp`), or null. */
+  readonly logoUrl?: string | null;
 }
 
 export interface PhoneStatus {

@@ -767,6 +767,14 @@ export class PasswordIdentityRepository {
   }
 
   /** End of the seller's holiday, or null when the shop is open (a past date counts as open). */
+  public async sellerLogo(sellerId: string): Promise<string | null> {
+    const result = await this.pool.query<{ logo_url: string | null }>(
+      'SELECT logo_url FROM sellers.sellers WHERE id = $1',
+      [sellerId],
+    );
+    return result.rows[0]?.logo_url ?? null;
+  }
+
   public async sellerHoliday(sellerId: string): Promise<string | null> {
     const result = await this.pool.query<{ until: Date | null }>(
       `SELECT CASE WHEN holiday_until > now() THEN holiday_until END AS until

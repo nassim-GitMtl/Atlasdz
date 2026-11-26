@@ -16,6 +16,7 @@ import {
   MAX_IMAGE_BYTES,
   MEDIA_SERVICE,
   normalizeImage,
+  normalizeLogo,
   WEBP,
   type ProductMediaService,
 } from './media.js';
@@ -188,6 +189,55 @@ export class SellerProductGalleryController {
     });
     if (imageUrl === null) throw new SafeApplicationError('RESOURCE_NOT_FOUND');
     return { productId, imageUrl };
+  }
+}
+
+/** The approved seller's square store logo (raw image body, at most 5 MiB). */
+@Controller('api/v1/seller/logo')
+export class SellerLogoController {
+  public constructor(@Inject(MEDIA_SERVICE) private readonly media: ProductMediaService) {}
+
+  private seller(request: AuthenticatedRequest) {
+    const principal = getRequestPrincipal(request);
+    if (principal.actorType !== 'seller_user' || principal.scope.type !== 'SELLER') {
+      throw new SafeApplicationError('FORBIDDEN');
+    }
+    return { sellerId: principal.scope.id, userId: principal.userId };
+  }
+
+  @Post()
+  @HttpCode(201)
+  @RequirePermission('offer.update', { minimumAssurance: 'MFA' })
+  @RateLimited('authenticated', 'sellers.logo')
+  public async upload(@Req() request: AuthenticatedRequest & CorrelatedRequest) {
+    const { sellerId, userId } = this.seller(request);
+    const body: unknown = request.body;
+    if (!Buffer.isBuffer(body) || body.length === 0) {
+      throw new SafeApplicationError('UNSUPPORTED_MEDIA_TYPE');
+    }
+    if (body.length > MAX_IMAGE_BYTES) throw new SafeApplicationError('PAYLOAD_TOO_LARGE');
+    if (detectImage(body) === null) throw new SafeApplicationError('UNSUPPORTED_MEDIA_TYPE');
+    const logo = await normalizeLogo(body);
+    if (logo === null) throw new SafeApplicationError('UNSUPPORTED_MEDIA_TYPE');
+    const logoUrl = await this.media.setSellerLogo({
+      sellerId,
+      userId,
+      bytes: logo,
+      correlationId: request.correlationId,
+    });
+    if (logoUrl === null) throw new SafeApplicationError('FORBIDDEN');
+    return { logoUrl };
+  }
+
+  @Post('remove')
+  @HttpCode(200)
+  @RequirePermission('offer.update', { minimumAssurance: 'MFA' })
+  @RateLimited('authenticated', 'sellers.logo')
+  public async remove(@Req() request: AuthenticatedRequest & CorrelatedRequest) {
+    const { sellerId, userId } = this.seller(request);
+    const removed = await this.media.removeSellerLogo(sellerId, userId, request.correlationId);
+    if (!removed) throw new SafeApplicationError('RESOURCE_NOT_FOUND');
+    return { logoUrl: null };
   }
 }
 

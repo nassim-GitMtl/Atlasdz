@@ -340,6 +340,14 @@ const fr = {
     title: 'Mes adresses',
     empty: 'Aucune adresse enregistrée. Chaque adresse de livraison utilisée est gardée ici.',
   },
+  logo: {
+    title: 'Logo de la boutique',
+    hint: 'Affiché sur la page de votre boutique. Image carrée de préférence.',
+    choose: 'Choisir un logo',
+    replace: 'Changer le logo',
+    remove: 'Retirer le logo',
+    saved: 'Logo enregistré.',
+  },
   changePassword: {
     title: 'Changer le mot de passe',
     intro: 'Vos autres appareils seront déconnectés. Cet appareil reste connecté.',
@@ -993,6 +1001,14 @@ const ar: Strings = {
     title: 'عناويني',
     empty: 'لا توجد عناوين محفوظة. يُحفظ هنا كل عنوان توصيل تستعمله.',
   },
+  logo: {
+    title: 'شعار المتجر',
+    hint: 'يظهر في صفحة متجرك. يُفضَّل أن تكون الصورة مربعة.',
+    choose: 'اختيار شعار',
+    replace: 'تغيير الشعار',
+    remove: 'إزالة الشعار',
+    saved: 'تم حفظ الشعار.',
+  },
   changePassword: {
     title: 'تغيير كلمة المرور',
     intro: 'سيتم تسجيل خروج أجهزتك الأخرى. يبقى هذا الجهاز متصلًا.',
@@ -1635,6 +1651,14 @@ const en: Strings = {
   addresses: {
     title: 'My addresses',
     empty: 'No saved addresses. Every delivery address you use is kept here.',
+  },
+  logo: {
+    title: 'Shop logo',
+    hint: 'Shown on your shop page. A square image works best.',
+    choose: 'Choose a logo',
+    replace: 'Change the logo',
+    remove: 'Remove the logo',
+    saved: 'Logo saved.',
   },
   changePassword: {
     title: 'Change password',

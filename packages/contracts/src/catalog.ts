@@ -35,6 +35,9 @@ export const SellerLegalSchema = z
   .strict();
 export type SellerLegal = z.infer<typeof SellerLegalSchema>;
 
+export const SellerLogoUrlSchema = z
+  .string()
+  .regex(/^\/media\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.webp$/);
 export const CatalogSellerSchema = z
   .object({
     id: UuidSchema,
@@ -45,6 +48,8 @@ export const CatalogSellerSchema = z
     holidayUntil: IsoTimestampSchema.nullish(),
     /** Legal identity; null until the seller has filled it in. */
     legal: SellerLegalSchema.nullish(),
+    /** Square store logo uploaded by the seller (`/media/<id>.webp`), or null. */
+    logoUrl: SellerLogoUrlSchema.nullish(),
   })
   .strict();
 

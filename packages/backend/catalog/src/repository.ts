@@ -719,7 +719,8 @@ export class PostgresCatalogRepository {
           AND contact_phone IS NOT NULL AND contact_email IS NOT NULL
           THEN jsonb_build_object('legalName', legal_name, 'registerKind', register_kind,
             'registerNumber', register_number, 'taxId', tax_id, 'address', legal_address,
-            'phone', contact_phone, 'email', contact_email) END) AS seller
+            'phone', contact_phone, 'email', contact_email) END,
+        'logoUrl', logo_url) AS seller
       FROM sellers.sellers WHERE slug = $1 AND status = 'APPROVED'
     `,
       [CatalogSlugSchema.parse(slug)],

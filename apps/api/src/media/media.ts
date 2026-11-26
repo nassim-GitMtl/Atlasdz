@@ -94,6 +94,19 @@ export async function normalizeImage(bytes: Buffer): Promise<NormalizedImage | n
 
 export const WEBP: ImageType = { contentType: 'image/webp', ext: 'webp' };
 
+/** Store logos: a centred 512 px square WebP, orientation applied and metadata stripped. */
+export async function normalizeLogo(bytes: Buffer): Promise<Buffer | null> {
+  try {
+    return await sharp(bytes, { limitInputPixels: 40_000_000, failOn: 'error' })
+      .rotate()
+      .resize({ width: 512, height: 512, fit: 'cover', position: 'centre' })
+      .webp({ quality: 85 })
+      .toBuffer();
+  } catch {
+    return null;
+  }
+}
+
 export type AttachOutcome = 'ATTACHED' | 'NOT_FOUND' | 'SELLER_NOT_APPROVED' | 'LIMIT_REACHED';
 
 /** Extra photos a product may show after its cover. */
@@ -164,6 +177,82 @@ export class ProductMediaService {
     private readonly pool: Pool,
     public readonly directory: string,
   ) {}
+
+  /**
+   * Replaces an approved seller's store logo (audited); the previous file is deleted.
+   * Returns null when the seller is not approved.
+   */
+  public async setSellerLogo(input: {
+    sellerId: string;
+    userId: string;
+    bytes: Buffer;
+    correlationId: string;
+  }): Promise<string | null> {
+    const file = `${randomUUID()}.webp`;
+    const logoUrl = `/media/${file}`;
+    await mkdir(this.directory, { recursive: true });
+    await writeFile(join(this.directory, file), input.bytes, { mode: 0o640 });
+    let previous: string | null = null;
+    try {
+      const updated = await this.pool.query<{ previous: string | null }>(
+        `WITH old AS (SELECT id, logo_url FROM sellers.sellers
+                      WHERE id = $1 AND status = 'APPROVED' FOR UPDATE)
+         UPDATE sellers.sellers s SET logo_url = $2 FROM old WHERE s.id = old.id
+         RETURNING old.logo_url AS previous`,
+        [input.sellerId, logoUrl],
+      );
+      if (updated.rowCount !== 1) {
+        await rm(join(this.directory, file), { force: true });
+        return null;
+      }
+      previous = updated.rows[0]?.previous ?? null;
+    } catch (error) {
+      await rm(join(this.directory, file), { force: true });
+      throw error;
+    }
+    await this.auditLogo(input.sellerId, input.userId, input.correlationId, previous, logoUrl);
+    await deleteMediaFiles(this.directory, previous);
+    return logoUrl;
+  }
+
+  /** Removes the store logo; false when there was none. */
+  public async removeSellerLogo(sellerId: string, userId: string, correlationId: string) {
+    const updated = await this.pool.query<{ previous: string }>(
+      `WITH old AS (SELECT id, logo_url FROM sellers.sellers
+                    WHERE id = $1 AND logo_url IS NOT NULL FOR UPDATE)
+       UPDATE sellers.sellers s SET logo_url = NULL FROM old WHERE s.id = old.id
+       RETURNING old.logo_url AS previous`,
+      [sellerId],
+    );
+    const previous = updated.rows[0]?.previous;
+    if (previous === undefined) return false;
+    await this.auditLogo(sellerId, userId, correlationId, previous, null);
+    await deleteMediaFiles(this.directory, previous);
+    return true;
+  }
+
+  private async auditLogo(
+    sellerId: string,
+    userId: string,
+    correlationId: string,
+    before: string | null,
+    after: string | null,
+  ) {
+    await this.pool.query(
+      `INSERT INTO platform.audit_events
+         (actor_type, actor_id, scope_snapshot, action, outcome, entity_type, entity_id,
+          correlation_id, before_data, after_data)
+       VALUES ('seller_user', $1, $2, 'seller.logo_changed', 'SUCCEEDED', 'seller', $3, $4, $5, $6)`,
+      [
+        userId,
+        JSON.stringify({ type: 'SELLER', id: sellerId }),
+        sellerId,
+        correlationId,
+        JSON.stringify({ logoUrl: before }),
+        JSON.stringify({ logoUrl: after }),
+      ],
+    );
+  }
 
   /** Only the submitting seller may reset their product to the placeholder image. */
   public async removeOwnPhoto(

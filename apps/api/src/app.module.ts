@@ -96,6 +96,7 @@ import {
 import { AccountAdminController, AdminController } from './admin/admin.controller.js';
 import {
   MediaController,
+  SellerLogoController,
   SellerProductGalleryController,
   SellerProductImageController,
   SellerProductImageRemoveController,
@@ -300,6 +301,7 @@ export class AppModule {
               SellerProductImageRemoveController,
               SellerProductGalleryController,
               MediaController,
+              SellerLogoController,
             ]),
       ],
       providers: [

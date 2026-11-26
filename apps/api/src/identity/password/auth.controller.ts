@@ -356,6 +356,7 @@ export class SellerAccountController {
       status,
       holidayUntil: await this.identity.sellerHoliday(principal.scope.id),
       legal: await this.identity.sellerLegal(principal.scope.id),
+      logoUrl: await this.identity.sellerLogo(principal.scope.id),
     };
   }
 

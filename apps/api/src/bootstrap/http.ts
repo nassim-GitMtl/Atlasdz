@@ -81,6 +81,7 @@ export async function createApiApplication(
   for (const path of [
     '/api/v1/seller/products/:productId/image',
     '/api/v1/seller/products/:productId/gallery',
+    '/api/v1/seller/logo',
   ]) {
     app.use(
       path,

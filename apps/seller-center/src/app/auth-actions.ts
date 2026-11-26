@@ -7,6 +7,7 @@ import { revalidatePath } from 'next/cache';
 import {
   AuthApiError,
   changePassword,
+  changeSellerLogo,
   forwardedClientIp,
   login,
   registerSeller,
@@ -209,6 +210,36 @@ export async function resetPasswordAction(
 export interface PhotoState {
   readonly error?: 'invalid' | 'forbidden' | 'full' | 'unavailable' | 'csrf' | 'unauthorized';
   readonly done?: boolean;
+}
+
+export interface LogoState {
+  readonly error?: 'invalid' | 'forbidden' | 'unavailable' | 'csrf' | 'unauthorized';
+  readonly done?: 'uploaded' | 'removed';
+}
+
+/** Uploads or removes the store logo shown on the store page. */
+export async function logoAction(_state: LogoState, form: FormData): Promise<LogoState> {
+  if (!(await validOrigin())) return { error: 'csrf' };
+  const token = await accessToken();
+  if (!token) return { error: 'unauthorized' };
+  if (form.get('remove') === '1') {
+    const removed = await changeSellerLogo(token, null);
+    if (removed !== 'ok') return { error: removed };
+    revalidatePath('/account');
+    return { done: 'removed' };
+  }
+  const file = form.get('logo');
+  if (
+    !(file instanceof File) ||
+    file.size === 0 ||
+    file.size > 5 * 1024 * 1024 ||
+    !['image/jpeg', 'image/png', 'image/webp'].includes(file.type)
+  )
+    return { error: 'invalid' };
+  const result = await changeSellerLogo(token, { bytes: await file.arrayBuffer(), contentType: file.type });
+  if (result !== 'ok') return { error: result };
+  revalidatePath('/account');
+  return { done: 'uploaded' };
 }
 
 export async function uploadPhotoAction(_state: PhotoState, form: FormData): Promise<PhotoState> {

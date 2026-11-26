@@ -133,6 +133,7 @@ export const sellerAccount = (token: string) =>
       /** End of the holiday while the shop is closed; null when open. */
       holidayUntil: z.string().nullable().optional(),
       legal: SellerLegalSchema.nullable().optional(),
+      logoUrl: z.string().nullable().optional(),
     }),
     { token },
   );
@@ -191,6 +192,35 @@ export const resetPassword = (token: string, password: string, clientIp?: string
   call('/api/v1/auth/password/reset', Accepted, { body: { token, password }, clientIp });
 
 /** Uploads the cover photo, or an extra photo with `target: 'gallery'`. */
+/** Uploads (raw image) or removes the store logo. */
+export async function changeSellerLogo(
+  token: string,
+  upload: { bytes: ArrayBuffer; contentType: string } | null,
+): Promise<'ok' | 'invalid' | 'forbidden' | 'unavailable'> {
+  try {
+    const response = await fetch(
+      new URL(upload ? '/api/v1/seller/logo' : '/api/v1/seller/logo/remove', apiOrigin(process.env)),
+      {
+        method: 'POST',
+        cache: 'no-store',
+        redirect: 'error',
+        signal: AbortSignal.timeout(20000),
+        headers: {
+          authorization: `Bearer ${token}`,
+          'content-type': upload ? upload.contentType : 'application/json',
+        },
+        body: upload ? upload.bytes : '{}',
+      },
+    );
+    if (response.ok || (!upload && response.status === 404)) return 'ok';
+    if ([413, 415, 422].includes(response.status)) return 'invalid';
+    if ([401, 403].includes(response.status)) return 'forbidden';
+    return 'unavailable';
+  } catch {
+    return 'unavailable';
+  }
+}
+
 export async function uploadProductPhoto(
   token: string,
   productId: string,

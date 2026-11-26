@@ -4,9 +4,11 @@ import { Text } from '@/components/text';
 
 import { ProductCard } from '@/components/product-card';
 import { RatingLine, ReviewItem } from '@/components/reviews';
+import { Photo } from '@/components/photo';
 import { SellerLegal } from '@/components/seller-legal';
 import { Button, Card, Empty, LoadState, Notice, text } from '@/components/ui';
 import { api } from '@/lib/api';
+import { imageUri } from '@/lib/config';
 import { fill, formatDate, localized } from '@/lib/format';
 import { useI18n } from '@/lib/i18n';
 import { colors, gap } from '@/lib/theme';
@@ -56,7 +58,12 @@ export default function StoreScreen() {
           />
           {seller.data ? (
             <Card>
-              <Text style={text.title}>{seller.data.name}</Text>
+              <View style={styles.identity}>
+                {seller.data.logoUrl ? (
+                  <Photo uri={imageUri(seller.data.logoUrl, 'small')} style={styles.logo} />
+                ) : null}
+                <Text style={[text.title, styles.name]}>{seller.data.name}</Text>
+              </View>
               {reviews.data ? <RatingLine summary={reviews.data.summary} /> : null}
               <Text style={text.muted}>{t.store.about}</Text>
               <Text style={text.body}>{localized(seller.data.description, locale)}</Text>
@@ -94,6 +101,9 @@ export default function StoreScreen() {
 }
 
 const styles = StyleSheet.create({
+  identity: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  logo: { width: 56, height: 56, borderRadius: 12, borderWidth: 1, borderColor: colors.line },
+  name: { flex: 1 },
   list: { flex: 1, backgroundColor: colors.cream },
   content: { padding: gap, gap: 12, paddingBottom: 40 },
   row: { gap: 12 },

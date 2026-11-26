@@ -3,6 +3,7 @@ import type { CatalogSeller } from '@atlas/contracts';
 import { Storefront } from '@phosphor-icons/react/dist/ssr';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { ProductGrid } from '@/components/product-card';
+import { ProductPhoto } from '@/components/product-photo';
 import { SiteChrome } from '@/components/site-chrome';
 import { ReviewsSection } from '@/components/reviews-section';
 import { EmptyState } from '@/components/states';
@@ -59,7 +60,13 @@ export default async function StorePage({
         <Breadcrumbs locale={locale} items={[{ label: seller.name }]} />
         <section className="store-hero">
           <div className="store-avatar">
-            <Storefront size={56} weight="duotone" aria-hidden="true" />
+            {seller.logoUrl ? (
+              <span className="store-avatar__logo">
+                <ProductPhoto src={seller.logoUrl} alt="" width={96} height={96} />
+              </span>
+            ) : (
+              <Storefront size={56} weight="duotone" aria-hidden="true" />
+            )}
           </div>
           <div>
             <p className="eyebrow">{t.sellerStore}</p>
