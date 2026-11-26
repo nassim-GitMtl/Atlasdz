@@ -230,6 +230,7 @@ export class AdminService {
             AND so.closed_at > clock_timestamp() - interval '30 days') AS expired_orders_30d,
         (SELECT count(*) FROM sellers.sellers WHERE holiday_until > now()) AS sellers_on_holiday,
         (SELECT count(*) FROM commerce.stock_alerts WHERE notified_at IS NULL) AS waiting_stock_alerts,
+        (SELECT count(DISTINCT product_id) FROM catalog.product_reports WHERE status = 'OPEN') AS open_reports,
         (SELECT count(*) FROM platform.outbox_events WHERE delivery_state = 'FAILED'
           OR (delivery_state = 'PENDING' AND occurred_at < clock_timestamp() - interval '30 minutes'))
           AS stuck_notifications,
@@ -513,6 +514,7 @@ export class AccountAdminService {
     await db.query('DELETE FROM commerce.cart_items WHERE customer_id = $1', [userId]);
     await db.query('DELETE FROM commerce.stock_alerts WHERE customer_id = $1', [userId]);
     await db.query('DELETE FROM catalog.product_questions WHERE customer_id = $1', [userId]);
+    await db.query('DELETE FROM catalog.product_reports WHERE reporter_id = $1', [userId]);
     await db.query(
       `UPDATE identity.users
        SET status = 'DISABLED', disabled_at = clock_timestamp(), pseudonymized_at = clock_timestamp(),

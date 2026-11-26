@@ -24,6 +24,7 @@ import {
   type ProcessSellerOrderInput,
   type SellerRejectionReason,
   SellerQuestionListSchema,
+  REPORT_REASONS,
 } from '@atlas/contracts';
 import { z } from 'zod';
 import { apiOrigin } from './security.ts';
@@ -249,6 +250,30 @@ const StaffQuestion = z.object({
   customerId: z.uuid(),
 });
 export type StaffQuestion = z.infer<typeof StaffQuestion>;
+const ProductReportGroup = z.object({
+  productId: z.uuid(),
+  slug: z.string(),
+  title: z.string(),
+  productStatus: z.string(),
+  count: z.number().int(),
+  reasons: z.partialRecord(z.enum(REPORT_REASONS), z.number().int()),
+  latestAt: z.string(),
+  details: z.string().array(),
+});
+export type ProductReportGroup = z.infer<typeof ProductReportGroup>;
+export const listProductReports = (token: string) =>
+  request('/api/v1/admin/reports', z.object({ items: ProductReportGroup.array() }), token);
+export const resolveProductReports = (
+  token: string,
+  productId: string,
+  action: 'DISMISS' | 'REMOVE_PRODUCT',
+) =>
+  request(
+    `/api/v1/admin/reports/${encodeURIComponent(productId)}/resolve`,
+    z.object({ status: z.enum(['DISMISSED', 'ACTIONED']) }),
+    token,
+    { action },
+  );
 export const listStaffQuestions = (token: string) =>
   request('/api/v1/admin/questions', z.object({ items: StaffQuestion.array() }), token);
 export const hideQuestion = (token: string, id: string) =>

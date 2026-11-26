@@ -59,6 +59,10 @@ kept; the shop and app store pages show it.
 `questions.mjs` (shop, Seller Center, app): a customer asks on a product page, the demo seller
 answers in Seller Center, the shop and the app show it, staff hide the question.
 
+`reports.mjs` (shop, app, Seller Center): signed-out visitors are asked to sign in; customers
+report a product from the shop and the app; staff see the grouped reasons and details on
+/admin/reports and the dashboard, then dismiss them (the product stays on sale).
+
 `deployed-shop.mjs` (production rehearsal, https://shop.localhost): search suggestions, favorites,
 product schema.org data and the live sitemap under the production CSP, with no CSP violations.
 

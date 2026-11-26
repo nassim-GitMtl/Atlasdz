@@ -8,6 +8,7 @@ import { FavoriteButton } from '@/components/favorite-button';
 import { PhotoGallery } from '@/components/photo-gallery';
 import { StockAlertCard } from '@/components/stock-alert';
 import { ProductQuestions } from '@/components/product-questions';
+import { ReportProduct } from '@/components/report-product';
 import { RatingLine, RatingSummary, ReviewItem } from '@/components/reviews';
 import { SummaryCard } from '@/components/product-card';
 import { Stepper } from '@/components/stepper';
@@ -249,6 +250,7 @@ export default function ProductScreen() {
               </ScrollView>
             </>
           ) : null}
+          <ReportProduct slug={slug} />
         </>
       ) : null}
     </Screen>

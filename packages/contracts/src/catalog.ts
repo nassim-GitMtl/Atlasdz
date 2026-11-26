@@ -446,3 +446,15 @@ export const SellerQuestionListSchema = z
 export type ProductQuestion = z.infer<typeof ProductQuestionSchema>;
 export type ProductQuestionList = z.infer<typeof ProductQuestionListSchema>;
 export type SellerQuestion = z.infer<typeof SellerQuestionSchema>;
+
+/** A customer's report about a listing. */
+export const REPORT_REASONS = ['COUNTERFEIT', 'PROHIBITED', 'MISLEADING', 'OFFENSIVE', 'OTHER'] as const;
+export const ReportProductInputSchema = z
+  .object({
+    reason: z.enum(REPORT_REASONS),
+    details: z.string().trim().min(1).max(500).optional(),
+  })
+  .strict();
+export const ResolveReportsInputSchema = z
+  .object({ action: z.enum(['DISMISS', 'REMOVE_PRODUCT']) })
+  .strict();

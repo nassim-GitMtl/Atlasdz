@@ -66,6 +66,12 @@ import { ReadinessState } from './health/readiness-state.js';
 import { PostgresIdentityInfrastructure } from './identity/postgres-identity-infrastructure.js';
 import { SharedDatabasePool } from './shared-database-pool.js';
 import {
+  AdminReportsController,
+  PRODUCT_REPORTS,
+  ProductReportsController,
+  type ReportsPort,
+} from './commerce/reports.controller.js';
+import {
   AdminQuestionsController,
   PRODUCT_QUESTIONS,
   ProductQuestionsController,
@@ -164,6 +170,7 @@ export interface AppModuleOptions {
   readonly reviews?: ReviewRepositoryPort;
   readonly stockAlerts?: StockAlertsPort;
   readonly questions?: QuestionsPort;
+  readonly reports?: ReportsPort;
   readonly localCheckoutPolicy?: SyntheticCheckoutPolicy;
   /** Real cash-on-delivery checkout; requires password identity and excludes the fixture policy. */
   readonly liveCheckoutPolicy?: LiveCheckoutPolicy;
@@ -264,6 +271,8 @@ export class AppModule {
         ProductQuestionsController,
         SellerQuestionsController,
         AdminQuestionsController,
+        ProductReportsController,
+        AdminReportsController,
         SupportController,
         AdminSupportController,
         CatalogReviewsController,
@@ -301,7 +310,8 @@ export class AppModule {
         options.support === undefined ||
         options.reviews === undefined ||
         options.stockAlerts === undefined ||
-        options.questions === undefined
+        options.questions === undefined ||
+        options.reports === undefined
           ? [OrderInfrastructure]
           : []),
         options.reviews === undefined
@@ -318,6 +328,13 @@ export class AppModule {
               useFactory: (infra: OrderInfrastructure) => infra.support,
             }
           : { provide: ORDER_SUPPORT, useValue: options.support },
+        options.reports === undefined
+          ? {
+              provide: PRODUCT_REPORTS,
+              inject: [OrderInfrastructure],
+              useFactory: (infra: OrderInfrastructure) => infra.reports,
+            }
+          : { provide: PRODUCT_REPORTS, useValue: options.reports },
         options.questions === undefined
           ? {
               provide: PRODUCT_QUESTIONS,

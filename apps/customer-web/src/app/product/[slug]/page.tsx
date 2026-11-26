@@ -17,6 +17,7 @@ import { Money, Truck } from '@phosphor-icons/react/dist/ssr';
 import { ProductGrid } from '@/components/product-card';
 import { CatalogNotFoundError, getProduct, getProductPage, getQuestions, getReviews } from '@/lib/catalog-api';
 import { ProductQuestions } from '@/components/product-questions';
+import { ReportProduct } from '@/components/report-product';
 import { copy, localizedHref, resolveLocale, text, type SearchParams, lang } from '@/lib/i18n';
 
 export async function generateMetadata({
@@ -220,6 +221,7 @@ export default async function ProductPage({
             signedIn={Boolean(viewerToken)}
           />
         )}
+        <ReportProduct slug={product.slug} locale={locale} signedIn={Boolean(viewerToken)} />
         </div>
         {related.length > 0 && (
           <section className="related-products" aria-labelledby="related-title">

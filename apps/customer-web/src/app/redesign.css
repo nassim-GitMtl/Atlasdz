@@ -339,6 +339,10 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 .ask-question { display: grid; gap: 8px; max-width: 560px; }
 .ask-question textarea { padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; font: inherit; }
 .ask-question .button { justify-self: start; }
+.ask-question select { padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; font: inherit; background: var(--white); }
+.report-product { margin-block: 8px 24px; color: var(--muted); font-size: 0.92rem; }
+.report-product summary { cursor: pointer; text-decoration: underline; width: fit-content; }
+.report-product[open] summary { margin-block-end: 12px; }
 /* Seller legal information on the store page. */
 .seller-legal { margin-top: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
 .seller-legal summary { cursor: pointer; font-weight: 700; }

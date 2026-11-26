@@ -572,6 +572,36 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
       .send({ body: 'Encore une réponse.' })
       .expect(404);
 
+    // Reporting a listing: customers only, one open report each, staff dismiss or act.
+    const reports = `/api/v1/catalog/products/${productSlug}/reports`;
+    await http().post(reports).set(bearer(seller)).send({ reason: 'COUNTERFEIT' }).expect(403);
+    await http().post(reports).set(bearer(customer)).send({ reason: 'FAKE' }).expect(422);
+    await http().post('/api/v1/catalog/products/introuvable-xyz/reports').set(bearer(customer)).send({ reason: 'OTHER' }).expect(404);
+    await http()
+      .post(reports)
+      .set(bearer(customer))
+      .send({ reason: 'MISLEADING', details: 'La photo ne correspond pas.' })
+      .expect(201);
+    await http().post(reports).set(bearer(customer)).send({ reason: 'COUNTERFEIT' }).expect(201);
+    await http().get('/api/v1/admin/reports').set(bearer(seller)).expect(403);
+    const reported = (await http().get('/api/v1/admin/reports').set(bearer(staff)).expect(200)).body.items;
+    assert.equal(reported.length, 1);
+    assert.equal(reported[0].productId, productId);
+    assert.equal(reported[0].count, 1);
+    assert.deepEqual(reported[0].reasons, { COUNTERFEIT: 1 });
+    await http()
+      .post(`/api/v1/admin/reports/${productId}/resolve`)
+      .set(bearer(staff))
+      .send({ action: 'DISMISS' })
+      .expect(200);
+    assert.deepEqual((await http().get('/api/v1/admin/reports').set(bearer(staff)).expect(200)).body.items, []);
+    await http()
+      .post(`/api/v1/admin/reports/${productId}/resolve`)
+      .set(bearer(staff))
+      .send({ action: 'DISMISS' })
+      .expect(404);
+    await http().get(`/api/v1/catalog/products/${productSlug}`).expect(200);
+
     const cart = await http().get('/api/v1/cart').set(bearer(customer)).expect(200);
     const filled = await http()
       .put(`/api/v1/cart/items/${offer.body.id}`)
@@ -1149,6 +1179,19 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
       const shown = new Set(first.body.items.map((item: { id: string }) => item.id));
       assert.ok(older.body.items.every((item: { id: string }) => !shown.has(item.id)));
     }
+
+    // A reported listing removed by staff leaves the public catalogue.
+    await http()
+      .post(`/api/v1/catalog/products/${productSlug}/reports`)
+      .set(bearer(customer))
+      .send({ reason: 'PROHIBITED' })
+      .expect(201);
+    await http()
+      .post(`/api/v1/admin/reports/${productId}/resolve`)
+      .set(bearer(staff))
+      .send({ action: 'REMOVE_PRODUCT' })
+      .expect(200);
+    await http().get(`/api/v1/catalog/products/${productSlug}`).expect(404);
 
     // The guest's order is still open: neither account can be closed yet.
     await http().post(`/api/v1/admin/sellers/${sellerId}/close`).set(bearer(staff)).expect(409);

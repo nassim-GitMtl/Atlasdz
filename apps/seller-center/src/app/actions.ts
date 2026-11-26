@@ -14,6 +14,7 @@ import {
   getOffer,
   answerQuestion,
   hideQuestion,
+  resolveProductReports,
   revokeSellerSession,
   SellerApiError,
 } from '@/lib/api';
@@ -269,6 +270,26 @@ export async function answerQuestionAction(
 }
 
 /** Staff hide a customer question. */
+/** Staff close a product's open reports: dismiss them, or remove the product from sale. */
+export async function resolveReportsAction(
+  _state: QuestionAnswerState,
+  form: FormData,
+): Promise<QuestionAnswerState> {
+  if (!(await validOrigin())) return { error: 'csrf' };
+  const token = await accessToken();
+  if (!token) return { error: 'unauthorized' };
+  const id = UuidSchema.safeParse(form.get('productId'));
+  const action = form.get('action');
+  if (!id.success || (action !== 'DISMISS' && action !== 'REMOVE_PRODUCT')) return { error: 'invalid' };
+  try {
+    await resolveProductReports(token, id.data, action);
+  } catch {
+    return { error: 'unavailable' };
+  }
+  revalidatePath('/admin/reports');
+  return { done: true };
+}
+
 export async function hideQuestionAction(
   _state: QuestionAnswerState,
   form: FormData,

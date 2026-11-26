@@ -1093,3 +1093,9 @@ dd small {
   font-size: 14px;
   line-height: 1.45;
 }
+.report-details {
+  margin: 6px 0 0;
+  padding-inline-start: 18px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
