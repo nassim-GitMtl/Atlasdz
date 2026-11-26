@@ -7,6 +7,7 @@ import type { ProductPage } from '@/lib/catalog-api';
 import { parseSort } from '@/lib/catalog-view';
 import { copy, localizedHref, text, type Locale } from '@/lib/i18n';
 
+import { CommuneFilter } from './commune-filter';
 import { EmptyState } from './states';
 import { ProductGrid } from './product-card';
 
@@ -18,6 +19,8 @@ interface CatalogResultsProps {
   /** Price range in whole dinars, as entered. */
   readonly minPrice?: number | undefined;
   readonly maxPrice?: number | undefined;
+  /** Only products a seller delivers to this commune. */
+  readonly commune?: string | undefined;
   readonly category?: string | undefined;
   readonly locale: Locale;
   readonly query?: string | undefined;
@@ -31,6 +34,7 @@ export function CatalogResults({
   availableOnly,
   minPrice,
   maxPrice,
+  commune,
   category,
   locale,
   query,
@@ -48,6 +52,7 @@ export function CatalogResults({
       ...(availableOnly ? { available: '1' } : {}),
       ...(minPrice !== undefined ? { min: String(minPrice) } : {}),
       ...(maxPrice !== undefined ? { max: String(maxPrice) } : {}),
+      ...(commune ? { commune } : {}),
       ...(page > 1 ? { page: String(page) } : {}),
     });
 
@@ -111,6 +116,7 @@ export function CatalogResults({
               type="number"
             />
           </label>
+          <CommuneFilter value={commune} locale={locale} />
           <label className="sort-select">
             <span>{t.sort}</span>
             <select defaultValue={parseSort(sort)} name="sort">
@@ -124,7 +130,12 @@ export function CatalogResults({
           <button className="button button--secondary" type="submit">
             {t.apply}
           </button>
-          {(availableOnly || sort || query || minPrice !== undefined || maxPrice !== undefined) && (
+          {(availableOnly ||
+            sort ||
+            query ||
+            commune ||
+            minPrice !== undefined ||
+            maxPrice !== undefined) && (
             <Link className="clear-filter" href={localizedHref(path, locale)}>
               {t.clear}
             </Link>

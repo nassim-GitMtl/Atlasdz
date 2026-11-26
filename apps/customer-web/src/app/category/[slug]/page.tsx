@@ -2,7 +2,7 @@ import { Breadcrumbs } from '@/components/breadcrumbs';
 import { CatalogResults } from '@/components/catalog-results';
 import { SiteChrome } from '@/components/site-chrome';
 import { getCategories, getProductPage } from '@/lib/catalog-api';
-import { parsePriceBound, parseSort } from '@/lib/catalog-view';
+import { parseCommune, parsePriceBound, parseSort } from '@/lib/catalog-view';
 import { firstParam, lang, resolveLocale, text, type SearchParams } from '@/lib/i18n';
 import type { Metadata } from 'next';
 
@@ -52,6 +52,7 @@ export default async function CategoryPage({
   const availableOnly = firstParam(queryParams.available) === '1';
   const minPrice = parsePriceBound(firstParam(queryParams.min));
   const maxPrice = parsePriceBound(firstParam(queryParams.max));
+  const commune = parseCommune(firstParam(queryParams.commune));
   const pageNumber = Math.min(1000, Math.max(1, Number(firstParam(queryParams.page)) || 1));
   const [results, categories] = await Promise.all([
     getProductPage({
@@ -61,6 +62,7 @@ export default async function CategoryPage({
       available: availableOnly,
       ...(minPrice !== undefined ? { minPrice: minPrice * 100 } : {}),
       ...(maxPrice !== undefined ? { maxPrice: maxPrice * 100 } : {}),
+      ...(commune ? { deliversTo: commune } : {}),
       page: pageNumber,
     }),
     getCategories().catch(() => []),
@@ -83,6 +85,7 @@ export default async function CategoryPage({
           availableOnly={availableOnly}
           minPrice={minPrice}
           maxPrice={maxPrice}
+          commune={commune}
           category={slug}
           locale={locale}
           query={query}

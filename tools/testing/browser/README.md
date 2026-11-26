@@ -78,6 +78,10 @@ lines, totals, no site chrome) and the seller opens its parcel copy. Cancels the
 `logo.mjs` (Seller Center, shop, app): the demo seller uploads a store logo from its account
 page; the shop and app store pages show it; removing it deletes the file (404 afterwards).
 
+`commune-filter.mjs` (shop, app): the "delivered to my commune" filter keeps only products a
+seller delivers to the test destination; the shop count matches the API and the app filter panel
+applies it.
+
 `deployed-shop.mjs` (production rehearsal, https://shop.localhost): search suggestions, favorites,
 product schema.org data and the live sitemap under the production CSP, with no CSP violations.
 

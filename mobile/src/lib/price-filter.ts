@@ -11,10 +11,13 @@ export function filterParams(filters: {
   readonly inStock: boolean;
   readonly min?: number | undefined;
   readonly max?: number | undefined;
+  /** Only products a seller delivers to this commune. */
+  readonly commune?: { readonly id: string } | undefined;
 }): Record<string, string> {
   return {
     ...(filters.inStock ? { available: 'true' } : {}),
     ...(filters.min !== undefined ? { minPrice: String(filters.min * 100) } : {}),
     ...(filters.max !== undefined ? { maxPrice: String(filters.max * 100) } : {}),
+    ...(filters.commune ? { deliversTo: filters.commune.id } : {}),
   };
 }

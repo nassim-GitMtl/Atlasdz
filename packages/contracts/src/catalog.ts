@@ -228,6 +228,8 @@ export const ListProductsInputSchema = z
     maxPrice: MoneyMinorSchema.optional(),
     /** Only these products (device favorites, recently viewed). */
     slugs: z.array(CatalogSlugSchema).min(1).max(60).optional(),
+    /** Only products with at least one seller delivering to this commune (as at checkout). */
+    deliversTo: UuidSchema.optional(),
   })
   .strict();
 

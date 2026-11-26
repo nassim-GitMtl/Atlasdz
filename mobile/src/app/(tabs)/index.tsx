@@ -16,6 +16,8 @@ import { Photo } from '@/components/photo';
 import { ProductCard, SummaryCard } from '@/components/product-card';
 import { Button, Checkbox, Empty, Field, LoadState, Segmented } from '@/components/ui';
 import { filterParams, parsePriceBound } from '@/lib/price-filter';
+import { CommuneFilter } from '@/components/commune-filter';
+import type { Place } from '@/components/place-picker';
 import { SearchSuggestions } from '@/components/search-suggestions';
 import { api } from '@/lib/api';
 import { categoryImage, type SortMode } from '@/lib/collections';
@@ -54,11 +56,19 @@ export default function HomeScreen() {
   // Stock and price filters: typed in the panel, applied together.
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [priceDraft, setPriceDraft] = useState({ min: '', max: '' });
-  const [filters, setFilters] = useState<{ inStock: boolean; min?: number; max?: number }>({
+  const [filters, setFilters] = useState<{
+    inStock: boolean;
+    min?: number;
+    max?: number;
+    commune?: Place;
+  }>({
     inStock: false,
   });
   const activeFilters =
-    Number(filters.inStock) + Number(filters.min !== undefined) + Number(filters.max !== undefined);
+    Number(filters.inStock) +
+    Number(filters.min !== undefined) +
+    Number(filters.max !== undefined) +
+    Number(filters.commune !== undefined);
 
   // Every category with products on sale, and pages of products sorted by the API across the
   // whole catalogue (more load as the shopper scrolls).
@@ -257,6 +267,14 @@ export default function HomeScreen() {
             label={t.home.inStock}
             onToggle={() => setFilters((current) => ({ ...current, inStock: !current.inStock }))}
           />
+          <CommuneFilter
+            value={filters.commune ?? null}
+            onChange={(commune) =>
+              setFilters(({ commune: _previous, ...current }) =>
+                commune ? { ...current, commune } : current,
+              )
+            }
+          />
           <View style={styles.priceRow}>
             <View style={styles.priceField}>
               <Field
@@ -282,7 +300,7 @@ export default function HomeScreen() {
             variant="secondary"
             onPress={() =>
               setFilters((current) => ({
-                inStock: current.inStock,
+                ...current,
                 min: parsePriceBound(priceDraft.min),
                 max: parsePriceBound(priceDraft.max),
               }))

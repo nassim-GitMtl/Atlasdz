@@ -460,6 +460,14 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
       .expect(200);
     assert.deepEqual(none.body.items, [{ sellerId, available: false, shippingFeeMinor: null }]);
     await http().get(`/api/v1/delivery/fees?destinationId=${destination.id}`).expect(422);
+    // Browsing can keep only products a seller delivers to the shopper's commune.
+    const deliverable = async (id: string) =>
+      (await http().get(`/api/v1/catalog/products?deliversTo=${id}`).expect(200)).body.items.map(
+        (item: { slug: string }) => item.slug,
+      );
+    assert.ok((await deliverable(destination.id)).includes(productSlug));
+    assert.ok(!(await deliverable(elsewhere.id)).includes(productSlug));
+    await http().get('/api/v1/catalog/products?deliversTo=not-a-uuid').expect(422);
 
     // Customer registers, fills the cart and places a cash-on-delivery order.
     await http()

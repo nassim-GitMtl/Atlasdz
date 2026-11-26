@@ -162,6 +162,8 @@ export async function getProductPage(
     readonly maxPrice?: number;
     /** Only these products (at most 60). */
     readonly slugs?: readonly string[];
+    /** Only products a seller delivers to this commune. */
+    readonly deliversTo?: string;
     readonly page?: number;
     readonly limit?: number;
   } = {},
@@ -175,6 +177,7 @@ export async function getProductPage(
   if (filters.minPrice !== undefined) query.set('minPrice', String(filters.minPrice));
   if (filters.maxPrice !== undefined) query.set('maxPrice', String(filters.maxPrice));
   if (filters.slugs?.length) query.set('slugs', filters.slugs.join(','));
+  if (filters.deliversTo) query.set('deliversTo', filters.deliversTo);
   if (filters.page && filters.page > 1) query.set('page', String(filters.page));
   query.set('limit', String(filters.limit ?? 24));
   const result = await requestJson(

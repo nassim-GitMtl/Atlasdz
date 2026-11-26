@@ -17,3 +17,7 @@ test('filters become catalogue parameters in centimes', () => {
     maxPrice: '500000',
   });
 });
+
+test('the commune filter becomes deliversTo', () => {
+  assert.deepEqual(filterParams({ inStock: false, commune: { id: 'c-1' } }), { deliversTo: 'c-1' });
+});

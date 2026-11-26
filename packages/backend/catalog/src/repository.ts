@@ -77,6 +77,25 @@ const PRODUCT_JSON = `jsonb_build_object(
 const MATCHES = (column: string) => `catalog.search_text(${column}) LIKE catalog.search_text($1)`;
 
 // The seller filter restricts the included offers as well as the product result.
+/**
+ * A public offer of the product whose seller delivers to the commune, resolved as at checkout:
+ * the seller's own rate for the commune decides unless it inherits the wilaya rate.
+ */
+const DELIVERS_TO = (product: string, commune: string) => `
+  SELECT 1 FROM offers.offers dto JOIN sellers.sellers dts ON dts.id = dto.seller_id
+  WHERE dto.product_id = ${product} AND dto.status = 'APPROVED' AND dts.status = 'APPROVED'
+    AND (dts.holiday_until IS NULL OR dts.holiday_until <= now())
+    AND (
+      EXISTS (SELECT 1 FROM sellers.delivery_rates r
+              WHERE r.seller_id = dto.seller_id AND r.commune_id = ${commune}
+                AND NOT r.use_wilaya_rate AND r.enabled)
+      OR (NOT EXISTS (SELECT 1 FROM sellers.delivery_rates r
+                      WHERE r.seller_id = dto.seller_id AND r.commune_id = ${commune}
+                        AND NOT r.use_wilaya_rate)
+          AND EXISTS (SELECT 1 FROM sellers.wilaya_delivery_rates w
+                      JOIN locations.communes lc ON lc.wilaya_id = w.wilaya_id
+                      WHERE lc.id = ${commune} AND w.seller_id = dto.seller_id AND w.enabled)))`;
+
 const PUBLIC_PRODUCTS = `
   FROM catalog.products p
   JOIN catalog.categories c ON c.id = p.category_id
@@ -642,7 +661,8 @@ export class PostgresCatalogRepository {
     const filter = `${parsed.available ? 'AND public_offers.in_stock' : ''}
       AND ($4::bigint IS NULL OR public_offers.best_price >= $4)
       AND ($5::bigint IS NULL OR public_offers.best_price <= $5)
-      AND ($6::text[] IS NULL OR p.slug = ANY($6::text[]))`;
+      AND ($6::text[] IS NULL OR p.slug = ANY($6::text[]))
+      AND ($7::uuid IS NULL OR EXISTS (${DELIVERS_TO('p.id', '$7')}))`;
     const values = [
       // NFKC turns Arabic presentation forms, full-width letters and ligatures into plain text.
       parsed.query ? `%${escapeCatalogSearch(parsed.query.normalize('NFKC'))}%` : null,
@@ -651,11 +671,12 @@ export class PostgresCatalogRepository {
       parsed.minPrice ?? null,
       parsed.maxPrice ?? null,
       parsed.slugs ?? null,
+      parsed.deliversTo ?? null,
     ];
     const result = await this.pool.query<{ product: unknown; total: string }>(
       `
       SELECT ${PRODUCT_JSON}, count(*) OVER () AS total ${PUBLIC_PRODUCTS} ${filter}
-      ORDER BY ${order}, p.id LIMIT $7 OFFSET $8
+      ORDER BY ${order}, p.id LIMIT $8 OFFSET $9
     `,
       [...values, pageSize, (page - 1) * pageSize],
     );

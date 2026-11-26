@@ -66,6 +66,12 @@ export function categoryImage(slug: string): string {
 }
 
 /** A whole-dinar price bound from the URL (`min`/`max`), or undefined when absent or invalid. */
+/** A commune id from the URL (the API checks it exists). */
+export function parseCommune(value: string | undefined): string | undefined {
+  const id = value?.trim().toLowerCase();
+  return id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id) ? id : undefined;
+}
+
 export function parsePriceBound(value: string | undefined): number | undefined {
   if (value === undefined || !/^\d{1,8}$/.test(value.trim())) return undefined;
   const dinars = Number(value.trim());
