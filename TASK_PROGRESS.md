@@ -9,7 +9,7 @@
   sitemap; Seller Center + app quick price/stock update; staff audit log; shop favorites page;
   web "order again"; seller holiday mode (039); checkout pre-filled from the last order;
   search suggestions; offers CSV export; staff metrics for holidays/alerts; product Q&A (040);
-  seller legal identity, law 18-05 (041); reported listings + staff queue (042); password change while signed in; seller-stated delivery days per destination (043); printable order summary (shop + Seller Center) with the seller legal identity snapshotted at quote time; store logo (044); "delivered to my commune" catalogue filter (shop + app).
+  seller legal identity, law 18-05 (041); reported listings + staff queue (042); password change while signed in; seller-stated delivery days per destination (043); printable order summary (shop + Seller Center) with the seller legal identity snapshotted at quote time; store logo (044); "delivered to my commune" catalogue filter (shop + app); offers CSV import (price/stock) in Seller Center.
 - Tests: API 74 unit + 22 integration; catalog 15, commerce 42, database 17 integration;
   e2e 15/15; mobile-app 20/20; mobile-seller 12/12; gallery 7/7; app 51 unit.
   Restart the local API if a suite hits 429 on /api/v1/local/session.

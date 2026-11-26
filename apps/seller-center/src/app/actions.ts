@@ -26,6 +26,7 @@ import {
   type OfferValues,
 } from '@/lib/offer-input';
 import { changedRows } from '@/lib/quick-edit';
+import { importRows, parseCsv, type ImportProblem } from '@/lib/csv-import';
 import { localAccountsEnabled, trustedMutationOrigin } from '@/lib/security';
 import { accessToken, KIND_COOKIE, SESSION_COOKIE } from '@/lib/session';
 
@@ -242,6 +243,67 @@ export async function quickUpdateOffersAction(
     revalidatePath('/dashboard');
   }
   return { saved, failed };
+}
+
+export interface ImportState {
+  readonly error?: 'file' | 'csrf' | 'unauthorized';
+  readonly saved?: number;
+  readonly unchanged?: number;
+  readonly problems?: readonly {
+    readonly line: number;
+    readonly reason: ImportProblem['reason'] | 'unknown' | 'refused' | 'unavailable';
+  }[];
+}
+
+/**
+ * Applies the price and stock columns of an offers CSV (the export, edited in a spreadsheet).
+ * Other columns are ignored; delivery time, pre-order and a running promotion are kept. Bad
+ * lines are reported by line number and nothing is sent for them.
+ */
+export async function importOffersAction(_state: ImportState, form: FormData): Promise<ImportState> {
+  if (!(await validOrigin())) return { error: 'csrf' };
+  const token = await accessToken();
+  if (!token) return { error: 'unauthorized' };
+  const file = form.get('file');
+  if (!(file instanceof File) || file.size === 0 || file.size > 1024 * 1024) return { error: 'file' };
+  const { rows, problems } = importRows(parseCsv(await file.text()));
+  const reported: NonNullable<ImportState['problems']>[number][] = [...problems];
+  let saved = 0;
+  let unchanged = 0;
+  for (const row of rows) {
+    try {
+      const current = await getOffer(token, row.id).catch((error: unknown) => {
+        if (error instanceof SellerApiError && ['forbidden', 'conflict', 'invalid'].includes(error.code))
+          return null;
+        throw error;
+      });
+      if (current === null) {
+        reported.push({ line: row.line, reason: 'unknown' });
+        continue;
+      }
+      if (current.priceMinor === row.priceMinor && current.availableQuantity === row.availableQuantity) {
+        unchanged += 1;
+        continue;
+      }
+      await updateOffer(token, row.id, {
+        priceMinor: row.priceMinor,
+        availableQuantity: row.availableQuantity,
+        handlingDays: current.handlingDays,
+        preorder: current.preorder ?? null,
+        expectedVersion: current.rowVersion,
+      });
+      saved += 1;
+    } catch (error) {
+      const code = error instanceof SellerApiError ? error.code : 'unavailable';
+      reported.push({ line: row.line, reason: code === 'unavailable' || code === 'unauthorized' ? 'unavailable' : 'refused' });
+    }
+  }
+  if (saved > 0) {
+    revalidatePath('/offers');
+    revalidatePath('/offers/quick');
+    revalidatePath('/dashboard');
+  }
+  return { saved, unchanged, problems: reported.sort((a, b) => a.line - b.line) };
 }
 
 export interface QuestionAnswerState {

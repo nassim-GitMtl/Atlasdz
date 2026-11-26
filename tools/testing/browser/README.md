@@ -82,6 +82,10 @@ page; the shop and app store pages show it; removing it deletes the file (404 af
 seller delivers to the test destination; the shop count matches the API and the app filter panel
 applies it.
 
+`offer-import.mjs` (Seller Center): the demo seller downloads the offers export, raises one stock,
+adds a bad line and imports the file from « Mise à jour rapide »; the stock changes and the bad
+line is reported by number. The original stock is restored at the end.
+
 `deployed-shop.mjs` (production rehearsal, https://shop.localhost): search suggestions, favorites,
 product schema.org data and the live sitemap under the production CSP, with no CSP violations.
 

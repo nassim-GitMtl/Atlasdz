@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { OfferImportForm } from '@/components/offer-import-form';
 import { QuickEditForm } from '@/components/quick-edit-form';
 import { Shell } from '@/components/shell';
 import { ServiceState } from '@/components/states';
@@ -90,6 +91,7 @@ export default async function QuickOffers({
               }))}
             />
           )}
+          <OfferImportForm locale={locale} />
         </>
       )}
     </Shell>

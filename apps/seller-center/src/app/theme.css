@@ -239,3 +239,4 @@ body { background: var(--surface); }
 }
 
 .store-logo-preview { width: 96px; height: 96px; border-radius: 16px; border: 1px solid var(--line); object-fit: cover; background: #fff; }
+.import-problems { margin: 6px 0 0; padding-inline-start: 18px; font-size: 13px; }
