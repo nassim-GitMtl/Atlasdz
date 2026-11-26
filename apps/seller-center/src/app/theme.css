@@ -211,3 +211,4 @@ body { background: var(--surface); }
 .legal-fields p { margin: 0; color: var(--muted); font-size: 13px; }
 .legal-form { display: grid; gap: 10px; margin-top: 18px; }
 .legal-form .button { justify-self: start; }
+.delivery-days { display: grid; grid-template-columns: auto minmax(0, 90px) auto minmax(0, 90px); gap: 8px; align-items: center; justify-content: start; }

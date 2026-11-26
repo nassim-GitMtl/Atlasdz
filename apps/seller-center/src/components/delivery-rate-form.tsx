@@ -22,6 +22,8 @@ export function DeliveryRateForm({
   const [enabled, setEnabled] = useState(rate?.enabled ?? false);
   const [fee, setFee] = useState(rate ? (rate.shippingFeeMinor / 100).toFixed(2) : '');
   const [collector, setCollector] = useState(rate?.codCollector ?? '');
+  const [minDays, setMinDays] = useState(rate?.deliveryDays ? String(rate.deliveryDays.min) : '');
+  const [maxDays, setMaxDays] = useState(rate?.deliveryDays ? String(rate.deliveryDays.max) : '');
   return (
     <form action={action} className="order-reject-form">
       <input type="hidden" name="destinationId" value={destination.id} />
@@ -74,6 +76,33 @@ export function DeliveryRateForm({
           <option value="SELLER">{t.SELLER}</option>
           <option value="SELLER_COURIER">{t.SELLER_COURIER}</option>
         </select>
+        <span>{t.days}</span>
+        <div className="delivery-days">
+          <label htmlFor={`days-min-${suffix}`}>{t.daysMin}</label>
+          <input
+            id={`days-min-${suffix}`}
+            name="minDays"
+            type="number"
+            min={1}
+            max={30}
+            inputMode="numeric"
+            required={maxDays !== ''}
+            value={minDays}
+            onChange={(e) => setMinDays(e.target.value)}
+          />
+          <label htmlFor={`days-max-${suffix}`}>{t.daysMax}</label>
+          <input
+            id={`days-max-${suffix}`}
+            name="maxDays"
+            type="number"
+            min={minDays === '' ? 1 : Number(minDays)}
+            max={30}
+            inputMode="numeric"
+            required={minDays !== ''}
+            value={maxDays}
+            onChange={(e) => setMaxDays(e.target.value)}
+          />
+        </div>
       </fieldset>
       <label>
         <input type="checkbox" name="confirm" value="yes" required /> {t.confirm}

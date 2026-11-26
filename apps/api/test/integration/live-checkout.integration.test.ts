@@ -430,7 +430,27 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
     const fees = await http()
       .get(`/api/v1/delivery/fees?destinationId=${destination.id}&sellerIds=${sellerId}`)
       .expect(200);
-    assert.deepEqual(fees.body.items, [{ sellerId, available: true, shippingFeeMinor: 60000 }]);
+    assert.deepEqual(fees.body.items, [
+      { sellerId, available: true, shippingFeeMinor: 60000, deliveryDays: null },
+    ]);
+    // The seller states a delivery time; an inverted range is refused, omitting it keeps it.
+    const rate = async (body: Record<string, unknown>) =>
+      http().post(`/api/v1/seller/delivery/${destination.id}`).set(bearer(seller)).send({
+        enabled: true,
+        shippingFeeMinor: 60000,
+        codCollector: 'SELLER_COURIER',
+        ...body,
+      });
+    assert.equal((await rate({ expectedVersion: 1, deliveryDays: { min: 4, max: 2 } })).status, 422);
+    const timed = await rate({ expectedVersion: 1, deliveryDays: { min: 2, max: 4 } });
+    assert.ok([200, 201].includes(timed.status));
+    assert.deepEqual(timed.body.deliveryDays, { min: 2, max: 4 });
+    const kept = await rate({ expectedVersion: 2, shippingFeeMinor: 60000, enabled: true });
+    assert.deepEqual(kept.body.deliveryDays, { min: 2, max: 4 });
+    const timedFees = await http()
+      .get(`/api/v1/delivery/fees?destinationId=${destination.id}&sellerIds=${sellerId}`)
+      .expect(200);
+    assert.deepEqual(timedFees.body.items[0].deliveryDays, { min: 2, max: 4 });
     const elsewhere = destinations.body.items.find(
       (item: { id: string; wilaya?: { id: string } }) =>
         item.id !== destination.id && item.wilaya?.id !== destination.id,

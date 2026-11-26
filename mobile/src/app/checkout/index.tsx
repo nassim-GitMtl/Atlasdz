@@ -9,7 +9,7 @@ import { api, errorCode } from '@/lib/api';
 import { useCart } from '@/lib/cart';
 import type { SavedAddress } from '@/lib/collections';
 import { contactErrors, emptyContact } from '@/lib/contact';
-import { fill, formatMoney, localized, normalizePhone } from '@/lib/format';
+import { fill, formatDeliveryDays, formatMoney, localized, normalizePhone } from '@/lib/format';
 import { useI18n } from '@/lib/i18n';
 import { useLibrary } from '@/lib/library';
 import { useSession } from '@/lib/session';
@@ -254,6 +254,9 @@ export default function CheckoutScreen() {
                       {fee?.available && fee.shippingFeeMinor !== null
                         ? formatMoney(fee.shippingFeeMinor, locale)
                         : t.checkout.notDelivered}
+                      {fee?.available && fee.deliveryDays
+                        ? ` · ${formatDeliveryDays(fee.deliveryDays, locale)}`
+                        : ''}
                     </Text>
                   </View>
                 );

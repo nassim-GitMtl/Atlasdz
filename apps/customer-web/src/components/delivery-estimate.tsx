@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { formatMoney } from '@/lib/catalog-view';
+import { deliveryDaysLabel, deliveryDaysNote, type DeliveryDays } from '@/lib/delivery-days';
 import { contentLocale, type Locale } from '@/lib/i18n';
 
 type Place = {
@@ -8,7 +9,12 @@ type Place = {
   name: { fr: string; ar: string };
   wilaya: { id: string; code: string; name: { fr: string; ar: string } } | null;
 };
-type Fee = { sellerId: string; available: boolean; shippingFeeMinor: number | null };
+type Fee = {
+  sellerId: string;
+  available: boolean;
+  shippingFeeMinor: number | null;
+  deliveryDays?: DeliveryDays | null;
+};
 const KEY = 'atlas.commune';
 const copy = {
   fr: {
@@ -162,12 +168,18 @@ export function DeliveryEstimate({
                         t.none
                       )}
                     </strong>
+                    {fee?.available && fee.deliveryDays && (
+                      <small className="fee-days">{deliveryDaysLabel(fee.deliveryDays, locale)}</small>
+                    )}
                   </li>
                 );
               })}
             </ul>
           )}
           <p>{t.note}</p>
+          {fees !== 'loading' && fees !== 'error' && fees.some((f) => f.available && f.deliveryDays) && (
+            <p>{deliveryDaysNote(locale)}</p>
+          )}
         </div>
       )}
     </div>

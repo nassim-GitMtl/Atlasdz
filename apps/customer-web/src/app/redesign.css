@@ -252,7 +252,8 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 /* Delivery fee per seller for the chosen commune, before the review step. */
 .fee-preview { display: grid; gap: 8px; padding: 12px 14px; border-radius: 12px; background: var(--surface); font-size: 14px; }
 .fee-preview ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.fee-preview li { display: flex; justify-content: space-between; gap: 12px; }
+.fee-preview li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; }
+.fee-preview .fee-days { flex-basis: 100%; color: var(--muted); font-size: 13px; }
 .fee-preview li strong { color: var(--ink); }
 .fee-preview li.is-unavailable strong { color: var(--danger); }
 .fee-preview p { margin: 0; }

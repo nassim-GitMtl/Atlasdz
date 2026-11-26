@@ -21,6 +21,12 @@ export const DeliveryDestinationSchema = z
   })
   .strict();
 export const CodCollectorSchema = z.enum(['SELLER', 'SELLER_COURIER']);
+/** Seller-declared delivery time (days after shipping), shown as the seller's own estimate. */
+export const DeliveryDaysSchema = z
+  .object({ min: z.number().int().min(1).max(30), max: z.number().int().min(1).max(30) })
+  .strict()
+  .refine((value) => value.max >= value.min, 'max must not be below min');
+export type DeliveryDays = z.infer<typeof DeliveryDaysSchema>;
 export const SetSellerDeliveryRateInputSchema = z
   .object({
     expectedVersion: z.number().int().min(0).max(2_147_483_646),
@@ -28,6 +34,8 @@ export const SetSellerDeliveryRateInputSchema = z
     shippingFeeMinor: z.number().int().min(0).max(2_000_000_000),
     codCollector: CodCollectorSchema,
     useWilayaRate: z.boolean().optional(),
+    /** Omitted keeps the stored value; null clears it. */
+    deliveryDays: DeliveryDaysSchema.nullable().optional(),
   })
   .strict();
 export const SellerDeliveryRateSchema = z
@@ -41,6 +49,7 @@ export const SellerDeliveryRateSchema = z
     codCollector: CodCollectorSchema,
     updatedAt: IsoTimestampSchema,
     useWilayaRate: z.boolean().optional(),
+    deliveryDays: DeliveryDaysSchema.nullable().optional(),
   })
   .strict();
 export const DeliveryRateChangedV1PayloadSchema = z
@@ -76,6 +85,7 @@ export const DeliveryFeesSchema = z
             sellerId: UuidSchema,
             available: z.boolean(),
             shippingFeeMinor: z.number().int().min(0).max(2_000_000_000).nullable(),
+            deliveryDays: DeliveryDaysSchema.nullable().optional(),
           })
           .strict(),
       )

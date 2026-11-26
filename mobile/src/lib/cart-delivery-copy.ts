@@ -15,6 +15,7 @@ export const cartDeliveryCopy = {
     refresh: 'Actualiser les frais',
     unknown: 'À calculer',
     invalid: 'À résoudre',
+    days: 'Délai annoncé par le vendeur (après expédition)',
   },
   ar: {
     title: 'التوصيل',
@@ -31,6 +32,7 @@ export const cartDeliveryCopy = {
     refresh: 'تحديث رسوم التوصيل',
     unknown: 'لم تحسب بعد',
     invalid: 'يتطلب المعالجة',
+    days: 'المدة حسب البائع (بعد الشحن)',
   },
   en: {
     title: 'Delivery',
@@ -48,5 +50,6 @@ export const cartDeliveryCopy = {
     refresh: 'Refresh delivery fees',
     unknown: 'Not calculated',
     invalid: 'Needs attention',
+    days: 'Time stated by the seller (after shipping)',
   },
 } as const;

@@ -580,6 +580,9 @@ const fr = {
   delivery: {
     intro: 'Choisissez une wilaya, fixez son tarif, puis ajustez les communes si besoin.',
     wilayaRate: 'Tarif pour toute la wilaya',
+    daysMin: 'Délai minimum (jours)',
+    daysMax: 'Délai maximum (jours)',
+    daysHint: 'Facultatif : délai après expédition, affiché aux clients comme votre estimation.',
     deliver: 'Je livre dans cette wilaya',
     fee: 'Frais de livraison (DA)',
     collector: 'Qui encaisse le paiement ?',
@@ -1221,6 +1224,9 @@ const ar: Strings = {
   delivery: {
     intro: 'اختر ولاية وحدد سعرها، ثم عدّل البلديات عند الحاجة.',
     wilayaRate: 'سعر الولاية كاملة',
+    daysMin: 'أدنى مدة (أيام)',
+    daysMax: 'أقصى مدة (أيام)',
+    daysHint: 'اختياري: المدة بعد الشحن، تُعرض للزبائن كتقدير منك.',
     deliver: 'أوصل إلى هذه الولاية',
     fee: 'تكلفة التوصيل (دج)',
     collector: 'من يستلم الدفع؟',
@@ -1864,6 +1870,9 @@ const en: Strings = {
   delivery: {
     intro: 'Choose a wilaya, set its rate, then adjust communes if needed.',
     wilayaRate: 'Rate for the whole wilaya',
+    daysMin: 'Minimum time (days)',
+    daysMax: 'Maximum time (days)',
+    daysHint: 'Optional: time after shipping, shown to customers as your estimate.',
     deliver: 'I deliver in this wilaya',
     fee: 'Delivery fee (DA)',
     collector: 'Who collects the payment?',

@@ -11,6 +11,7 @@ import { orderText } from '@/lib/orders-copy';
 import { localizedHref, type Locale, contentLocale } from '@/lib/i18n';
 import { preorderCopy } from '@/lib/preorder';
 import { formatMoney } from '@/lib/catalog-view';
+import { deliveryDaysLabel, deliveryDaysNote, type DeliveryDays } from '@/lib/delivery-days';
 
 const feeCopy = {
   fr: {
@@ -37,7 +38,12 @@ const feeCopy = {
     blocked: 'أحد البائعين لا يوصل إلى هذه البلدية: احذف منتجاته من السلة أو اختر بلدية أخرى.',
   },
 } as const;
-type Fee = { sellerId: string; available: boolean; shippingFeeMinor: number | null };
+type Fee = {
+  sellerId: string;
+  available: boolean;
+  shippingFeeMinor: number | null;
+  deliveryDays?: DeliveryDays | null;
+};
 
 export function OrderForm({
   kind,
@@ -208,11 +214,17 @@ export function OrderForm({
                             c.unavailable
                           )}
                         </strong>
+                        {fee?.available && fee.deliveryDays && (
+                          <small className="fee-days">{deliveryDaysLabel(fee.deliveryDays, locale)}</small>
+                        )}
                       </li>
                     );
                   })}
                 </ul>
               )}
+              {fees !== 'loading' &&
+                fees !== 'error' &&
+                fees.some((f) => f.available && f.deliveryDays) && <p>{deliveryDaysNote(locale)}</p>}
               {blocked && (
                 <p role="alert" className="cart-feedback">
                   {c.blocked}

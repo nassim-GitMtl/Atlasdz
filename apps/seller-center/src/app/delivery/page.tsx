@@ -134,6 +134,8 @@ export default async function Delivery({
                       style: 'currency',
                       currency: 'DZD',
                     }).format(effective.shippingFeeMinor / 100)}
+                    {effective.deliveryDays &&
+                      ` · ${t.daysShort(effective.deliveryDays.min, effective.deliveryDays.max)}`}
                   </p>
                 )}
                 <details>

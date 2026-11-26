@@ -114,6 +114,15 @@ export default function DeliveryScreen() {
   );
 }
 
+/** Both empty: no stated time (null); a valid 1–30 range; anything else is invalid (undefined). */
+function parseDays(min: string, max: string): { min: number; max: number } | null | undefined {
+  if (min.trim() === '' && max.trim() === '') return null;
+  const low = Number(min);
+  const high = Number(max);
+  if (!Number.isInteger(low) || !Number.isInteger(high)) return undefined;
+  return low >= 1 && high <= 30 && high >= low ? { min: low, max: high } : undefined;
+}
+
 function WilayaRate({
   wilayaId,
   base,
@@ -128,13 +137,16 @@ function WilayaRate({
   const [enabled, setEnabled] = useState(base?.enabled ?? true);
   const [fee, setFee] = useState(base ? dinarsText(base.shippingFeeMinor) : '');
   const [collector, setCollector] = useState<Collector>(base?.codCollector ?? 'SELLER');
+  const [minDays, setMinDays] = useState(base?.deliveryDays ? String(base.deliveryDays.min) : '');
+  const [maxDays, setMaxDays] = useState(base?.deliveryDays ? String(base.deliveryDays.max) : '');
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const feeMinor = parseDinars(fee);
+  const days = parseDays(minDays, maxDays);
 
   async function save() {
-    if (feeMinor === null) return;
+    if (feeMinor === null || days === undefined) return;
     setBusy(true);
     setFailure(null);
     setNotice(null);
@@ -145,6 +157,7 @@ function WilayaRate({
           enabled,
           shippingFeeMinor: feeMinor,
           codCollector: collector,
+          deliveryDays: enabled ? days : null,
         },
       });
       setNotice(t.delivery.saved);
@@ -182,6 +195,23 @@ function WilayaRate({
             value={collector}
             onChange={setCollector}
           />
+          <Field
+            label={t.delivery.daysMin}
+            hint={t.delivery.daysHint}
+            value={minDays}
+            onChangeText={setMinDays}
+            keyboardType="number-pad"
+            maxLength={2}
+            error={enabled && days === undefined}
+          />
+          <Field
+            label={t.delivery.daysMax}
+            value={maxDays}
+            onChangeText={setMaxDays}
+            keyboardType="number-pad"
+            maxLength={2}
+            error={enabled && days === undefined}
+          />
         </>
       ) : null}
       {notice ? <Notice tone="success">{notice}</Notice> : null}
@@ -189,7 +219,7 @@ function WilayaRate({
       <Button
         label={t.common.save}
         busy={busy}
-        disabled={feeMinor === null}
+        disabled={feeMinor === null || (enabled && days === undefined)}
         onPress={() => void save()}
       />
     </Card>

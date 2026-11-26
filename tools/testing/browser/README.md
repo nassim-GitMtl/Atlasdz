@@ -67,6 +67,10 @@ report a product from the shop and the app; staff see the grouped reasons and de
 change their password while signed in (mismatch and wrong-password errors shown); the old
 password stops working and the new one signs in.
 
+`delivery-days.mjs` (Seller Center, shop, app): the demo seller states 2–4 days for the test
+destination; the shop delivery estimate and the app checkout show it next to the fee with the
+"stated by the seller" note. Clears the days (and any cart line it added) at the end.
+
 `deployed-shop.mjs` (production rehearsal, https://shop.localhost): search suggestions, favorites,
 product schema.org data and the live sitemap under the production CSP, with no CSP violations.
 

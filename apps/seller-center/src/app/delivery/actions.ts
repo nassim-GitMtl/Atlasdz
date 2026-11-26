@@ -21,12 +21,18 @@ export async function saveDeliveryAction(
   const id = UuidSchema.safeParse(form.get('destinationId'));
   const inherited = form.get('useWilayaRate') === 'yes';
   const enabled = !inherited && form.get('enabled') === 'yes';
+  const minDays = String(form.get('minDays') ?? '').trim();
+  const maxDays = String(form.get('maxDays') ?? '').trim();
+  // Both empty clears the stated delivery time; a half-filled range is refused.
+  const deliveryDays =
+    !enabled || (minDays === '' && maxDays === '') ? null : { min: Number(minDays), max: Number(maxDays) };
   const input = SetSellerDeliveryRateInputSchema.safeParse({
     expectedVersion: Number(form.get('version')),
     enabled,
     shippingFeeMinor: enabled ? moneyToMinor(String(form.get('fee') ?? '')) : 0,
     codCollector: enabled ? form.get('collector') : 'SELLER',
     useWilayaRate: inherited,
+    ...(inherited ? {} : { deliveryDays }),
   });
   if (!id.success || !input.success || form.get('confirm') !== 'yes') return { error: 'invalid' };
   try {

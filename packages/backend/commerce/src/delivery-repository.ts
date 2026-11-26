@@ -6,6 +6,7 @@ import {
   SellerDeliveryRateSchema,
   SetSellerDeliveryRateInputSchema,
   UuidSchema,
+  type DeliveryDays,
   type DeliveryDestination,
   type SellerDeliveryRate,
   type SetSellerDeliveryRateInput,
@@ -182,9 +183,11 @@ export async function readSellerDeliveryRates(
     cod_collector: string;
     updated_at: Date;
     use_wilaya_rate: boolean;
+    delivery_min_days: number | null;
+    delivery_max_days: number | null;
   }>(
-    `SELECT id,seller_id,commune_id,row_version,enabled,shipping_fee_minor,cod_collector,updated_at,use_wilaya_rate FROM sellers.delivery_rates WHERE seller_id=$1 AND commune_id=ANY($2::uuid[])
-     UNION ALL SELECT id,seller_id,wilaya_id,row_version,enabled,shipping_fee_minor,cod_collector,updated_at,false FROM sellers.wilaya_delivery_rates WHERE seller_id=$1 AND wilaya_id=ANY($2::uuid[]) ORDER BY commune_id`,
+    `SELECT id,seller_id,commune_id,row_version,enabled,shipping_fee_minor,cod_collector,updated_at,use_wilaya_rate,delivery_min_days,delivery_max_days FROM sellers.delivery_rates WHERE seller_id=$1 AND commune_id=ANY($2::uuid[])
+     UNION ALL SELECT id,seller_id,wilaya_id,row_version,enabled,shipping_fee_minor,cod_collector,updated_at,false,delivery_min_days,delivery_max_days FROM sellers.wilaya_delivery_rates WHERE seller_id=$1 AND wilaya_id=ANY($2::uuid[]) ORDER BY commune_id`,
     [sellerId, destinations.map((d) => d.id)],
   );
   return result.rows.map((row) =>
@@ -198,6 +201,10 @@ export async function readSellerDeliveryRates(
       codCollector: row.cod_collector,
       updatedAt: row.updated_at.toISOString(),
       ...(row.use_wilaya_rate ? { useWilayaRate: true } : {}),
+      deliveryDays:
+        row.delivery_min_days === null || row.delivery_max_days === null
+          ? null
+          : { min: row.delivery_min_days, max: row.delivery_max_days },
     }),
   );
 }
@@ -228,6 +235,8 @@ export async function resolveSellerDeliveryRate(
   );
   return inherited ? { ...inherited, destination } : undefined;
 }
+const sameDays = (a: DeliveryDays | null, b: DeliveryDays | null) =>
+  a === null || b === null ? a === b : a.min === b.min && a.max === b.max;
 export class PostgresDeliveryRepository {
   constructor(
     private readonly pool: Pool,
@@ -247,7 +256,12 @@ export class PostgresDeliveryRepository {
       sellerIds.map(async (sellerId) => {
         const rate = await resolveSellerDeliveryRate(this.pool, UuidSchema.parse(sellerId), id);
         return rate?.enabled
-          ? { sellerId, available: true, shippingFeeMinor: rate.shippingFeeMinor }
+          ? {
+              sellerId,
+              available: true,
+              shippingFeeMinor: rate.shippingFeeMinor,
+              deliveryDays: rate.deliveryDays ?? null,
+            }
           : { sellerId, available: false, shippingFeeMinor: null };
       }),
     );
@@ -294,38 +308,47 @@ export class PostgresDeliveryRepository {
       const previous = (await readSellerDeliveryRates(db, sellerId)).find(
         (r) => r.destination.id === destinationId,
       );
+      // Omitted days keep what the seller stated before (older clients send none).
+      const days = input.deliveryDays === undefined ? (previous?.deliveryDays ?? null) : input.deliveryDays;
       const same =
         previous &&
         previous.enabled === input.enabled &&
         previous.shippingFeeMinor === input.shippingFeeMinor &&
         previous.codCollector === input.codCollector &&
-        Boolean(previous.useWilayaRate) === Boolean(input.useWilayaRate);
+        Boolean(previous.useWilayaRate) === Boolean(input.useWilayaRate) &&
+        sameDays(previous.deliveryDays ?? null, days);
       if (previous?.version === input.expectedVersion + 1 && same) return previous;
       if ((previous?.version ?? 0) !== input.expectedVersion)
         throw new DeliveryWriteError('DELIVERY_CONFLICT');
       if (previous) {
         await db.query(
           `UPDATE ${table} SET enabled=$2,shipping_fee_minor=$3,cod_collector=$4,
-          ${wilaya ? '' : 'use_wilaya_rate=$5,'}
+          delivery_min_days=$5,delivery_max_days=$6,
+          ${wilaya ? '' : 'use_wilaya_rate=$7,'}
           row_version=row_version+1,updated_at=date_trunc('milliseconds',clock_timestamp()) WHERE id=$1`,
           [
             previous.id,
             input.enabled,
             input.shippingFeeMinor,
             input.codCollector,
+            days?.min ?? null,
+            days?.max ?? null,
             ...(wilaya ? [] : [input.useWilayaRate ?? false]),
           ],
         );
       } else {
         await db.query(
-          `INSERT INTO ${table}(seller_id,${column},enabled,shipping_fee_minor,cod_collector${wilaya ? '' : ',use_wilaya_rate'})
-          VALUES($1,$2,$3,$4,$5${wilaya ? '' : ',$6'})`,
+          `INSERT INTO ${table}(seller_id,${column},enabled,shipping_fee_minor,cod_collector,
+          delivery_min_days,delivery_max_days${wilaya ? '' : ',use_wilaya_rate'})
+          VALUES($1,$2,$3,$4,$5,$6,$7${wilaya ? '' : ',$8'})`,
           [
             sellerId,
             destinationId,
             input.enabled,
             input.shippingFeeMinor,
             input.codCollector,
+            days?.min ?? null,
+            days?.max ?? null,
             ...(wilaya ? [] : [input.useWilayaRate ?? false]),
           ],
         );

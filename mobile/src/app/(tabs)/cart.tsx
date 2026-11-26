@@ -13,7 +13,7 @@ import { Badge, Button, Card, Empty, LoadState, Notice, Screen, text } from '@/c
 import { api, errorCode } from '@/lib/api';
 import { useCart } from '@/lib/cart';
 import { imageUri } from '@/lib/config';
-import { formatMoney, localized } from '@/lib/format';
+import { formatDeliveryDays, formatMoney, localized } from '@/lib/format';
 import { buildGuestCart } from '@/lib/guest-cart';
 import { useI18n } from '@/lib/i18n';
 import { useSession } from '@/lib/session';
@@ -224,6 +224,12 @@ export default function CartScreen() {
                     : deliveryCopy.unknown}
               </Text>
             </View>
+            {fee?.available && fee.deliveryDays ? (
+              <View style={styles.total}>
+                <Text style={text.muted}>{deliveryCopy.days}</Text>
+                <Text style={text.body}>{formatDeliveryDays(fee.deliveryDays, locale)}</Text>
+              </View>
+            ) : null}
             {fee?.available === false && <Notice tone="error">{deliveryCopy.unsupported}</Notice>}
             {group.valid && fee?.available && fee.shippingFeeMinor !== null && (
               <View style={styles.total}>
