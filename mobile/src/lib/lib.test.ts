@@ -100,6 +100,11 @@ describe('delivery contact', () => {
       'recipientName',
     ]);
     assert.ok(contactErrors({ ...good, phone: '12-34' }).has('phone'));
+    // The courier note is optional, short and on one line.
+    assert.equal(contactErrors({ ...good, note: '' }).size, 0);
+    assert.equal(contactErrors({ ...good, note: 'Près de la mosquée, 2e étage' }).size, 0);
+    assert.ok(contactErrors({ ...good, note: 'x' }).has('note'));
+    assert.ok(contactErrors({ ...good, note: 'a\nb' }).has('note'));
   });
 });
 

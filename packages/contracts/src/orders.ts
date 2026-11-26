@@ -26,6 +26,8 @@ export const DeliveryContactSchema = z
       .regex(/^\+?[0-9]{7,15}$/),
     addressLine: contactText(5, 240),
     city: contactText(2, 120),
+    /** Optional single-line hint for the courier: landmark, floor, best time to call. */
+    note: contactText(2, 200).optional(),
   })
   .strict();
 export type DeliveryContact = z.infer<typeof DeliveryContactSchema>;

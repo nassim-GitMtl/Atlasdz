@@ -675,6 +675,22 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
       .set(bearer(customer))
       .send({ quantity: 2, expectedVersion: cart.body.version })
       .expect(200);
+    // The courier note is optional and single-line.
+    await http()
+      .post('/api/v1/checkout/quotes')
+      .set(bearer(customer))
+      .send({
+        expectedCartVersion: filled.body.version,
+        destinationId: destination.id,
+        deliveryContact: {
+          recipientName: 'Amina B.',
+          phone: '+213555000000',
+          addressLine: '12 rue des Oliviers',
+          city: 'Tlemcen',
+          note: 'Sonner\ndeux fois',
+        },
+      })
+      .expect(422);
     const quote = await http()
       .post('/api/v1/checkout/quotes')
       .set(bearer(customer))
@@ -686,9 +702,11 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
           phone: '+213555000000',
           addressLine: '12 rue des Oliviers',
           city: 'Tlemcen',
+          note: 'En face de la pharmacie, 2e étage',
         },
       })
       .expect(201);
+    assert.equal(quote.body.deliveryContact.note, 'En face de la pharmacie, 2e étage');
     assert.equal(quote.body.dataClass, 'live');
     assert.equal(quote.body.paymentArrangement, 'CASH_ON_DELIVERY');
     assert.equal(quote.body.totalMinor, 2 * 450000 + 60000);
@@ -758,6 +776,11 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
     assert.equal(order.body.paymentState, 'CASH_ON_DELIVERY');
     const sellerOrder = order.body.sellerOrders[0];
     assert.equal(sellerOrder.dataClass, 'live');
+    const sellerView = await http()
+      .get(`/api/v1/seller/orders/${sellerOrder.id}`)
+      .set(bearer(seller))
+      .expect(200);
+    assert.equal(sellerView.body.deliveryContact.note, 'En face de la pharmacie, 2e étage');
     // The order keeps the seller's legal identity and stated delivery time (printed summary).
     assert.equal(sellerOrder.snapshot.sellerLegal.registerNumber, '13/AR-0012345');
     assert.equal(sellerOrder.snapshot.sellerLegal.address, '7 boulevard Colonel Lotfi, Tlemcen');

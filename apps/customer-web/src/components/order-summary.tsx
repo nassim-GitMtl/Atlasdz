@@ -19,9 +19,11 @@ export function DeliveryContactSummary({
       <h2>{t.deliveryContact}</h2>
       {contact ? (
         <dl>
-          {(['recipientName', 'phone', 'addressLine', 'city'] as const).map((field) => (
+          {(['recipientName', 'phone', 'addressLine', 'city', 'note'] as const)
+            .filter((field) => contact[field])
+            .map((field) => (
             <div key={field}>
-              <dt>{t[field]}</dt>
+              <dt>{field === 'note' ? t.noteShown : t[field]}</dt>
               <dd>
                 <bdi dir={field === 'phone' ? 'ltr' : 'auto'}>{contact[field]}</bdi>
               </dd>

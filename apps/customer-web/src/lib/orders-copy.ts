@@ -5,6 +5,9 @@ export const orderCopy = {
     phone: 'Téléphone',
     addressLine: 'Rue, numéro et appartement',
     city: 'Ville / commune',
+    note: 'Indications pour le livreur (facultatif)',
+    noteShown: 'Indications pour le livreur',
+    noteHint: 'Point de repère, étage, meilleur moment pour appeler… Sans données sensibles.',
     preorder: 'Cochez la case d’acceptation de la précommande pour continuer.',
     guestEmail: 'Adresse e-mail (pour suivre la commande)',
     guestEmailHint:
@@ -122,6 +125,9 @@ export const orderCopy = {
     phone: 'Phone',
     addressLine: 'Street, number and apartment',
     city: 'Town / commune',
+    note: 'Notes for the courier (optional)',
+    noteShown: 'Notes for the courier',
+    noteHint: 'Landmark, floor, best time to call… No sensitive data.',
     preorder: 'Tick the pre-order acceptance box to continue.',
     guestEmail: 'Email address (to follow the order)',
     guestEmailHint:
@@ -237,6 +243,9 @@ export const orderCopy = {
     phone: 'الهاتف',
     addressLine: 'الشارع ورقم المبنى والشقة',
     city: 'المدينة / البلدية',
+    note: 'إرشادات لعامل التوصيل (اختياري)',
+    noteShown: 'إرشادات لعامل التوصيل',
+    noteHint: 'معلم قريب، الطابق، أفضل وقت للاتصال… دون بيانات حساسة.',
     preorder: 'ضع علامة الموافقة على الطلب المسبق للمتابعة.',
     guestEmail: 'البريد الإلكتروني (لمتابعة الطلب)',
     guestEmailHint:

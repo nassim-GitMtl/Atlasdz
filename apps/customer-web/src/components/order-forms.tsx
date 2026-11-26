@@ -285,6 +285,23 @@ export function OrderForm({
                 />
               </label>
             ))}
+            <label htmlFor="checkout-note">
+              {t.note}
+              <input
+                id="checkout-note"
+                name="note"
+                type="text"
+                dir="auto"
+                autoComplete="off"
+                maxLength={200}
+                aria-describedby="checkout-note-hint"
+                value={contact.note ?? ''}
+                onChange={(event) => setContact({ ...contact, note: event.target.value })}
+              />
+              <span id="checkout-note-hint" className="auth-hint">
+                {t.noteHint}
+              </span>
+            </label>
             <p id="contact-phone-hint">{t.phoneHint}</p>
           </fieldset>
           {destinations.length === 0 && <p role="status">{t.noDestinations}</p>}

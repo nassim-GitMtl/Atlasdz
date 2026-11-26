@@ -88,6 +88,12 @@ export function OrderDocument({
               <dd>
                 {contact.addressLine}, {contact.city}
               </dd>
+              {contact.note && (
+                <>
+                  <dt>{lang(locale, 'Indications', 'إرشادات', 'Notes')}</dt>
+                  <dd>{contact.note}</dd>
+                </>
+              )}
               {destination && (
                 <>
                   <dt>{lang(locale, 'Commune', 'البلدية', 'Commune')}</dt>

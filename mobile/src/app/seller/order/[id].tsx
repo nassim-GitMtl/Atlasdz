@@ -163,6 +163,11 @@ export default function SellerOrderScreen() {
                 {destination ? ` — ${localized(destination.name, locale)}` : ''}
                 {destination?.wilaya ? `, ${localized(destination.wilaya.name, locale)}` : ''}
               </Text>
+              {contact.note ? (
+                <Text style={text.muted}>
+                  {t.checkout.noteShown} : {contact.note}
+                </Text>
+              ) : null}
               <Button
                 label={`${t.seller.call} · ${contact.phone}`}
                 variant="secondary"

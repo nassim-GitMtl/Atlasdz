@@ -86,9 +86,15 @@ export default async function OrderDetail({
             <p>{t.contactHint}</p>
             {result.order.deliveryContact ? (
               <dl>
-                {(['recipientName', 'phone', 'addressLine', 'city'] as const).map((field) => (
+                {(['recipientName', 'phone', 'addressLine', 'city', 'note'] as const)
+                  .filter((field) => result.order?.deliveryContact?.[field])
+                  .map((field) => (
                   <div key={field}>
-                    <dt>{t[field]}</dt>
+                    <dt>
+                      {field === 'note'
+                        ? lang(locale, 'Indications pour le livreur', 'إرشادات لعامل التوصيل', 'Notes for the courier')
+                        : t[field]}
+                    </dt>
                     <dd>
                       <bdi dir={field === 'phone' ? 'ltr' : 'auto'}>
                         {result.order?.deliveryContact?.[field]}

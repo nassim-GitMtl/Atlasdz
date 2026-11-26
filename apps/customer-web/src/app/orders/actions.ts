@@ -77,6 +77,8 @@ export async function quoteAction(
       phone: form.get('phone'),
       addressLine: form.get('addressLine'),
       city: form.get('city'),
+      // Optional: an empty field is simply left out.
+      ...(String(form.get('note') ?? '').trim() ? { note: form.get('note') } : {}),
     },
   });
   if (!input.success) return { error: 'invalid' };

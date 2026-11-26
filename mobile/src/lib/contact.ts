@@ -17,5 +17,8 @@ export function contactErrors(contact: DeliveryContact): Set<keyof DeliveryConta
   if (!/^\+?[0-9]{7,15}$/.test(normalizePhone(contact.phone))) bad.add('phone');
   if (!length(contact.addressLine, 5, 240)) bad.add('addressLine');
   if (!length(contact.city, 2, 120)) bad.add('city');
+  // The courier note is optional: empty is fine, otherwise 2–200 characters on one line.
+  const note = contact.note?.trim() ?? '';
+  if (note !== '' && (!length(note, 2, 200) || /[\r\n]/.test(note))) bad.add('note');
   return bad;
 }

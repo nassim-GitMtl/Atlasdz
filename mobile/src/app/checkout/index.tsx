@@ -167,6 +167,7 @@ export default function CheckoutScreen() {
         phone: normalizePhone(contact.phone),
         addressLine: contact.addressLine.trim(),
         city: contact.city.trim(),
+        ...(contact.note?.trim() ? { note: contact.note.trim() } : {}),
       };
       const quote = await session.request<CheckoutQuote>('/api/v1/checkout/quotes', {
         body: {
@@ -306,6 +307,14 @@ export default function CheckoutScreen() {
             value={contact.city}
             onChangeText={set('city')}
             error={showErrors && errors.has('city')}
+          />
+          <Field
+            label={t.checkout.note}
+            hint={t.checkout.noteHint}
+            value={contact.note ?? ''}
+            onChangeText={set('note')}
+            maxLength={200}
+            error={showErrors && errors.has('note')}
           />
           {preorder ? (
             <Checkbox

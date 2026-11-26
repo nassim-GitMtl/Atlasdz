@@ -86,6 +86,10 @@ applies it.
 adds a bad line and imports the file from « Mise à jour rapide »; the stock changes and the bad
 line is reported by number. The original stock is restored at the end.
 
+`delivery-note.mjs` (shop, Seller Center): the demo customer adds a courier note (landmark) in the
+shop checkout form; the order page, the printable summary and the seller's order page show it.
+The order is cancelled at the end.
+
 `deployed-shop.mjs` (production rehearsal, https://shop.localhost): search suggestions, favorites,
 product schema.org data and the live sitemap under the production CSP, with no CSP violations.
 
