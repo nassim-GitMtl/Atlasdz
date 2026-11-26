@@ -94,6 +94,9 @@ The order is cancelled at the end.
 member opens the welcome link from the API log, chooses a password, enrols two-step sign-in, can
 open orders but not the shop settings or the team; the owner removes the member.
 
+`order-filter.mjs` (Seller Center, read-only): the order inbox tabs (to handle / shipped / closed /
+all) add up, and the search finds an order by its number.
+
 `deployed-shop.mjs` (production rehearsal, https://shop.localhost): search suggestions, favorites,
 product schema.org data and the live sitemap under the production CSP, with no CSP violations.
 
