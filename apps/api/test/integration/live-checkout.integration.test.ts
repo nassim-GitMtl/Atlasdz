@@ -711,6 +711,10 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
     assert.equal(order.body.paymentState, 'CASH_ON_DELIVERY');
     const sellerOrder = order.body.sellerOrders[0];
     assert.equal(sellerOrder.dataClass, 'live');
+    // The order keeps the seller's legal identity and stated delivery time (printed summary).
+    assert.equal(sellerOrder.snapshot.sellerLegal.registerNumber, '13/AR-0012345');
+    assert.equal(sellerOrder.snapshot.sellerLegal.address, '7 boulevard Colonel Lotfi, Tlemcen');
+    assert.deepEqual(sellerOrder.snapshot.deliveryRate.deliveryDays, { min: 2, max: 4 });
 
     // The seller is emailed through the retrying outbox, then reminded once while it waits.
     await flush();

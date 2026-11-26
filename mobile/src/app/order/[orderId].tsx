@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
 import { Badge, Button, Card, LoadState, Notice, Screen, text } from '@/components/ui';
+import { SellerLegal } from '@/components/seller-legal';
 import { errorCode } from '@/lib/api';
 import { useCart } from '@/lib/cart';
 import { fill, formatDate, formatMoney, localized } from '@/lib/format';
@@ -129,6 +130,13 @@ export default function OrderScreen() {
                     tone={statusTone(sellerOrder.status)}
                   />
                 </View>
+                {sellerOrder.snapshot.sellerLegal ? (
+                  <SellerLegal
+                    legal={sellerOrder.snapshot.sellerLegal}
+                    note={t.order.legalAtOrder}
+                    collapsible
+                  />
+                ) : null}
                 {sellerOrder.snapshot.items.map((item) => (
                   <Fragment key={item.offerId}>
                     <View style={styles.row}>

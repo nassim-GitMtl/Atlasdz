@@ -6,6 +6,7 @@ import {
   DeliveryContactSchema,
   EventEnvelopeSchema,
   SellerOrderSchema,
+  SellerLegalSchema,
   SellerRejectionReasonSchema,
   ProcessSellerOrderInputSchema,
   UuidSchema,
@@ -199,7 +200,24 @@ async function lockedTerms(
       version: rate.version,
       destination: rate.destination,
       codCollector: rate.codCollector,
+      deliveryDays: rate.deliveryDays ?? null,
     };
+  }
+  // The seller's legal identity at quote time, printed on the order summary (law 18-05).
+  const legal = await client.query<{ id: string; legal: SellerOrderSnapshot['sellerLegal'] }>(
+    `SELECT id, CASE WHEN legal_name IS NOT NULL AND register_kind IS NOT NULL
+        AND register_number IS NOT NULL AND tax_id IS NOT NULL AND legal_address IS NOT NULL
+        AND contact_phone IS NOT NULL AND contact_email IS NOT NULL
+        THEN jsonb_build_object('legalName', legal_name, 'registerKind', register_kind,
+          'registerNumber', register_number, 'taxId', tax_id, 'address', legal_address,
+          'phone', contact_phone, 'email', contact_email) END AS legal
+     FROM sellers.sellers WHERE id = ANY($1::uuid[])`,
+    [[...groups.keys()]],
+  );
+  // Parsed so key order matches the stored quote (jsonb reorders keys; quotes compare as JSON).
+  for (const group of groups.values()) {
+    const found = legal.rows.find((row) => row.id === group.sellerId)?.legal ?? null;
+    group.sellerLegal = found === null ? null : SellerLegalSchema.parse(found);
   }
   return [...groups.values()]
     .sort((a, b) => a.sellerId.localeCompare(b.sellerId))

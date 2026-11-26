@@ -71,6 +71,10 @@ password stops working and the new one signs in.
 destination; the shop delivery estimate and the app checkout show it next to the fee with the
 "stated by the seller" note. Clears the days (and any cart line it added) at the end.
 
+`print-order.mjs` (shop, Seller Center): the demo customer places a test order through the API;
+the shop order page opens the printable summary (seller legal identity recorded at order time,
+lines, totals, no site chrome) and the seller opens its parcel copy. Cancels the order at the end.
+
 `deployed-shop.mjs` (production rehearsal, https://shop.localhost): search suggestions, favorites,
 product schema.org data and the live sitemap under the production CSP, with no CSP violations.
 

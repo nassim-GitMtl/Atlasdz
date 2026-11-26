@@ -58,6 +58,9 @@ export default async function OrderDetail({
           <p>
             {t.id}: <bdi className="mono">{result.order.id}</bdi>
           </p>
+          <Link className="button secondary small" href={href(`/orders/${sellerOrderId}/print`, locale)}>
+            {lang(locale, 'Imprimer le récapitulatif (à joindre au colis)', 'طباعة ملخص الطلب (يُرفق بالطرد)', 'Print the summary (for the parcel)')}
+          </Link>
           <ul className="seller-order-items">
             {result.order.snapshot.items.map((item) => (
               <li key={item.offerId}>

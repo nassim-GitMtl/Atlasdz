@@ -1,7 +1,12 @@
 import { z } from 'zod';
-import { CatalogLocalizedTextSchema, CatalogProductSchema, PreorderSchema } from './catalog.js';
+import {
+  CatalogLocalizedTextSchema,
+  CatalogProductSchema,
+  PreorderSchema,
+  SellerLegalSchema,
+} from './catalog.js';
 import { IsoTimestampSchema, UuidSchema } from './primitives.js';
-import { CodCollectorSchema, DeliveryDestinationSchema } from './delivery.js';
+import { CodCollectorSchema, DeliveryDaysSchema, DeliveryDestinationSchema } from './delivery.js';
 
 const TotalSchema = z.number().int().min(0).max(10_100_000_000_000);
 const contactText = (min: number, max: number) =>
@@ -99,9 +104,13 @@ export const SellerOrderSnapshotSchema = z
         version: z.number().int().positive(),
         destination: DeliveryDestinationSchema,
         codCollector: CodCollectorSchema,
+        /** The delivery time the seller stated for this destination when the order was quoted. */
+        deliveryDays: DeliveryDaysSchema.nullish(),
       })
       .strict()
       .optional(),
+    /** The seller's legal identity (law 18-05) when the order was quoted; null if incomplete. */
+    sellerLegal: SellerLegalSchema.nullish(),
   })
   .strict();
 export const CheckoutQuoteSchema = z

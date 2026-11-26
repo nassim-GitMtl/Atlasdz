@@ -4,6 +4,7 @@ import { Text } from '@/components/text';
 
 import { ProductCard } from '@/components/product-card';
 import { RatingLine, ReviewItem } from '@/components/reviews';
+import { SellerLegal } from '@/components/seller-legal';
 import { Button, Card, Empty, LoadState, Notice, text } from '@/components/ui';
 import { api } from '@/lib/api';
 import { fill, formatDate, localized } from '@/lib/format';
@@ -60,20 +61,7 @@ export default function StoreScreen() {
               <Text style={text.muted}>{t.store.about}</Text>
               <Text style={text.body}>{localized(seller.data.description, locale)}</Text>
               {seller.data.legal ? (
-                <View style={styles.legal}>
-                  <Text style={text.heading}>{t.register.legalTitle}</Text>
-                  <Text style={text.body}>{seller.data.legal.legalName}</Text>
-                  <Text style={text.muted}>
-                    {t.register[`kind${seller.data.legal.registerKind}`]} :{' '}
-                    {seller.data.legal.registerNumber}
-                  </Text>
-                  <Text style={text.muted}>NIF : {seller.data.legal.taxId}</Text>
-                  <Text style={text.muted}>{seller.data.legal.address}</Text>
-                  <Text style={text.muted}>
-                    {seller.data.legal.phone} · {seller.data.legal.email}
-                  </Text>
-                  <Text style={text.muted}>{t.register.legalShown}</Text>
-                </View>
+                <SellerLegal legal={seller.data.legal} note={t.register.legalShown} />
               ) : null}
               {seller.data.holidayUntil ? (
                 <Notice tone="info">
@@ -106,7 +94,6 @@ export default function StoreScreen() {
 }
 
 const styles = StyleSheet.create({
-  legal: { gap: 2, paddingTop: 8, borderTopWidth: 1, borderTopColor: colors.line },
   list: { flex: 1, backgroundColor: colors.cream },
   content: { padding: gap, gap: 12, paddingBottom: 40 },
   row: { gap: 12 },

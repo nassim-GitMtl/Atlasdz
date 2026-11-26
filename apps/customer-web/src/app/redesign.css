@@ -351,3 +351,28 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 .seller-legal dt { color: var(--muted); }
 .seller-legal dd { margin: 0; overflow-wrap: anywhere; }
 .seller-legal p { margin: 0; color: var(--muted); font-size: 12px; }
+
+/* Printable order summary (no site chrome). */
+.print-page { max-width: 820px; margin: 0 auto; padding: 24px 16px 48px; background: var(--white); color: var(--ink); }
+.print-page__bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 24px; }
+.print-page__brand { margin: 0 0 8px; font-weight: 800; font-size: 20px; letter-spacing: -0.02em; }
+.order-document h1 { margin: 0 0 12px; font-size: 26px; }
+.order-document h2 { margin: 0 0 8px; font-size: 16px; }
+.order-document dl { display: grid; grid-template-columns: minmax(110px, 38%) 1fr; gap: 4px 12px; margin: 0; font-size: 14px; }
+.order-document dt { color: var(--muted); }
+.order-document dd { margin: 0; overflow-wrap: anywhere; }
+.order-document__meta { margin-bottom: 20px !important; }
+.order-document__parties { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 20px; }
+.order-document__parties section { padding: 14px; border: 1px solid var(--line); border-radius: 12px; }
+.order-document__shop { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
+.order-document__lines { width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 16px; }
+.order-document__lines th, .order-document__lines td { padding: 8px 6px; border-bottom: 1px solid var(--line); text-align: start; vertical-align: top; }
+.order-document__lines td:nth-child(n+2), .order-document__lines thead th:nth-child(n+2), .order-document__lines tfoot td { text-align: end; white-space: nowrap; }
+.order-document__lines tfoot th { text-align: end; font-weight: 500; color: var(--muted); }
+.order-document__total th, .order-document__total td { font-weight: 800 !important; color: var(--ink) !important; font-size: 16px; }
+.order-document__note { color: var(--muted); font-size: 12px; }
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff !important; }
+  .print-page { padding: 0; max-width: none; }
+}

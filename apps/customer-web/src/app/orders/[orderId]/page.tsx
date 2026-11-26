@@ -93,6 +93,14 @@ export default async function OrderDetail({
                   <p>
                     {t.seller}: <bdi className="order-id">{seller.id}</bdi>
                   </p>
+                  <Link href={localizedHref(`/orders/${orderId}/print/${seller.id}`, locale)}>
+                    {lang(
+                      locale,
+                      'Imprimer le récapitulatif (vendeur, articles, total)',
+                      'طباعة ملخص الطلب (البائع، المنتجات، المجموع)',
+                      'Print the summary (seller, items, total)',
+                    )}
+                  </Link>
                   <p>
                     {t.deadline}:{' '}
                     <time dateTime={seller.acceptanceDeadline}>
