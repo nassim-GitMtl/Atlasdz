@@ -77,7 +77,7 @@ export default async function StorePage({
                 <summary>{lang(locale, 'Informations légales du vendeur', 'المعلومات القانونية للبائع', 'Seller legal information')}</summary>
                 <dl>
                   <dt>{lang(locale, 'Nom ou raison sociale', 'الاسم أو التسمية التجارية', 'Name or company name')}</dt>
-                  <dd>{seller.legal.legalName}</dd>
+                  <dd><bdi>{seller.legal.legalName}</bdi></dd>
                   <dt>
                     {{
                       COMMERCE: lang(locale, 'Registre du commerce', 'السجل التجاري', 'Commerce register'),
@@ -89,7 +89,7 @@ export default async function StorePage({
                   <dt>{lang(locale, 'NIF', 'رقم التعريف الجبائي', 'Tax ID (NIF)')}</dt>
                   <dd><bdi>{seller.legal.taxId}</bdi></dd>
                   <dt>{lang(locale, 'Adresse', 'العنوان', 'Address')}</dt>
-                  <dd>{seller.legal.address}</dd>
+                  <dd><bdi>{seller.legal.address}</bdi></dd>
                   <dt>{lang(locale, 'Téléphone', 'الهاتف', 'Phone')}</dt>
                   <dd><a href={`tel:${seller.legal.phone}`} dir="ltr">{seller.legal.phone}</a></dd>
                   <dt>{lang(locale, 'E-mail', 'البريد الإلكتروني', 'Email')}</dt>

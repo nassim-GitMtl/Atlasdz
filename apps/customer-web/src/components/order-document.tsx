@@ -47,13 +47,13 @@ export function OrderDocument({
           {legal ? (
             <dl>
               <dt>{lang(locale, 'Nom ou raison sociale', 'الاسم أو التسمية التجارية', 'Name or company name')}</dt>
-              <dd>{legal.legalName}</dd>
+              <dd><bdi>{legal.legalName}</bdi></dd>
               <dt>{registerLabel(legal.registerKind, locale)}</dt>
               <dd><bdi>{legal.registerNumber}</bdi></dd>
               <dt>{lang(locale, 'NIF', 'رقم التعريف الجبائي', 'Tax ID (NIF)')}</dt>
               <dd><bdi>{legal.taxId}</bdi></dd>
               <dt>{lang(locale, 'Adresse', 'العنوان', 'Address')}</dt>
-              <dd>{legal.address}</dd>
+              <dd><bdi>{legal.address}</bdi></dd>
               <dt>{lang(locale, 'Téléphone', 'الهاتف', 'Phone')}</dt>
               <dd><bdi dir="ltr">{legal.phone}</bdi></dd>
               <dt>{lang(locale, 'E-mail', 'البريد الإلكتروني', 'Email')}</dt>
@@ -61,7 +61,7 @@ export function OrderDocument({
             </dl>
           ) : (
             <p>
-              <strong>{snapshot.sellerName}</strong>
+              <strong><bdi>{snapshot.sellerName}</bdi></strong>
               <br />
               {lang(
                 locale,
@@ -72,7 +72,7 @@ export function OrderDocument({
             </p>
           )}
           <p className="order-document__shop">
-            {lang(locale, 'Boutique', 'المتجر', 'Shop')} : {snapshot.sellerName}
+            {lang(locale, 'Boutique', 'المتجر', 'Shop')} : <bdi>{snapshot.sellerName}</bdi>
           </p>
         </section>
         <section>
@@ -80,17 +80,19 @@ export function OrderDocument({
           {contact ? (
             <dl>
               <dt>{lang(locale, 'Destinataire', 'المستلم', 'Recipient')}</dt>
-              <dd>{contact.recipientName}</dd>
+              <dd><bdi>{contact.recipientName}</bdi></dd>
               <dt>{lang(locale, 'Téléphone', 'الهاتف', 'Phone')}</dt>
               <dd><bdi dir="ltr">{contact.phone}</bdi></dd>
               <dt>{lang(locale, 'Adresse', 'العنوان', 'Address')}</dt>
               <dd>
-                {contact.addressLine}, {contact.city}
+                <bdi>
+                  {contact.addressLine}, {contact.city}
+                </bdi>
               </dd>
               {contact.note && (
                 <>
                   <dt>{lang(locale, 'Indications', 'إرشادات', 'Notes')}</dt>
-                  <dd>{contact.note}</dd>
+                  <dd><bdi>{contact.note}</bdi></dd>
                 </>
               )}
               {destination && (
@@ -129,7 +131,7 @@ export function OrderDocument({
         <tbody>
           {snapshot.items.map((item) => (
             <tr key={item.offerId}>
-              <td>{text(item.title, locale)}</td>
+              <td><bdi>{text(item.title, locale)}</bdi></td>
               <td>{item.quantity}</td>
               <td><bdi>{formatMoney(item.unitPriceMinor, locale)}</bdi></td>
               <td><bdi>{formatMoney(item.unitPriceMinor * item.quantity, locale)}</bdi></td>
