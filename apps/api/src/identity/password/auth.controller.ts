@@ -1,4 +1,9 @@
-import { SafeApplicationError, SellerHolidayInputSchema, UuidSchema } from '@atlas/contracts';
+import {
+  SafeApplicationError,
+  SellerHolidayInputSchema,
+  SellerLegalSchema,
+  UuidSchema,
+} from '@atlas/contracts';
 import type { RuntimeConfig } from '@atlas/platform';
 import { Body, Controller, Get, HttpCode, Inject, Param, Post, Query, Req } from '@nestjs/common';
 
@@ -166,8 +171,12 @@ export class AuthController {
       'descriptionFr',
       'descriptionAr',
       'origin',
+      'legal',
     ]);
     const origin = this.allowedOrigin(raw['origin']);
+    // Law 18-05: the seller's register number, NIF, address and contacts are shown to buyers.
+    const legal = SellerLegalSchema.safeParse(raw['legal']);
+    if (!legal.success) invalid('legal', 'INVALID');
     const input = {
       email: email(raw),
       password: password(raw),
@@ -175,6 +184,7 @@ export class AuthController {
       storeName: text(raw, 'storeName', 160),
       descriptionFr: text(raw, 'descriptionFr', 8000, true),
       descriptionAr: text(raw, 'descriptionAr', 8000, true),
+      legal: legal.data,
     };
     const violation = passwordPolicyViolation(input.password, input.email);
     if (violation) policyFailure(violation);
@@ -297,7 +307,30 @@ export class SellerAccountController {
       sellerId: principal.scope.id,
       status,
       holidayUntil: await this.identity.sellerHoliday(principal.scope.id),
+      legal: await this.identity.sellerLegal(principal.scope.id),
     };
+  }
+
+  /** The seller's legal identity shown to buyers (register, NIF, address, contacts). */
+  @Post('legal')
+  @HttpCode(200)
+  @RequirePermission('offer.update', { minimumAssurance: 'MFA' })
+  @RateLimited('authenticated', 'seller.account.legal')
+  public async legal(
+    @Req() request: AuthenticatedRequest & CorrelatedRequest,
+    @Body() body: unknown,
+  ) {
+    const principal = getRequestPrincipal(request);
+    if (principal.actorType !== 'seller_user' || principal.scope.type !== 'SELLER') {
+      throw new SafeApplicationError('FORBIDDEN');
+    }
+    const parsed = SellerLegalSchema.safeParse(body);
+    if (!parsed.success) invalid('legal', 'INVALID');
+    await this.identity.setSellerLegal(principal.scope.id, parsed.data, {
+      actorUserId: principal.userId,
+      correlationId: request.correlationId,
+    });
+    return { legal: parsed.data };
   }
 
   /**

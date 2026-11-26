@@ -1,4 +1,5 @@
 'use client';
+import { LegalFields } from './legal-fields';
 
 import Link from 'next/link';
 import { useActionState, useState } from 'react';
@@ -128,7 +129,7 @@ export function SellerRegisterForm({ locale }: { readonly locale: Locale }) {
     <form action={action} className="auth-form">
       <input type="hidden" name="lang" value={locale} />
       <Field id="reg-store" label={t.storeName}>
-        <input id="reg-store" name="storeName" required maxLength={160} />
+        <input id="reg-store" name="storeName" required maxLength={160} defaultValue={state.values?.storeName} />
       </Field>
       <Field id="reg-email" label={t.email}>
         <input
@@ -139,6 +140,7 @@ export function SellerRegisterForm({ locale }: { readonly locale: Locale }) {
           dir="ltr"
           required
           maxLength={254}
+          defaultValue={state.values?.email}
         />
       </Field>
       <Field id="reg-password" label={t.password} hint={t.passwordHint}>
@@ -155,11 +157,12 @@ export function SellerRegisterForm({ locale }: { readonly locale: Locale }) {
         />
       </Field>
       <Field id="reg-fr" label={t.descriptionFr}>
-        <textarea id="reg-fr" name="descriptionFr" dir="ltr" lang="fr" required maxLength={8000} />
+        <textarea id="reg-fr" name="descriptionFr" dir="ltr" lang="fr" required maxLength={8000} defaultValue={state.values?.descriptionFr} />
       </Field>
       <Field id="reg-ar" label={t.descriptionAr}>
-        <textarea id="reg-ar" name="descriptionAr" dir="rtl" lang="ar" required maxLength={8000} />
+        <textarea id="reg-ar" name="descriptionAr" dir="rtl" lang="ar" required maxLength={8000} defaultValue={state.values?.descriptionAr} />
       </Field>
+      <LegalFields locale={locale} prefix="reg" values={state.values?.legal} />
       {state.error && (
         <p className="notice error" role="alert">
           {t[state.error]}

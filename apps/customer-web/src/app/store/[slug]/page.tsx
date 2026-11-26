@@ -65,6 +65,39 @@ export default async function StorePage({
             <p className="eyebrow">{t.sellerStore}</p>
             <h1>{seller.name}</h1>
             <p>{text(seller.description, locale)}</p>
+            {seller.legal && (
+              <details className="seller-legal">
+                <summary>{lang(locale, 'Informations légales du vendeur', 'المعلومات القانونية للبائع', 'Seller legal information')}</summary>
+                <dl>
+                  <dt>{lang(locale, 'Nom ou raison sociale', 'الاسم أو التسمية التجارية', 'Name or company name')}</dt>
+                  <dd>{seller.legal.legalName}</dd>
+                  <dt>
+                    {{
+                      COMMERCE: lang(locale, 'Registre du commerce', 'السجل التجاري', 'Commerce register'),
+                      ARTISAN: lang(locale, 'Carte d’artisan', 'بطاقة الحرفي', 'Craftsman card'),
+                      AUTO_ENTREPRENEUR: lang(locale, 'Carte d’auto-entrepreneur', 'بطاقة المقاول الذاتي', 'Auto-entrepreneur card'),
+                    }[seller.legal.registerKind]}
+                  </dt>
+                  <dd><bdi>{seller.legal.registerNumber}</bdi></dd>
+                  <dt>{lang(locale, 'NIF', 'رقم التعريف الجبائي', 'Tax ID (NIF)')}</dt>
+                  <dd><bdi>{seller.legal.taxId}</bdi></dd>
+                  <dt>{lang(locale, 'Adresse', 'العنوان', 'Address')}</dt>
+                  <dd>{seller.legal.address}</dd>
+                  <dt>{lang(locale, 'Téléphone', 'الهاتف', 'Phone')}</dt>
+                  <dd><a href={`tel:${seller.legal.phone}`} dir="ltr">{seller.legal.phone}</a></dd>
+                  <dt>{lang(locale, 'E-mail', 'البريد الإلكتروني', 'Email')}</dt>
+                  <dd><a href={`mailto:${seller.legal.email}`} dir="ltr">{seller.legal.email}</a></dd>
+                </dl>
+                <p>
+                  {lang(
+                    locale,
+                    'Informations déclarées par le vendeur (loi 18-05 relative au commerce électronique).',
+                    'معلومات صرّح بها البائع (القانون 18-05 المتعلق بالتجارة الإلكترونية).',
+                    'Information declared by the seller (Algerian e-commerce law 18-05).',
+                  )}
+                </p>
+              </details>
+            )}
             {seller.holidayUntil && (
               <p className="notice" role="status">
                 {lang(locale, 'Boutique en congé jusqu’au ', 'المتجر في عطلة حتى ', 'Shop on holiday until ')}

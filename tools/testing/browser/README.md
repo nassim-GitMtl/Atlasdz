@@ -52,6 +52,10 @@ a new product submitted (with characteristics and an English title), approved th
 staff session, given a main and an extra photo from the file picker and an offer, then shown with
 its characteristics in French and English; a commune delivery rate; notifications; sign-out.
 
+`seller-legal.mjs` (Seller Center, shop, app): the demo seller fills its legal identity
+(law 18-05: register, NIF, address, contacts); an invalid NIF is refused with the typed values
+kept; the shop and app store pages show it.
+
 `questions.mjs` (shop, Seller Center, app): a customer asks on a product page, the demo seller
 answers in Seller Center, the shop and the app show it, staff hide the question.
 

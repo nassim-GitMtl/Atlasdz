@@ -1,3 +1,4 @@
+import type { SellerLegal } from '@atlas/contracts';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import type {
   AccessCredentialVerifierPort,
@@ -68,7 +69,19 @@ export interface SellerApplication {
   readonly descriptionAr: string;
   readonly email: string;
   readonly createdAt: string;
+  /** Declared legal identity, checked by staff before approval (null for older sellers). */
+  readonly legal: SellerLegal | null;
 }
+
+/** Columns -> legal identity, or null while incomplete. */
+const LEGAL_JSON = (alias: string) => `CASE WHEN ${alias}.legal_name IS NOT NULL
+  AND ${alias}.register_kind IS NOT NULL AND ${alias}.register_number IS NOT NULL
+  AND ${alias}.tax_id IS NOT NULL AND ${alias}.legal_address IS NOT NULL
+  AND ${alias}.contact_phone IS NOT NULL AND ${alias}.contact_email IS NOT NULL
+  THEN jsonb_build_object('legalName', ${alias}.legal_name, 'registerKind', ${alias}.register_kind,
+    'registerNumber', ${alias}.register_number, 'taxId', ${alias}.tax_id,
+    'address', ${alias}.legal_address, 'phone', ${alias}.contact_phone,
+    'email', ${alias}.contact_email) END`;
 
 export interface AuditContext {
   readonly correlationId: string;
@@ -304,6 +317,7 @@ export class PasswordIdentityRepository {
       storeName: string;
       descriptionFr: string;
       descriptionAr: string;
+      legal: SellerLegal;
     },
     context: AuditContext,
   ): Promise<RegistrationResult> {
@@ -320,9 +334,22 @@ export class PasswordIdentityRepository {
         let slug = base;
         for (let suffix = 2; used.has(slug); suffix += 1) slug = `${base}-${suffix}`;
         const seller = await client.query<{ id: string }>(
-          `INSERT INTO sellers.sellers (slug, name, description_fr, description_ar, status)
-           VALUES ($1, $2, $3, $4, 'PENDING_REVIEW') RETURNING id`,
-          [slug, input.storeName.trim(), input.descriptionFr.trim(), input.descriptionAr.trim()],
+          `INSERT INTO sellers.sellers (slug, name, description_fr, description_ar, status,
+             legal_name, register_kind, register_number, tax_id, legal_address, contact_phone, contact_email)
+           VALUES ($1, $2, $3, $4, 'PENDING_REVIEW', $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
+          [
+            slug,
+            input.storeName.trim(),
+            input.descriptionFr.trim(),
+            input.descriptionAr.trim(),
+            input.legal.legalName,
+            input.legal.registerKind,
+            input.legal.registerNumber,
+            input.legal.taxId,
+            input.legal.address,
+            input.legal.phone,
+            input.legal.email,
+          ],
         );
         const sellerId = seller.rows[0]?.id;
         if (sellerId === undefined) throw new Error('Seller was not created');
@@ -623,9 +650,10 @@ export class PasswordIdentityRepository {
       description_ar: string;
       email: string;
       created_at: Date;
+      legal: SellerLegal | null;
     }>(
       `SELECT s.id, s.slug, s.name, s.description_fr, s.description_ar, s.created_at,
-         COALESCE(c.email, '') AS email
+         COALESCE(c.email, '') AS email, ${LEGAL_JSON('s')} AS legal
        FROM sellers.sellers s
        LEFT JOIN LATERAL (
          SELECT pc.email FROM identity.user_role_assignments a
@@ -644,6 +672,7 @@ export class PasswordIdentityRepository {
       descriptionAr: row.description_ar,
       email: row.email,
       createdAt: row.created_at.toISOString(),
+      legal: row.legal,
     }));
   }
 
@@ -687,6 +716,54 @@ export class PasswordIdentityRepository {
       [sellerId],
     );
     return result.rows[0]?.status ?? null;
+  }
+
+  /** The seller's declared legal identity, or null while incomplete. */
+  public async sellerLegal(sellerId: string): Promise<SellerLegal | null> {
+    const result = await this.pool.query<{ legal: SellerLegal | null }>(
+      `SELECT ${LEGAL_JSON('s')} AS legal FROM sellers.sellers s WHERE s.id = $1`,
+      [sellerId],
+    );
+    return result.rows[0]?.legal ?? null;
+  }
+
+  /** Updates the legal identity shown to buyers; audited with the previous values. */
+  public async setSellerLegal(
+    sellerId: string,
+    legal: SellerLegal,
+    context: { actorUserId: string; correlationId: string },
+  ): Promise<void> {
+    await inTransaction(this.pool, async (client) => {
+      const before = await client.query<{ legal: SellerLegal | null }>(
+        `SELECT ${LEGAL_JSON('s')} AS legal FROM sellers.sellers s WHERE s.id = $1 FOR UPDATE`,
+        [sellerId],
+      );
+      await client.query(
+        `UPDATE sellers.sellers SET legal_name = $2, register_kind = $3, register_number = $4,
+           tax_id = $5, legal_address = $6, contact_phone = $7, contact_email = $8
+         WHERE id = $1`,
+        [
+          sellerId,
+          legal.legalName,
+          legal.registerKind,
+          legal.registerNumber,
+          legal.taxId,
+          legal.address,
+          legal.phone,
+          legal.email,
+        ],
+      );
+      await audit(client, {
+        actorType: 'seller_user',
+        actorId: context.actorUserId,
+        action: 'seller.legal_updated',
+        outcome: 'SUCCEEDED',
+        entityType: 'seller',
+        entityId: sellerId,
+        correlationId: context.correlationId,
+        after: { before: before.rows[0]?.legal ?? null, after: legal },
+      });
+    });
   }
 
   /** End of the seller's holiday, or null when the shop is open (a past date counts as open). */

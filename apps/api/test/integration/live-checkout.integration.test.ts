@@ -149,20 +149,42 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
 
   it('runs registration → approvals → COD order → seller delivery → customer confirmation', async () => {
     // Seller onboarding and staff approval.
+    // Law 18-05: the register number, NIF, address and contacts are required at registration.
+    const legal = {
+      legalName: 'Ahmed Benali',
+      registerKind: 'ARTISAN',
+      registerNumber: '13/AR-0012345',
+      taxId: '197813010012345',
+      address: '5 rue de la Paix, Tlemcen',
+      phone: '+213550000002',
+      email: 'contact@boutique.example.dz',
+    };
+    const registration = {
+      email: 'boutique@example.dz',
+      password,
+      storeName: 'Boutique Tlemcen',
+      descriptionFr: 'Artisanat de Tlemcen',
+      descriptionAr: 'صناعة تقليدية من تلمسان',
+    };
+    await http().post('/api/v1/auth/register/seller').send(registration).expect(422);
     await http()
       .post('/api/v1/auth/register/seller')
-      .send({
-        email: 'boutique@example.dz',
-        password,
-        storeName: 'Boutique Tlemcen',
-        descriptionFr: 'Artisanat de Tlemcen',
-        descriptionAr: 'صناعة تقليدية من تلمسان',
-      })
-      .expect(201);
+      .send({ ...registration, legal: { ...legal, taxId: '12AB' } })
+      .expect(422);
+    await http().post('/api/v1/auth/register/seller').send({ ...registration, legal }).expect(201);
     await identity.createStaff('ops@example.dz', password);
     const seller = await mfaLogin('boutique@example.dz');
     const staff = await mfaLogin('ops@example.dz');
     const account = await http().get('/api/v1/seller/account').set(bearer(seller)).expect(200);
+    assert.deepEqual(account.body.legal, legal);
+    // The seller corrects its address; buyers see the update once the store is approved.
+    const corrected = { ...legal, address: '7 boulevard Colonel Lotfi, Tlemcen' };
+    await http().post('/api/v1/seller/account/legal').set(bearer(seller)).send({ ...corrected, phone: 'x' }).expect(422);
+    await http().post('/api/v1/seller/account/legal').set(bearer(seller)).send(corrected).expect(200);
+    assert.equal(
+      (await http().get('/api/v1/seller/account').set(bearer(seller)).expect(200)).body.legal.address,
+      corrected.address,
+    );
     await http()
       .post(`/api/v1/admin/sellers/${account.body.sellerId}/review`)
       .set(bearer(staff))
@@ -502,6 +524,8 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
     await http().get(`/api/v1/catalog/products/${productSlug}`).expect(404);
     const store = await http().get(`/api/v1/catalog/sellers/${sellerSlug}`).expect(200);
     assert.ok(store.body.holidayUntil);
+    assert.equal(store.body.legal.registerNumber, '13/AR-0012345');
+    assert.equal(store.body.legal.address, '7 boulevard Colonel Lotfi, Tlemcen');
     const emptyCart = await http().get('/api/v1/cart').set(bearer(customer)).expect(200);
     const awayCart = await http()
       .put(`/api/v1/cart/items/${offer.body.id}`)

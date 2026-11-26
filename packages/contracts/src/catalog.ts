@@ -18,6 +18,23 @@ export const CatalogLocalizedTextSchema = z
 const MoneyMinorSchema = z.number().int().min(0).max(2_000_000_000);
 const QuantitySchema = z.number().int().min(0).max(1_000_000);
 
+/** A seller's legal identity, shown to buyers (law 18-05 on electronic commerce). */
+export const SellerLegalSchema = z
+  .object({
+    legalName: z.string().trim().min(2).max(160),
+    registerKind: z.enum(['COMMERCE', 'ARTISAN', 'AUTO_ENTREPRENEUR']),
+    registerNumber: z.string().trim().min(3).max(40),
+    taxId: z.string().trim().regex(/^[0-9]{15,20}$/),
+    address: z.string().trim().min(5).max(240),
+    phone: z
+      .string()
+      .trim()
+      .regex(/^\+?[0-9]{9,15}$/),
+    email: z.email().max(254),
+  })
+  .strict();
+export type SellerLegal = z.infer<typeof SellerLegalSchema>;
+
 export const CatalogSellerSchema = z
   .object({
     id: UuidSchema,
@@ -26,6 +43,8 @@ export const CatalogSellerSchema = z
     description: CatalogLocalizedTextSchema,
     /** Set while the seller is on holiday: offers come back after this time. */
     holidayUntil: IsoTimestampSchema.nullish(),
+    /** Legal identity; null until the seller has filled it in. */
+    legal: SellerLegalSchema.nullish(),
   })
   .strict();
 

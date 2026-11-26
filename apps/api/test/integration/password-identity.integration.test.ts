@@ -132,6 +132,15 @@ describe('email/password identity with PostgreSQL and HTTP', () => {
           storeName: 'Boutique',
           descriptionFr: 'Produits',
           descriptionAr: 'منتجات',
+          legal: {
+          legalName: 'Épicerie Atlas SARL',
+          registerKind: 'COMMERCE',
+          registerNumber: '16/00-1234567B21',
+          taxId: '000216001234567',
+          address: '12 rue Didouche Mourad, Alger',
+          phone: '+213550000001',
+          email: 'contact@epicerie.example.dz',
+        },
           ...fields,
         });
     for (const storeName of ['Shop‮etuqi', 'Shop​name', 'Shop\nname', 'Shop\u0000'])
@@ -145,6 +154,15 @@ describe('email/password identity with PostgreSQL and HTTP', () => {
         storeName: 'Épicerie Atlas',
         descriptionFr: 'Produits locaux',
         descriptionAr: 'منتجات محلية',
+        legal: {
+          legalName: 'Épicerie Atlas SARL',
+          registerKind: 'COMMERCE',
+          registerNumber: '16/00-1234567B21',
+          taxId: '000216001234567',
+          address: '12 rue Didouche Mourad, Alger',
+          phone: '+213550000001',
+          email: 'contact@epicerie.example.dz',
+        },
       })
       .expect(201);
     const enrollment = await http()

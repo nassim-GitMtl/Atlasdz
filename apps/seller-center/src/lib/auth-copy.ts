@@ -26,6 +26,7 @@ export const authCopy = {
     exists: 'Un compte existe déjà avec cet e-mail.',
     weak: 'Mot de passe trop faible : au moins 10 caractères variés, sans votre e-mail.',
     format: 'Vérifiez les champs du formulaire.',
+    legal: 'Vérifiez les informations légales : NIF de 15 à 20 chiffres, téléphone de 9 à 15 chiffres, e-mail valide.',
     customer: 'Ce compte est un compte client. Connectez-vous sur la boutique Atlas DZ.',
     limited: 'Trop de tentatives. Réessayez dans quelques minutes.',
     unavailable: 'Service momentanément indisponible. Réessayez.',
@@ -85,6 +86,7 @@ export const authCopy = {
     exists: 'An account already exists with this email.',
     weak: 'Password too weak: at least 10 varied characters, without your email.',
     format: 'Check the form fields.',
+    legal: 'Check the legal information: NIF of 15 to 20 digits, phone of 9 to 15 digits, valid email.',
     customer: 'This is a customer account. Sign in on the Atlas DZ shop.',
     limited: 'Too many attempts. Try again in a few minutes.',
     unavailable: 'Service briefly unavailable. Try again.',
@@ -142,6 +144,7 @@ export const authCopy = {
     exists: 'يوجد حساب بهذا البريد الإلكتروني.',
     weak: 'كلمة المرور ضعيفة: 10 أحرف متنوعة على الأقل ودون بريدك الإلكتروني.',
     format: 'تحقق من حقول النموذج.',
+    legal: 'تحقق من المعلومات القانونية: رقم جبائي من 15 إلى 20 رقمًا، هاتف من 9 إلى 15 رقمًا، بريد صحيح.',
     customer: 'هذا حساب زبون. سجّل الدخول من متجر أطلس دي زد.',
     limited: 'محاولات كثيرة. أعد المحاولة بعد بضع دقائق.',
     unavailable: 'الخدمة غير متاحة مؤقتًا. أعد المحاولة.',
@@ -180,6 +183,7 @@ export type AuthError =
   | 'exists'
   | 'weak'
   | 'format'
+  | 'legal'
   | 'customer'
   | 'limited'
   | 'unavailable'

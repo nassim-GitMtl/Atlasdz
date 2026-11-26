@@ -105,6 +105,14 @@ await step('seller registers', sp, async () => {
   await sp.fill('#reg-password', password);
   await sp.fill('#reg-fr', 'Tapis tissés à la main dans les Aurès.');
   await sp.fill('#reg-ar', 'زرابي منسوجة يدويا في الأوراس.');
+  // Law 18-05 legal identity (required).
+  await sp.fill('#reg-legal-name', `Atelier ${tag}`);
+  await sp.selectOption('#reg-register-kind', 'ARTISAN');
+  await sp.fill('#reg-register-number', '05/AR-0042');
+  await sp.fill('#reg-tax-id', '197805010012345');
+  await sp.fill('#reg-address', '12 rue des Aurès, Batna');
+  await sp.fill('#reg-phone', '+213 550 12 34 56');
+  await sp.fill('#reg-contact-email', `atelier-${tag}@example.dz`);
   await submit(sp, 'form.auth-form');
   await sp.waitForURL(/registered=1/, { timeout: 20000 });
 });
@@ -261,6 +269,14 @@ await step('seller sets a delivery rate for Alger', sp, async () => {
 // --- A guest buys with cash on delivery ---
 const bp = await (await context(390)).newPage();
 let orderUrl;
+await step('the store page shows the seller legal information (law 18-05)', bp, async () => {
+  await bp.goto(`${SHOP}/search?query=${encodeURIComponent(product.fr)}`);
+  await bp.getByRole('link', { name: product.fr }).first().click();
+  await bp.getByRole('link', { name: 'Voir la boutique' }).first().click();
+  await bp.getByText('Informations légales du vendeur').click({ timeout: 15000 });
+  await bp.getByText('05/AR-0042').waitFor({ timeout: 15000 });
+  await bp.getByText('197805010012345').waitFor();
+});
 await step('guest finds the product and adds it to the cart', bp, async () => {
   await bp.goto(`${SHOP}/search?query=${encodeURIComponent(product.fr)}`);
   // The promotion shows on the product card with the real regular price.

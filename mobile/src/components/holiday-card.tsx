@@ -7,8 +7,6 @@ import { fill, formatDate } from '@/lib/format';
 import { useI18n } from '@/lib/i18n';
 import { useSession } from '@/lib/session';
 import { errorMessage } from '@/lib/strings';
-import type { SellerAccount } from '@/lib/types';
-import { useRequest } from '@/lib/use-request';
 
 const PRESETS = [3, 7, 14, 30] as const;
 
@@ -22,12 +20,11 @@ function endOfDayIn(days: number): string {
 export function HolidayCard() {
   const { t, locale } = useI18n();
   const session = useSession();
-  const account = useRequest('seller-account-holiday', () =>
-    session.request<SellerAccount>('/api/v1/seller/account'),
-  );
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
-  const until = account.data?.holidayUntil ?? null;
+  // From the account the session already holds: the card renders with the screen, so nothing
+  // below it moves when it appears (a moving button can catch a tap meant for another).
+  const until = session.seller?.holidayUntil ?? null;
 
   async function set(days: number | null) {
     setBusy(true);
@@ -35,7 +32,7 @@ export function HolidayCard() {
     try {
       const end = days === null ? null : endOfDayIn(days);
       await session.request('/api/v1/seller/account/holiday', { body: { until: end } });
-      await account.reload();
+      await session.refreshAccount();
     } catch (error) {
       setFailure(errorCode(error));
     } finally {
@@ -43,7 +40,7 @@ export function HolidayCard() {
     }
   }
 
-  if (account.data?.status !== 'APPROVED') return null;
+  if (session.seller?.status !== 'APPROVED') return null;
   return (
     <Card>
       <Text style={text.heading}>{t.seller.holidayTitle}</Text>

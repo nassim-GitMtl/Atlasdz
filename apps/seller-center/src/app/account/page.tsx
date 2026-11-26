@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { HolidayForm } from '@/components/holiday-form';
+import { LegalForm } from '@/components/legal-form';
 import { Shell } from '@/components/shell';
 import { ServiceState } from '@/components/states';
 import { sellerAccount } from '@/lib/auth';
@@ -36,6 +37,7 @@ export default async function Account({
           {account.status === 'APPROVED' && (
             <HolidayForm locale={locale} holidayUntil={account.holidayUntil} />
           )}
+          <LegalForm locale={locale} legal={account.legal} />
         </section>
       )}
     </Shell>

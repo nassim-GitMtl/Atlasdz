@@ -1,3 +1,4 @@
+import { SellerLegalSchema, type SellerLegal } from '@atlas/contracts';
 import { isIP } from 'node:net';
 import { z } from 'zod';
 import type { AuthError } from './auth-copy.ts';
@@ -40,6 +41,7 @@ const SellerApplicationSchema = z
     descriptionAr: z.string(),
     email: z.string(),
     createdAt: z.iso.datetime(),
+    legal: SellerLegalSchema.nullable().optional(),
   })
   .strict();
 export type SellerApplication = z.infer<typeof SellerApplicationSchema>;
@@ -113,6 +115,7 @@ export const registerSeller = (
     storeName: string;
     descriptionFr: string;
     descriptionAr: string;
+    legal: SellerLegal;
   },
   clientIp?: string,
 ) =>
@@ -129,9 +132,16 @@ export const sellerAccount = (token: string) =>
       status: z.enum(['PENDING_REVIEW', 'APPROVED', 'REJECTED', 'SUSPENDED']),
       /** End of the holiday while the shop is closed; null when open. */
       holidayUntil: z.string().nullable().optional(),
+      legal: SellerLegalSchema.nullable().optional(),
     }),
     { token },
   );
+/** Updates the legal identity shown to buyers. */
+export const setSellerLegal = (token: string, legal: SellerLegal) =>
+  call('/api/v1/seller/account/legal', z.object({ legal: SellerLegalSchema }), {
+    token,
+    body: legal,
+  });
 /** Holiday mode: hide every offer until `until` (ISO), or reopen now with null. */
 export const setSellerHoliday = (token: string, until: string | null) =>
   call('/api/v1/seller/account/holiday', z.object({ holidayUntil: z.string().nullable() }), {

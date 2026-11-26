@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { SellerReviewForm } from '@/components/auth-forms';
+import { legalCopy } from '@/lib/legal';
 import { Shell } from '@/components/shell';
 import { ServiceState } from '@/components/states';
 import { listSellerApplications } from '@/lib/auth';
@@ -57,6 +58,24 @@ export default async function SellerApplications({
                   <p lang="ar" dir="rtl">
                     {seller.descriptionAr}
                   </p>
+                  {seller.legal ? (
+                    <dl className="kv-list">
+                      <dt>{legalCopy[locale].legalName}</dt>
+                      <dd>{seller.legal.legalName}</dd>
+                      <dt>{legalCopy[locale][seller.legal.registerKind]}</dt>
+                      <dd dir="ltr">{seller.legal.registerNumber}</dd>
+                      <dt>NIF</dt>
+                      <dd dir="ltr">{seller.legal.taxId}</dd>
+                      <dt>{legalCopy[locale].address}</dt>
+                      <dd>{seller.legal.address}</dd>
+                      <dt>{legalCopy[locale].phone}</dt>
+                      <dd dir="ltr">{seller.legal.phone}</dd>
+                      <dt>{legalCopy[locale].email}</dt>
+                      <dd dir="ltr">{seller.legal.email}</dd>
+                    </dl>
+                  ) : (
+                    <p className="notice error">{legalCopy[locale].missing}</p>
+                  )}
                   <SellerReviewForm locale={locale} sellerId={seller.sellerId} />
                 </li>
               ))}

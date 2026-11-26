@@ -414,6 +414,14 @@ await check('seller registers through the form', async () => {
   await sp.fill('#reg-password', password);
   await sp.fill('#reg-fr', 'Artisanat local');
   await sp.fill('#reg-ar', 'صناعة تقليدية');
+  // Law 18-05 legal identity (required).
+  await sp.fill('#reg-legal-name', `Boutique ${tag} SARL`);
+  await sp.selectOption('#reg-register-kind', 'COMMERCE');
+  await sp.fill('#reg-register-number', '16/00-1234567B21');
+  await sp.fill('#reg-tax-id', '000216001234567');
+  await sp.fill('#reg-address', '3 rue Larbi Ben Mhidi, Alger');
+  await sp.fill('#reg-phone', '+213 550 12 34 56');
+  await sp.fill('#reg-contact-email', `contact-${tag}@example.dz`);
   await sp.click('form.auth-form button[type=submit]');
   await sp.waitForURL(/\/login.*registered=1/, { timeout: 15000 });
   await audit(sp, 'seller /login');

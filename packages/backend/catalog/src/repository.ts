@@ -712,7 +712,14 @@ export class PostgresCatalogRepository {
       `
       SELECT jsonb_build_object('id', id, 'slug', slug, 'name', name,
         'description', jsonb_build_object('fr', description_fr, 'ar', description_ar),
-        'holidayUntil', CASE WHEN holiday_until > now() THEN ${utcIso('holiday_until')} END) AS seller
+        'holidayUntil', CASE WHEN holiday_until > now() THEN ${utcIso('holiday_until')} END,
+        -- Law 18-05 identity, shown once complete.
+        'legal', CASE WHEN legal_name IS NOT NULL AND register_kind IS NOT NULL
+          AND register_number IS NOT NULL AND tax_id IS NOT NULL AND legal_address IS NOT NULL
+          AND contact_phone IS NOT NULL AND contact_email IS NOT NULL
+          THEN jsonb_build_object('legalName', legal_name, 'registerKind', register_kind,
+            'registerNumber', register_number, 'taxId', tax_id, 'address', legal_address,
+            'phone', contact_phone, 'email', contact_email) END) AS seller
       FROM sellers.sellers WHERE slug = $1 AND status = 'APPROVED'
     `,
       [CatalogSlugSchema.parse(slug)],

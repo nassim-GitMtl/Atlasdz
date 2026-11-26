@@ -10,6 +10,7 @@ export type {
   ProductQuestionList,
   ProductSpecKey,
   ProductSubmission,
+  SellerLegal,
   SellerQuestion,
   StockAlertList,
   SellerOffer,

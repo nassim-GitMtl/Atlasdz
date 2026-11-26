@@ -12,7 +12,7 @@ import {
 import { api, ApiError, type RequestOptions } from './api';
 import { SHOP_URL } from './config';
 import { readValue, removeValue, writeValue } from './storage';
-import type { Account, Locale, LoginResult, SellerAccount } from './types';
+import type { SellerLegal, Account, Locale, LoginResult, SellerAccount } from './types';
 
 const TOKEN_KEY = 'atlas.session';
 const SESSION_ENDED = new Set(['AUTHENTICATION_REQUIRED', 'SESSION_REVOKED', 'SESSION_NOT_FOUND']);
@@ -30,6 +30,8 @@ export interface SellerRegistration {
   readonly storeName: string;
   readonly descriptionFr: string;
   readonly descriptionAr: string;
+  /** Law 18-05 identity shown to buyers. */
+  readonly legal: SellerLegal;
 }
 
 interface Stored {

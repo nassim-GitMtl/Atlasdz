@@ -15,10 +15,12 @@ import {
   removeProductPhoto,
   changeGalleryPhoto,
   setSellerHoliday,
+  setSellerLegal,
   uploadProductPhoto,
 } from '@/lib/auth';
 import type { AuthError } from '@/lib/auth-copy';
 import { href, localeFrom } from '@/lib/i18n';
+import { legalDraft, legalFromForm, type LegalDraft } from '@/lib/legal';
 import { trustedMutationOrigin } from '@/lib/security';
 import { accessToken, KIND_COOKIE, SESSION_COOKIE } from '@/lib/session';
 
@@ -31,6 +33,14 @@ export interface LoginState {
 export interface RegisterState {
   readonly error?: AuthError;
   readonly done?: boolean;
+  /** What was typed (never the password), shown again after a refusal. */
+  readonly values?: {
+    readonly storeName: string;
+    readonly email: string;
+    readonly descriptionFr: string;
+    readonly descriptionAr: string;
+    readonly legal: LegalDraft;
+  };
 }
 export interface ReviewState {
   readonly error?: 'invalid' | 'unauthorized' | 'forbidden' | 'conflict' | 'unavailable' | 'csrf';
@@ -100,11 +110,23 @@ export async function sellerRegisterAction(
     descriptionFr: str(form, 'descriptionFr').trim(),
     descriptionAr: str(form, 'descriptionAr').trim(),
   };
-  if (Object.values(input).some((value) => value === '')) return { error: 'format' };
+  const values = {
+    storeName: input.storeName,
+    email: input.email,
+    descriptionFr: input.descriptionFr,
+    descriptionAr: input.descriptionAr,
+    legal: legalDraft(form),
+  };
+  if (Object.values(input).some((value) => value === '')) return { error: 'format', values };
+  const legal = legalFromForm(form);
+  if (!legal) return { error: 'legal', values };
   try {
-    await registerSeller(input, forwardedClientIp((await headers()).get('x-forwarded-for')));
+    await registerSeller(
+      { ...input, legal },
+      forwardedClientIp((await headers()).get('x-forwarded-for')),
+    );
   } catch (error) {
-    return { error: authFailure(error) };
+    return { error: authFailure(error), values };
   }
   redirect(`${href('/login', locale)}&registered=1`);
 }
@@ -268,4 +290,26 @@ export async function holidayAction(_state: HolidayState, form: FormData): Promi
   revalidatePath('/account');
   revalidatePath('/offers');
   return {};
+}
+
+export interface LegalState {
+  readonly error?: 'invalid' | 'csrf' | 'unauthorized' | 'unavailable';
+  readonly done?: boolean;
+  readonly values?: LegalDraft;
+}
+
+/** The seller updates the legal identity shown to buyers. */
+export async function legalAction(_state: LegalState, form: FormData): Promise<LegalState> {
+  if (!(await validOrigin())) return { error: 'csrf' };
+  const token = await accessToken();
+  if (!token) return { error: 'unauthorized' };
+  const legal = legalFromForm(form);
+  if (!legal) return { error: 'invalid', values: legalDraft(form) };
+  try {
+    await setSellerLegal(token, legal);
+  } catch {
+    return { error: 'unavailable', values: legalDraft(form) };
+  }
+  revalidatePath('/account');
+  return { done: true };
 }
