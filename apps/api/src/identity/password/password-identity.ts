@@ -767,6 +767,153 @@ export class PasswordIdentityRepository {
   }
 
   /** End of the seller's holiday, or null when the shop is open (a past date counts as open). */
+  /** The user's role in a seller's team: the owner, a team member, or null. */
+  public async sellerRole(userId: string, sellerId: string): Promise<'OWNER' | 'STAFF' | null> {
+    const result = await this.pool.query<{ code: string }>(
+      `SELECT r.code FROM identity.user_role_assignments a
+       JOIN identity.roles r ON r.id = a.role_id
+       WHERE a.user_id = $1 AND a.scope_type = 'SELLER' AND a.scope_id = $2
+         AND a.revoked_at IS NULL AND r.code IN ('SELLER_OWNER', 'SELLER_STAFF')
+       ORDER BY a.valid_from LIMIT 1`,
+      [userId, sellerId],
+    );
+    const code = result.rows[0]?.code;
+    return code === 'SELLER_OWNER' ? 'OWNER' : code === 'SELLER_STAFF' ? 'STAFF' : null;
+  }
+
+  /** Owner and team members of a seller; `pending` until the member has set up two-step login. */
+  public async listTeam(sellerId: string): Promise<
+    readonly { userId: string; email: string; role: 'OWNER' | 'STAFF'; since: string; pending: boolean }[]
+  > {
+    const result = await this.pool.query<{
+      user_id: string;
+      email: string;
+      code: string;
+      since: Date;
+      pending: boolean;
+    }>(
+      `SELECT a.user_id, c.email, r.code, a.valid_from AS since,
+         NOT EXISTS (SELECT 1 FROM identity.totp_factors f
+                     WHERE f.user_id = a.user_id AND f.confirmed_at IS NOT NULL) AS pending
+       FROM identity.user_role_assignments a
+       JOIN identity.roles r ON r.id = a.role_id
+       JOIN identity.password_credentials c ON c.user_id = a.user_id
+       WHERE a.scope_type = 'SELLER' AND a.scope_id = $1 AND a.revoked_at IS NULL
+         AND r.code IN ('SELLER_OWNER', 'SELLER_STAFF')
+       ORDER BY a.valid_from`,
+      [sellerId],
+    );
+    return result.rows.map((row) => ({
+      userId: row.user_id,
+      email: row.email,
+      role: row.code === 'SELLER_OWNER' ? 'OWNER' : 'STAFF',
+      since: row.since.toISOString(),
+      pending: row.pending,
+    }));
+  }
+
+  /**
+   * Creates a team member account (no usable password yet) for an approved seller and returns
+   * a single-use, 7-day link token to choose the password. At most 10 team members.
+   */
+  public async inviteTeamMember(
+    input: { sellerId: string; ownerId: string; email: string; locale: Locale },
+    context: AuditContext,
+  ): Promise<
+    | { status: 'INVITED'; userId: string; setPasswordToken: string }
+    | { status: 'CONFLICT' | 'TEAM_FULL' | 'NOT_APPROVED' }
+  > {
+    const unusable = await hashPassword(randomBytes(32).toString('base64url'));
+    const token = randomBytes(32).toString('base64url');
+    try {
+      return await inTransaction(this.pool, async (client) => {
+        const seller = await client.query<{ status: string }>(
+          'SELECT status FROM sellers.sellers WHERE id = $1 FOR UPDATE',
+          [input.sellerId],
+        );
+        if (seller.rows[0]?.status !== 'APPROVED') return { status: 'NOT_APPROVED' } as const;
+        const members = await client.query<{ n: number }>(
+          `SELECT count(*)::int AS n FROM identity.user_role_assignments a
+           JOIN identity.roles r ON r.id = a.role_id
+           WHERE a.scope_type = 'SELLER' AND a.scope_id = $1 AND a.revoked_at IS NULL
+             AND r.code = 'SELLER_STAFF'`,
+          [input.sellerId],
+        );
+        if ((members.rows[0]?.n ?? 0) >= 10) return { status: 'TEAM_FULL' } as const;
+        const userId = await this.createUser(client, input.email, unusable, input.locale);
+        const assigned = await client.query(
+          `INSERT INTO identity.user_role_assignments
+             (user_id, role_id, actor_type, scope_type, scope_id, granted_by, granted_reason)
+           SELECT $1, r.id, r.actor_type, r.assignment_scope_type, $2, $3, 'Invited by the seller owner'
+           FROM identity.roles r WHERE r.code = 'SELLER_STAFF' AND r.status = 'ACTIVE' AND r.is_system`,
+          [userId, input.sellerId, input.ownerId],
+        );
+        if (assigned.rowCount !== 1) throw new Error('System role SELLER_STAFF is unavailable');
+        await client.query(
+          `INSERT INTO identity.password_reset_tokens (user_id, token_hash, expires_at)
+           VALUES ($1, $2, clock_timestamp() + interval '7 days')`,
+          [userId, tokenHash(token)],
+        );
+        await audit(client, {
+          actorType: 'seller_user',
+          actorId: input.ownerId,
+          action: 'seller.team_member_invited',
+          outcome: 'SUCCEEDED',
+          entityType: 'user',
+          entityId: userId,
+          correlationId: context.correlationId,
+          after: { sellerId: input.sellerId },
+        });
+        return { status: 'INVITED', userId, setPasswordToken: token } as const;
+      });
+    } catch (error) {
+      if (isUniqueViolation(error)) return { status: 'CONFLICT' };
+      throw error;
+    }
+  }
+
+  /** Removes a team member (never the owner): access ends at once and open links stop working. */
+  public async removeTeamMember(
+    sellerId: string,
+    ownerId: string,
+    memberId: string,
+    context: AuditContext,
+  ): Promise<boolean> {
+    return inTransaction(this.pool, async (client) => {
+      const revoked = await client.query(
+        `UPDATE identity.user_role_assignments a
+         SET revoked_at = clock_timestamp(), revoked_by = $3, revoke_reason = 'Removed by the seller owner'
+         FROM identity.roles r
+         WHERE r.id = a.role_id AND r.code = 'SELLER_STAFF' AND a.user_id = $1
+           AND a.scope_type = 'SELLER' AND a.scope_id = $2 AND a.revoked_at IS NULL`,
+        [memberId, sellerId, ownerId],
+      );
+      if (revoked.rowCount !== 1) return false;
+      await client.query(
+        `UPDATE identity.users SET session_epoch = session_epoch + 1,
+           row_version = row_version + 1, updated_at = clock_timestamp()
+         WHERE id = $1`,
+        [memberId],
+      );
+      await client.query(
+        `UPDATE identity.password_reset_tokens SET used_at = clock_timestamp()
+         WHERE user_id = $1 AND used_at IS NULL`,
+        [memberId],
+      );
+      await audit(client, {
+        actorType: 'seller_user',
+        actorId: ownerId,
+        action: 'seller.team_member_removed',
+        outcome: 'SUCCEEDED',
+        entityType: 'user',
+        entityId: memberId,
+        correlationId: context.correlationId,
+        after: { sellerId },
+      });
+      return true;
+    });
+  }
+
   public async sellerLogo(sellerId: string): Promise<string | null> {
     const result = await this.pool.query<{ logo_url: string | null }>(
       'SELECT logo_url FROM sellers.sellers WHERE id = $1',

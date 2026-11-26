@@ -17,6 +17,7 @@ import {
   Truck,
   UserCircle,
   Users,
+  UsersThree,
 } from '@phosphor-icons/react/dist/ssr';
 import type { Icon } from '@phosphor-icons/react';
 import Image from 'next/image';
@@ -35,9 +36,9 @@ import { adminCopy } from '@/lib/admin-copy';
 import { accountKind } from '@/lib/session';
 
 const groups = {
-  fr: { shop: 'Ma boutique', staff: 'Équipe Atlas DZ', dashboard: 'Tableau de bord', notifications: 'Notifications', offers: 'Offres à valider', account: 'Mon compte', escalations: 'Demandes escaladées', vendors: 'Comptes vendeurs', customers: 'Comptes clients', reviews: 'Avis clients' , audit: 'Journal d’audit', questions: 'Questions clients', reports: 'Produits signalés' },
-  en: { shop: 'My shop', staff: 'Atlas DZ team', dashboard: 'Dashboard', notifications: 'Notifications', offers: 'Offers to approve', account: 'My account', escalations: 'Escalated requests', vendors: 'Seller accounts', customers: 'Customer accounts', reviews: 'Customer reviews' , audit: 'Audit log', questions: 'Customer questions', reports: 'Reported products' },
-  ar: { shop: 'متجري', staff: 'فريق Atlas DZ', dashboard: 'لوحة التحكم', notifications: 'الإشعارات', offers: 'عروض للمراجعة', account: 'حسابي', escalations: 'طلبات مُصعَّدة', vendors: 'حسابات البائعين', customers: 'حسابات الزبائن', reviews: 'تقييمات الزبائن' , audit: 'سجل التدقيق', questions: 'أسئلة الزبائن', reports: 'منتجات مُبلَّغ عنها' },
+  fr: { shop: 'Ma boutique', staff: 'Équipe Atlas DZ', dashboard: 'Tableau de bord', notifications: 'Notifications', offers: 'Offres à valider', account: 'Mon compte', escalations: 'Demandes escaladées', vendors: 'Comptes vendeurs', customers: 'Comptes clients', reviews: 'Avis clients' , audit: 'Journal d’audit', questions: 'Questions clients', reports: 'Produits signalés', team: 'Équipe' },
+  en: { shop: 'My shop', staff: 'Atlas DZ team', dashboard: 'Dashboard', notifications: 'Notifications', offers: 'Offers to approve', account: 'My account', escalations: 'Escalated requests', vendors: 'Seller accounts', customers: 'Customer accounts', reviews: 'Customer reviews' , audit: 'Audit log', questions: 'Customer questions', reports: 'Reported products', team: 'Team' },
+  ar: { shop: 'متجري', staff: 'فريق Atlas DZ', dashboard: 'لوحة التحكم', notifications: 'الإشعارات', offers: 'عروض للمراجعة', account: 'حسابي', escalations: 'طلبات مُصعَّدة', vendors: 'حسابات البائعين', customers: 'حسابات الزبائن', reviews: 'تقييمات الزبائن' , audit: 'سجل التدقيق', questions: 'أسئلة الزبائن', reports: 'منتجات مُبلَّغ عنها', team: 'الفريق' },
 } as const;
 
 interface NavItem {
@@ -105,6 +106,7 @@ export async function Shell({
     { path: '/reviews', label: g.reviews, Icon: Star },
     { path: '/questions', label: g.questions, Icon: ChatCircleText },
     { path: '/support', label: supportCopy[locale].title, Icon: Lifebuoy },
+    { path: '/team', label: g.team, Icon: UsersThree },
   ];
   const staff: NavItem[] = [
     { path: '/moderation', label: g.offers, Icon: ShieldCheck },

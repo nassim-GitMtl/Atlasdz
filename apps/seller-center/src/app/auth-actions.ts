@@ -7,6 +7,8 @@ import { revalidatePath } from 'next/cache';
 import {
   AuthApiError,
   changePassword,
+  inviteTeamMember,
+  removeTeamMember,
   changeSellerLogo,
   forwardedClientIp,
   login,
@@ -210,6 +212,39 @@ export async function resetPasswordAction(
 export interface PhotoState {
   readonly error?: 'invalid' | 'forbidden' | 'full' | 'unavailable' | 'csrf' | 'unauthorized';
   readonly done?: boolean;
+}
+
+export interface TeamState {
+  readonly error?: 'invalid' | 'exists' | 'full' | 'forbidden' | 'csrf' | 'unauthorized' | 'unavailable';
+  readonly done?: 'invited' | 'removed';
+  readonly email?: string;
+}
+
+/** The owner invites a team member by email (a set-password link is emailed) or removes one. */
+export async function teamAction(_state: TeamState, form: FormData): Promise<TeamState> {
+  if (!(await validOrigin())) return { error: 'csrf' };
+  const token = await accessToken();
+  if (!token) return { error: 'unauthorized' };
+  const remove = UuidSchema.safeParse(form.get('remove'));
+  const email = String(form.get('email') ?? '').trim();
+  try {
+    if (remove.success) {
+      await removeTeamMember(token, remove.data);
+      revalidatePath('/team');
+      return { done: 'removed' };
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) || email.length > 254) return { error: 'invalid', email };
+    await inviteTeamMember(token, email, localeFrom(str(form, 'lang')));
+  } catch (error) {
+    const code = error instanceof AuthApiError ? error.code : 'unavailable';
+    if (code === 'exists') return { error: 'exists', email };
+    if (code === 'format') return { error: 'full', email };
+    if (code === 'forbidden') return { error: 'forbidden', email };
+    if (code === 'unauthorized') return { error: 'unauthorized', email };
+    return { error: 'unavailable', email };
+  }
+  revalidatePath('/team');
+  return { done: 'invited' };
 }
 
 export interface LogoState {

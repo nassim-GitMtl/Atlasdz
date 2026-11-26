@@ -5,7 +5,7 @@ import { Text } from '@/components/text';
 
 import { HolidayCard } from '@/components/holiday-card';
 import { LogoCard } from '@/components/logo-card';
-import { Badge, Button, Card, ListRow, Screen, text } from '@/components/ui';
+import { Badge, Button, Card, ListRow, Screen, text, Notice } from '@/components/ui';
 import { webPage } from '@/lib/config';
 import { useI18n } from '@/lib/i18n';
 import { useSession } from '@/lib/session';
@@ -35,8 +35,15 @@ export default function SellerAccountScreen() {
           ) : null}
         </Card>
       ) : null}
-      <HolidayCard />
-      {session.seller?.status === 'APPROVED' ? <LogoCard /> : null}
+      {/* Shop settings are the owner's; team members handle orders, delivery and support. */}
+      {session.seller?.role === 'STAFF' ? (
+        <Notice tone="info">{t.seller.teamMember}</Notice>
+      ) : (
+        <>
+          <HolidayCard />
+          {session.seller?.status === 'APPROVED' ? <LogoCard /> : null}
+        </>
+      )}
       <Card>
         <ListRow
           icon="car-outline"

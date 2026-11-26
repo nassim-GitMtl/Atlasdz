@@ -781,6 +781,62 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
       .set(bearer(seller))
       .expect(200);
     assert.equal(sellerView.body.deliveryContact.note, 'En face de la pharmacie, 2e étage');
+
+    // Team: the owner invites a member who handles orders but cannot change offers or the team.
+    await http()
+      .post('/api/v1/seller/team/invite')
+      .set(bearer(customer))
+      .send({ email: 'equipe@example.dz' })
+      .expect(403);
+    const sentBeforeInvite = mailer.sent.length;
+    const invited = await http()
+      .post('/api/v1/seller/team/invite')
+      .set(bearer(seller))
+      .send({ email: 'equipe@example.dz', locale: 'fr' })
+      .expect(201);
+    await http()
+      .post('/api/v1/seller/team/invite')
+      .set(bearer(seller))
+      .send({ email: 'equipe@example.dz' })
+      .expect(409);
+    await settle(() => mailer.sent.length > sentBeforeInvite);
+    const invitation = mailer.sent.find((mail) => mail.to === 'equipe@example.dz');
+    assert.match(invitation?.subject ?? '', /Boutique Tlemcen/);
+    const inviteToken = /reset-password\?token=([A-Za-z0-9_-]{43})&lang=fr&welcome=1/.exec(
+      invitation?.text ?? '',
+    )?.[1];
+    assert.ok(inviteToken, 'invitation link');
+    await http().post('/api/v1/auth/password/reset').send({ token: inviteToken, password }).expect(200);
+    const member = await mfaLogin('equipe@example.dz');
+    const memberAccount = await http().get('/api/v1/seller/account').set(bearer(member)).expect(200);
+    assert.equal(memberAccount.body.role, 'STAFF');
+    assert.equal(memberAccount.body.sellerId, sellerId);
+    assert.equal(
+      (await http().get('/api/v1/seller/account').set(bearer(seller)).expect(200)).body.role,
+      'OWNER',
+    );
+    await http().get(`/api/v1/seller/orders/${sellerOrder.id}`).set(bearer(member)).expect(200);
+    await http().post(`/api/v1/seller/offers/${offer.body.id}`).set(bearer(member)).send({}).expect(403);
+    await http().get('/api/v1/seller/team').set(bearer(member)).expect(403);
+    const team = await http().get('/api/v1/seller/team').set(bearer(seller)).expect(200);
+    assert.deepEqual(
+      team.body.items.map((item: { email: string; role: string; pending: boolean }) => [
+        item.email,
+        item.role,
+        item.pending,
+      ]),
+      [
+        ['boutique@example.dz', 'OWNER', false],
+        ['equipe@example.dz', 'STAFF', false],
+      ],
+    );
+    await http().post(`/api/v1/seller/team/${invited.body.userId}/remove`).set(bearer(seller)).expect(200);
+    await http().get('/api/v1/seller/account').set(bearer(member)).expect(401);
+    await http()
+      .post('/api/v1/auth/login')
+      .send({ email: 'equipe@example.dz', password })
+      .expect(401);
+    await http().post(`/api/v1/seller/team/${invited.body.userId}/remove`).set(bearer(seller)).expect(404);
     // The order keeps the seller's legal identity and stated delivery time (printed summary).
     assert.equal(sellerOrder.snapshot.sellerLegal.registerNumber, '13/AR-0012345');
     assert.equal(sellerOrder.snapshot.sellerLegal.address, '7 boulevard Colonel Lotfi, Tlemcen');
@@ -1254,10 +1310,18 @@ describe('LIVE cash-on-delivery marketplace journey', () => {
       .set(bearer(staff))
       .expect(200);
     assert.ok(sellerActions.body.items.length > 0);
+    // The owner's team actions are audited under the owner's account.
+    assert.ok(
+      sellerActions.body.items.some(
+        (item: { action: string; actorEmail: string | null }) =>
+          item.action === 'seller.team_member_invited' && item.actorEmail === 'boutique@example.dz',
+      ),
+    );
     assert.ok(
       sellerActions.body.items.every(
         (item: { actorType: string; actorEmail: string | null }) =>
-          item.actorType === 'seller_user' && item.actorEmail === 'boutique@example.dz',
+          item.actorType === 'seller_user' &&
+          ['boutique@example.dz', 'equipe@example.dz'].includes(item.actorEmail ?? ''),
       ),
     );
     await http().get('/api/v1/admin/audit?area=DROP%20TABLE').set(bearer(staff)).expect(422);

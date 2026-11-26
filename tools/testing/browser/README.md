@@ -90,6 +90,10 @@ line is reported by number. The original stock is restored at the end.
 shop checkout form; the order page, the printable summary and the seller's order page show it.
 The order is cancelled at the end.
 
+`team.mjs` (Seller Center; needs `ATLAS_API_LOG`): the demo seller invites a team member; the
+member opens the welcome link from the API log, chooses a password, enrols two-step sign-in, can
+open orders but not the shop settings or the team; the owner removes the member.
+
 `deployed-shop.mjs` (production rehearsal, https://shop.localhost): search suggestions, favorites,
 product schema.org data and the live sitemap under the production CSP, with no CSP violations.
 

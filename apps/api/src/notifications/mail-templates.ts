@@ -2,6 +2,31 @@ import type { MailMessage } from './mailer.js';
 
 type Locale = 'fr' | 'ar' | 'en';
 
+export function sellerInvitationMail(
+  to: string,
+  locale: Locale,
+  storeName: string,
+  link: string,
+): MailMessage {
+  if (locale === 'en')
+    return {
+      to,
+      subject: `Atlas DZ — Join the ${storeName} team`,
+      text: `Hello,\n\nThe owner of the shop "${storeName}" invited you to help with its orders on Atlas DZ Seller Center.\nChoose your password with this link (valid for 7 days, single use), then set up two-step sign-in:\n${link}\n\nIf you do not know this shop, ignore this message.\n\nAtlas DZ`,
+    };
+  return locale === 'ar'
+    ? {
+        to,
+        subject: `أطلس دي زد — انضم إلى فريق ${storeName}`,
+        text: `مرحبًا،\n\nدعاك صاحب المتجر «${storeName}» لمساعدته في معالجة الطلبات على فضاء البائع في أطلس دي زد.\nاختر كلمة المرور من هذا الرابط (صالح 7 أيام، ويُستعمل مرة واحدة)، ثم فعّل التحقق بخطوتين:\n${link}\n\nإذا كنت لا تعرف هذا المتجر، تجاهل هذه الرسالة.\n\nأطلس دي زد`,
+      }
+    : {
+        to,
+        subject: `Atlas DZ — Rejoignez l’équipe de ${storeName}`,
+        text: `Bonjour,\n\nLe propriétaire de la boutique « ${storeName} » vous invite à l’aider à traiter ses commandes sur l’Espace vendeur Atlas DZ.\nChoisissez votre mot de passe avec ce lien (valable 7 jours, à usage unique), puis activez la connexion en deux étapes :\n${link}\n\nSi vous ne connaissez pas cette boutique, ignorez ce message.\n\nAtlas DZ`,
+      };
+}
+
 export function passwordResetMail(to: string, locale: Locale, link: string): MailMessage {
   if (locale === 'en')
     return {

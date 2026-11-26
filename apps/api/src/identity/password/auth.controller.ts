@@ -290,6 +290,70 @@ export class AuthController {
   }
 }
 
+/** The seller owner invites and removes team members (orders, delivery, support only). */
+@Controller('api/v1/seller/team')
+@RequirePermission('seller.team.manage', { minimumAssurance: 'MFA' })
+export class SellerTeamController {
+  public constructor(
+    @Inject(PASSWORD_IDENTITY) private readonly identity: PasswordIdentityRepository,
+    @Inject(MARKETPLACE_NOTIFIER) private readonly notifier: MarketplaceNotifier,
+  ) {}
+
+  private owner(request: AuthenticatedRequest) {
+    const principal = getRequestPrincipal(request);
+    if (principal.actorType !== 'seller_user' || principal.scope.type !== 'SELLER') {
+      throw new SafeApplicationError('FORBIDDEN');
+    }
+    return { sellerId: principal.scope.id, userId: principal.userId };
+  }
+
+  @Get()
+  @RateLimited('authenticated', 'sellers.team.list')
+  public async list(@Req() request: AuthenticatedRequest) {
+    return { items: await this.identity.listTeam(this.owner(request).sellerId) };
+  }
+
+  @Post('invite')
+  @HttpCode(201)
+  @RateLimited('authenticated', 'sellers.team.invite')
+  public async invite(@Req() request: AuthenticatedRequest & CorrelatedRequest, @Body() body: unknown) {
+    const { sellerId, userId } = this.owner(request);
+    const raw = object(body, ['email', 'locale']);
+    const address = email(raw);
+    const language = locale(raw);
+    const outcome = await this.identity.inviteTeamMember(
+      { sellerId, ownerId: userId, email: address, locale: language },
+      { correlationId: request.correlationId },
+    );
+    if (outcome.status !== 'INVITED') {
+      if (outcome.status === 'CONFLICT') throw new SafeApplicationError('ACCOUNT_CONFLICT');
+      if (outcome.status === 'NOT_APPROVED') throw new SafeApplicationError('FORBIDDEN');
+      invalid('email', 'TEAM_FULL');
+    }
+    const [store] = await this.identity.sellerContacts([sellerId]);
+    this.notifier.sellerInvitation(address, language, store?.name ?? 'Atlas DZ', outcome.setPasswordToken);
+    return { userId: outcome.userId, status: 'INVITED' };
+  }
+
+  @Post(':userId/remove')
+  @HttpCode(200)
+  @RateLimited('authenticated', 'sellers.team.remove')
+  public async remove(
+    @Req() request: AuthenticatedRequest & CorrelatedRequest,
+    @Param('userId') memberId: string,
+  ) {
+    const { sellerId, userId } = this.owner(request);
+    if (!UuidSchema.safeParse(memberId).success || memberId === userId) {
+      throw new SafeApplicationError('RESOURCE_NOT_FOUND');
+    }
+    const removed = await this.identity.removeTeamMember(sellerId, userId, memberId, {
+      correlationId: request.correlationId,
+    });
+    if (!removed) throw new SafeApplicationError('RESOURCE_NOT_FOUND');
+    return { status: 'REMOVED' };
+  }
+}
+
 /** Any signed-in account changes its password; other devices are signed out. */
 @Controller('api/v1/auth/password')
 export class PasswordChangeController {
@@ -357,6 +421,7 @@ export class SellerAccountController {
       holidayUntil: await this.identity.sellerHoliday(principal.scope.id),
       legal: await this.identity.sellerLegal(principal.scope.id),
       logoUrl: await this.identity.sellerLogo(principal.scope.id),
+      role: await this.identity.sellerRole(principal.userId, principal.scope.id),
     };
   }
 

@@ -39,6 +39,7 @@ const accounts = {
       { id: fixtureId('46'), code: 'support.manage' },
       { id: fixtureId('48'), code: 'product.submit' },
       { id: fixtureId('50'), code: 'review.reply' },
+      { id: fixtureId('53'), code: 'seller.team.manage' },
     ],
   },
   admin: {

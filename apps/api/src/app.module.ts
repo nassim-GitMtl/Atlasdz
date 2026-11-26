@@ -113,6 +113,7 @@ import {
   PASSWORD_IDENTITY,
   PasswordChangeController,
   SellerAccountController,
+  SellerTeamController,
 } from './identity/password/auth.controller.js';
 import {
   composeCredentialVerifiers,
@@ -288,6 +289,7 @@ export class AppModule {
               AuthController,
               PasswordChangeController,
               SellerAccountController,
+              SellerTeamController,
               AdminSellersController,
               PhoneVerificationController,
               CustomerAccountController,

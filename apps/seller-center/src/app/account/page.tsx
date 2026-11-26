@@ -46,11 +46,23 @@ export default async function Account({
               {t.goOffers}
             </Link>
           )}
-          {account.status === 'APPROVED' && (
+          {account.role === 'STAFF' && (
+            <p className="notice">
+              {lang(
+                locale,
+                'Vous êtes membre de l’équipe : vous traitez les commandes, la livraison et l’aide. Les réglages de la boutique sont réservés au propriétaire.',
+                'أنت عضو في الفريق: تعالج الطلبات والتوصيل والمساعدة. إعدادات المتجر خاصة بالمالك.',
+                'You are a team member: you handle orders, delivery and help. Shop settings are for the owner.',
+              )}
+            </p>
+          )}
+          {account.status === 'APPROVED' && account.role !== 'STAFF' && (
             <HolidayForm locale={locale} holidayUntil={account.holidayUntil} />
           )}
-          {account.status === 'APPROVED' && <LogoForm locale={locale} logoUrl={account.logoUrl} />}
-          <LegalForm locale={locale} legal={account.legal} />
+          {account.status === 'APPROVED' && account.role !== 'STAFF' && (
+            <LogoForm locale={locale} logoUrl={account.logoUrl} />
+          )}
+          {account.role !== 'STAFF' && <LegalForm locale={locale} legal={account.legal} />}
           <PasswordForm locale={locale} />
         </section>
       )}

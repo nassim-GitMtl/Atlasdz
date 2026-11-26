@@ -74,6 +74,8 @@ export interface SellerAccount {
   readonly holidayUntil?: string | null;
   /** Square store logo (`/media/<id>.webp`), or null. */
   readonly logoUrl?: string | null;
+  /** OWNER manages the shop; STAFF (team member) handles orders, delivery and support. */
+  readonly role?: 'OWNER' | 'STAFF' | null;
 }
 
 export interface PhoneStatus {

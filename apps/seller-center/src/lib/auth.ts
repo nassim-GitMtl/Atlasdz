@@ -134,9 +134,31 @@ export const sellerAccount = (token: string) =>
       holidayUntil: z.string().nullable().optional(),
       legal: SellerLegalSchema.nullable().optional(),
       logoUrl: z.string().nullable().optional(),
+      /** OWNER manages the shop; STAFF (team member) handles orders, delivery and support. */
+      role: z.enum(['OWNER', 'STAFF']).nullable().optional(),
     }),
     { token },
   );
+const TeamMemberSchema = z.object({
+  userId: z.uuid(),
+  email: z.string(),
+  role: z.enum(['OWNER', 'STAFF']),
+  since: z.string(),
+  pending: z.boolean(),
+});
+export type TeamMember = z.infer<typeof TeamMemberSchema>;
+export const listTeam = (token: string) =>
+  call('/api/v1/seller/team', z.object({ items: TeamMemberSchema.array() }), { token });
+export const inviteTeamMember = (token: string, email: string, locale: 'fr' | 'ar' | 'en') =>
+  call('/api/v1/seller/team/invite', z.object({ userId: z.uuid() }), {
+    token,
+    body: { email, locale },
+  });
+export const removeTeamMember = (token: string, userId: string) =>
+  call(`/api/v1/seller/team/${encodeURIComponent(userId)}/remove`, z.object({ status: z.string() }), {
+    token,
+    body: {},
+  });
 /** Updates the legal identity shown to buyers. */
 export const setSellerLegal = (token: string, legal: SellerLegal) =>
   call('/api/v1/seller/account/legal', z.object({ legal: SellerLegalSchema }), {

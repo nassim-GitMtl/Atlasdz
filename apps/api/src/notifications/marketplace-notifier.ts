@@ -16,6 +16,7 @@ import {
   type NotifiedStatus,
   offerDecisionMail,
   backInStockMail,
+  sellerInvitationMail,
 } from './mail-templates.js';
 import { deliver, type Mailer } from './mailer.js';
 
@@ -50,6 +51,17 @@ export class MarketplaceNotifier {
 
   public passwordReset(email: string, locale: 'fr' | 'ar' | 'en', link: string): void {
     deliver(this.mailer, this.logger, passwordResetMail(email, locale, link));
+  }
+
+  /** A seller owner invited a team member: a 7-day link to choose the password. */
+  public sellerInvitation(
+    email: string,
+    locale: 'fr' | 'ar' | 'en',
+    storeName: string,
+    token: string,
+  ): void {
+    const link = `${this.links.sellerWebOrigin ?? ''}/reset-password?token=${token}&lang=${locale}&welcome=1`;
+    deliver(this.mailer, this.logger, sellerInvitationMail(email, locale, storeName, link));
   }
 
   /** Guest checkout: the account exists; a 7-day link lets the buyer choose a password. */
