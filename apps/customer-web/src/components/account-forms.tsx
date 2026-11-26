@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
-import { deleteAccountAction, phoneAction } from '@/app/account/actions';
+import { changePasswordAction, deleteAccountAction, phoneAction } from '@/app/account/actions';
 import { accountCopy } from '@/lib/account-copy';
 import type { Locale } from '@/lib/i18n';
 
@@ -83,6 +83,43 @@ export function DeleteAccountForm({ locale }: { readonly locale: Locale }) {
       )}
       <button className="button button--secondary" type="submit" disabled={pending}>
         {pending ? t.busy : t.confirmDelete}
+      </button>
+    </form>
+  );
+}
+
+/** Signed-in password change (current password required; other devices are signed out). */
+export function ChangePasswordForm({ locale }: { readonly locale: Locale }) {
+  const [state, action, pending] = useActionState(changePasswordAction, {});
+  const t = accountCopy[locale];
+  if (state.step === 'done') return <p role="status">{t.passwordChanged}</p>;
+  const field = (id: string, name: string, label: string, autoComplete: string) => (
+    <label htmlFor={id}>
+      {label}
+      <input
+        id={id}
+        name={name}
+        type="password"
+        autoComplete={autoComplete}
+        dir="ltr"
+        required
+        minLength={name === 'current' ? 1 : 10}
+        maxLength={128}
+      />
+    </label>
+  );
+  return (
+    <form action={action} className="auth-form">
+      {field('change-current', 'current', t.password, 'current-password')}
+      {field('change-new', 'password', t.newPassword, 'new-password')}
+      {field('change-confirm', 'confirm', t.confirmPassword, 'new-password')}
+      {state.error && (
+        <p className="cart-feedback" role="alert">
+          {t[state.error]}
+        </p>
+      )}
+      <button className="button button--secondary" type="submit" disabled={pending}>
+        {pending ? t.busy : t.changePassword}
       </button>
     </form>
   );

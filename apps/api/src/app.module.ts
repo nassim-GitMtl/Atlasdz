@@ -110,6 +110,7 @@ import {
   AuthController,
   CustomerAccountController,
   PASSWORD_IDENTITY,
+  PasswordChangeController,
   SellerAccountController,
 } from './identity/password/auth.controller.js';
 import {
@@ -284,6 +285,7 @@ export class AppModule {
           ? []
           : [
               AuthController,
+              PasswordChangeController,
               SellerAccountController,
               AdminSellersController,
               PhoneVerificationController,

@@ -3,7 +3,13 @@
 import { resolveLocale } from '@/lib/i18n';
 import { cookies, headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
-import { AccountApiError, confirmPhone, deleteAccount, startPhone } from '@/lib/account-api';
+import {
+  AccountApiError,
+  changePassword,
+  confirmPhone,
+  deleteAccount,
+  startPhone,
+} from '@/lib/account-api';
 import { CUSTOMER_COOKIE, customerToken } from '@/lib/cart-api';
 import { customerTrustedOrigin } from '@/lib/customer-security';
 
@@ -16,7 +22,10 @@ export interface AccountState {
     | 'codeInvalid'
     | 'limited'
     | 'unavailable'
-    | 'csrf';
+    | 'csrf'
+    | 'weak'
+    | 'same'
+    | 'mismatch';
   readonly step?: 'code' | 'done';
   readonly phone?: string;
 }
@@ -61,5 +70,21 @@ export async function deleteAccountAction(
     return failure(error);
   }
   (await cookies()).delete(CUSTOMER_COOKIE);
+  return { step: 'done' };
+}
+
+export async function changePasswordAction(
+  _state: AccountState,
+  form: FormData,
+): Promise<AccountState> {
+  const token = await guard();
+  if (typeof token !== 'string') return token;
+  const next = String(form.get('password') ?? '');
+  if (next !== String(form.get('confirm') ?? '')) return { error: 'mismatch' };
+  try {
+    await changePassword(token, String(form.get('current') ?? ''), next);
+  } catch (error) {
+    return failure(error);
+  }
   return { step: 'done' };
 }

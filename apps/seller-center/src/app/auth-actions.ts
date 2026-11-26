@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import {
   AuthApiError,
+  changePassword,
   forwardedClientIp,
   login,
   registerSeller,
@@ -271,6 +272,34 @@ export interface HolidayState {
  * Starts holiday mode until the end of the chosen day (Algiers time, at most 60 days ahead), or
  * reopens the shop now (`reopen`).
  */
+export interface PasswordChangeState {
+  readonly error?: 'wrong' | 'weak' | 'same' | 'mismatch' | 'limited' | 'csrf' | 'unauthorized' | 'unavailable';
+  readonly done?: boolean;
+}
+
+/** Sellers and staff change their password; other devices are signed out by the API. */
+export async function changePasswordAction(
+  _state: PasswordChangeState,
+  form: FormData,
+): Promise<PasswordChangeState> {
+  if (!(await validOrigin())) return { error: 'csrf' };
+  const token = await accessToken();
+  if (!token) return { error: 'unauthorized' };
+  const current = String(form.get('current') ?? '');
+  const next = String(form.get('password') ?? '');
+  if (next !== String(form.get('confirm') ?? '')) return { error: 'mismatch' };
+  if (next === current) return { error: 'same' };
+  try {
+    await changePassword(token, current, next);
+  } catch (error) {
+    const code = error instanceof AuthApiError ? error.code : 'unavailable';
+    if (code === 'invalid') return { error: 'wrong' };
+    if (code === 'weak' || code === 'limited' || code === 'unauthorized') return { error: code };
+    return { error: 'unavailable' };
+  }
+  return { done: true };
+}
+
 export async function holidayAction(_state: HolidayState, form: FormData): Promise<HolidayState> {
   if (!(await validOrigin())) return { error: 'csrf' };
   const token = await accessToken();

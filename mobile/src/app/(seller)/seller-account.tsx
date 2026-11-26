@@ -56,6 +56,11 @@ export default function SellerAccountScreen() {
           label={t.account.devices}
           onPress={() => router.push('/sessions')}
         />
+        <ListRow
+          icon="key-outline"
+          label={t.changePassword.title}
+          onPress={() => router.push('/change-password')}
+        />
       </Card>
       <Card>
         <Text style={text.heading}>{t.account.language}</Text>

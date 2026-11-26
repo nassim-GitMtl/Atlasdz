@@ -941,6 +941,53 @@ export class PasswordIdentityRepository {
     });
   }
 
+  /**
+   * Signed-in password change: the current password must match. Clears lockouts and stores the
+   * new hash; the caller signs out the account's other devices. Audited.
+   */
+  public async changePassword(
+    userId: string,
+    actorType: ActorType,
+    currentPassword: string,
+    newPassword: string,
+    context: AuditContext,
+  ): Promise<'CHANGED' | 'INVALID_PASSWORD'> {
+    const credential = await this.pool.query<{ password_hash: string }>(
+      'SELECT password_hash FROM identity.password_credentials WHERE user_id = $1',
+      [userId],
+    );
+    const hash = credential.rows[0]?.password_hash;
+    if (hash === undefined || !(await verifyPassword(currentPassword, hash))) {
+      return 'INVALID_PASSWORD';
+    }
+    const passwordHash = await hashPassword(newPassword);
+    return inTransaction(this.pool, async (client) => {
+      await client.query(
+        `UPDATE identity.password_credentials
+         SET password_hash = $2, failed_attempts = 0, locked_until = NULL,
+             password_changed_at = clock_timestamp(), updated_at = clock_timestamp()
+         WHERE user_id = $1`,
+        [userId, passwordHash],
+      );
+      // Any reset link still in an inbox stops working.
+      await client.query(
+        `UPDATE identity.password_reset_tokens SET used_at = clock_timestamp()
+         WHERE user_id = $1 AND used_at IS NULL`,
+        [userId],
+      );
+      await audit(client, {
+        actorType,
+        actorId: userId,
+        action: 'identity.password_changed',
+        outcome: 'SUCCEEDED',
+        entityType: 'user',
+        entityId: userId,
+        correlationId: context.correlationId,
+      });
+      return 'CHANGED' as const;
+    });
+  }
+
   public async emailForUser(userId: string): Promise<{ email: string; locale: Locale } | null> {
     const result = await this.pool.query<{ email: string; locale: string }>(
       `SELECT c.email, u.preferred_locale AS locale FROM identity.password_credentials c

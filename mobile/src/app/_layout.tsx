@@ -71,6 +71,7 @@ function Navigator() {
         <Stack.Screen name="support/new" options={{ title: t.support.newTitle }} />
         <Stack.Screen name="support/[caseId]" options={{ title: t.support.title }} />
         <Stack.Screen name="sessions" options={{ title: t.sessions.title }} />
+        <Stack.Screen name="change-password" options={{ title: t.changePassword.title }} />
         <Stack.Screen name="+not-found" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="dark" />

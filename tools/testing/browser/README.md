@@ -63,6 +63,10 @@ answers in Seller Center, the shop and the app show it, staff hide the question.
 report a product from the shop and the app; staff see the grouped reasons and details on
 /admin/reports and the dashboard, then dismiss them (the product stays on sale).
 
+`password-change.mjs` (shop, Seller Center, app): a customer, a staff account and an app customer
+change their password while signed in (mismatch and wrong-password errors shown); the old
+password stops working and the new one signs in.
+
 `deployed-shop.mjs` (production rehearsal, https://shop.localhost): search suggestions, favorites,
 product schema.org data and the live sitemap under the production CSP, with no CSP violations.
 

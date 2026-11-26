@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { DeleteAccountForm, PhoneForm } from '@/components/account-forms';
+import { ChangePasswordForm, DeleteAccountForm, PhoneForm } from '@/components/account-forms';
 import { CustomerSessionForm } from '@/components/cart-forms';
 import { SiteChrome } from '@/components/site-chrome';
 import { getAccount, getPhone } from '@/lib/account-api';
@@ -43,6 +43,11 @@ export default async function Account({
               <Link href={localizedHref('/orders', locale)}>{t.orders}</Link>
             </p>
             <CustomerSessionForm locale={locale} logout />
+          </div>
+          <div className="cart-empty">
+            <h2>{t.passwordTitle}</h2>
+            <p>{t.passwordBody}</p>
+            <ChangePasswordForm locale={locale} />
           </div>
           {phone.required && (
             <div className="cart-empty">

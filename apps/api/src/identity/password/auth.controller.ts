@@ -4,6 +4,7 @@ import {
   SellerLegalSchema,
   UuidSchema,
 } from '@atlas/contracts';
+import type { SessionSelfService } from '@atlas/identity';
 import type { RuntimeConfig } from '@atlas/platform';
 import { Body, Controller, Get, HttpCode, Inject, Param, Post, Query, Req } from '@nestjs/common';
 
@@ -22,6 +23,7 @@ import {
   type MarketplaceNotifier,
 } from '../../notifications/marketplace-notifier.js';
 import { RUNTIME_CONFIG } from '../../tokens.js';
+import { SESSION_SELF_SERVICE } from '../tokens.js';
 import { passwordPolicyViolation } from './credential-crypto.js';
 import { normalizeEmail, type PasswordIdentityRepository } from './password-identity.js';
 
@@ -285,6 +287,52 @@ export class AuthController {
     });
     if (outcome === 'INVALID') invalid('token', 'RESET_TOKEN_INVALID');
     return { status: 'RESET' };
+  }
+}
+
+/** Any signed-in account changes its password; other devices are signed out. */
+@Controller('api/v1/auth/password')
+export class PasswordChangeController {
+  public constructor(
+    @Inject(PASSWORD_IDENTITY) private readonly identity: PasswordIdentityRepository,
+    @Inject(SESSION_SELF_SERVICE) private readonly sessions: SessionSelfService,
+  ) {}
+
+  @Post('change')
+  @HttpCode(200)
+  @AuthenticatedOnly()
+  @RateLimited('authenticated', 'identity.password.change')
+  public async change(
+    @Req() request: AuthenticatedRequest & CorrelatedRequest,
+    @Body() body: unknown,
+  ) {
+    const principal = getRequestPrincipal(request);
+    const actor = principal.actorType;
+    if (actor !== 'customer' && actor !== 'seller_user' && actor !== 'staff')
+      throw new SafeApplicationError('FORBIDDEN');
+    const raw = object(body, ['currentPassword', 'password']);
+    const current = raw['currentPassword'];
+    if (typeof current !== 'string' || current.length < 1 || current.length > 128)
+      invalid('currentPassword');
+    const next = password(raw);
+    if (next === current) policyFailure('PASSWORD_UNCHANGED');
+    const account = await this.identity.emailForUser(principal.userId);
+    if (account === null) throw new SafeApplicationError('RESOURCE_NOT_FOUND');
+    const violation = passwordPolicyViolation(next, account.email);
+    if (violation) policyFailure(violation);
+    const outcome = await this.identity.changePassword(
+      principal.userId,
+      actor,
+      current,
+      next,
+      { correlationId: request.correlationId },
+    );
+    if (outcome === 'INVALID_PASSWORD') throw new SafeApplicationError('INVALID_CREDENTIALS');
+    const revoked = await this.sessions.revokeOtherFamilies({
+      principal,
+      correlation: { correlationId: request.correlationId },
+    });
+    return { status: 'CHANGED', signedOutDevices: revoked.counts.revokedFamilyCount };
   }
 }
 

@@ -2,7 +2,15 @@ import { z } from 'zod';
 import { customerApiOrigin } from './customer-security.ts';
 
 export type AccountFailure =
-  'auth' | 'password' | 'openOrders' | 'phoneInvalid' | 'codeInvalid' | 'limited' | 'unavailable';
+  | 'auth'
+  | 'password'
+  | 'openOrders'
+  | 'phoneInvalid'
+  | 'codeInvalid'
+  | 'limited'
+  | 'unavailable'
+  | 'weak'
+  | 'same';
 export class AccountApiError extends Error {
   constructor(readonly code: AccountFailure) {
     super(code);
@@ -50,6 +58,8 @@ async function call<T>(
     if (code === 'RATE_LIMITED') throw new AccountApiError('limited');
     if (reason === 'PHONE_INVALID') throw new AccountApiError('phoneInvalid');
     if (reason === 'PHONE_CODE_INVALID') throw new AccountApiError('codeInvalid');
+    if (reason === 'PASSWORD_UNCHANGED') throw new AccountApiError('same');
+    if (reason.startsWith('PASSWORD_')) throw new AccountApiError('weak');
     throw new AccountApiError('unavailable');
   }
   return schema.parse(await response.json());
@@ -73,6 +83,12 @@ export const confirmPhone = (token: string, phone: string, code: string) =>
   call('/api/v1/account/phone/confirm', z.object({ status: z.string() }), token, { phone, code });
 export const deleteAccount = (token: string, password: string) =>
   call('/api/v1/account/delete', z.object({ status: z.string() }), token, { password });
+/** Signed-in password change; the API signs out the account's other devices. */
+export const changePassword = (token: string, currentPassword: string, password: string) =>
+  call('/api/v1/auth/password/change', z.object({ status: z.literal('CHANGED') }), token, {
+    currentPassword,
+    password,
+  });
 export async function exportAccount(token: string): Promise<Response> {
   return fetch(new URL('/api/v1/account/export', customerApiOrigin(process.env)), {
     cache: 'no-store',

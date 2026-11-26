@@ -143,6 +143,12 @@ export const setSellerLegal = (token: string, legal: SellerLegal) =>
     body: legal,
   });
 /** Holiday mode: hide every offer until `until` (ISO), or reopen now with null. */
+/** Signed-in password change; the API signs out the account's other devices. */
+export const changePassword = (token: string, currentPassword: string, password: string) =>
+  call('/api/v1/auth/password/change', z.object({ status: z.literal('CHANGED') }), {
+    token,
+    body: { currentPassword, password },
+  });
 export const setSellerHoliday = (token: string, until: string | null) =>
   call('/api/v1/seller/account/holiday', z.object({ holidayUntil: z.string().nullable() }), {
     token,

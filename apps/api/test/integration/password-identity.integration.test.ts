@@ -311,6 +311,40 @@ describe('email/password identity with PostgreSQL and HTTP', () => {
       .expect(200);
   });
 
+  it('changes a password while signed in and signs out the other devices', async () => {
+    const first = 'river stone compass 31';
+    await http()
+      .post('/api/v1/auth/register/customer')
+      .send({ email: 'change@example.dz', password: first })
+      .expect(201);
+    const signIn = async (secret: string) =>
+      (
+        await http()
+          .post('/api/v1/auth/login')
+          .send({ email: 'change@example.dz', password: secret })
+          .expect(200)
+      ).body.accessToken as string;
+    const phone = await signIn(first);
+    const laptop = await signIn(first);
+    const change = (token: string, body: Record<string, unknown>) =>
+      http().post('/api/v1/auth/password/change').set('Authorization', `Bearer ${token}`).send(body);
+    await http().post('/api/v1/auth/password/change').send({ currentPassword: first, password: 'x' }).expect(401);
+    await change(laptop, { currentPassword: 'wrong guess here 9', password: 'fresh meadow lantern 52' }).expect(401);
+    await change(laptop, { currentPassword: first, password: 'short' }).expect(422);
+    await change(laptop, { currentPassword: first, password: first }).expect(422);
+    const next = 'fresh meadow lantern 52';
+    const done = await change(laptop, { currentPassword: first, password: next }).expect(200);
+    assert.equal(done.body.status, 'CHANGED');
+    assert.equal(done.body.signedOutDevices, 1);
+    await http().get('/api/v1/account').set('Authorization', `Bearer ${laptop}`).expect(200);
+    await http().get('/api/v1/account').set('Authorization', `Bearer ${phone}`).expect(401);
+    await http()
+      .post('/api/v1/auth/login')
+      .send({ email: 'change@example.dz', password: first })
+      .expect(401);
+    await signIn(next);
+  });
+
   it('exports and deletes a customer account (law 18-07) and frees the email', async () => {
     const privacyPassword = 'quiet harbor lantern 26';
     await http()
